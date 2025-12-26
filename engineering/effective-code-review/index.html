@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Code Review Bottlenecks: From a Team Pain Point to Scalable Practices | Yiyue (Lily) Liu</title>
+<meta name="keywords" content="software-engineering, code-review, productivity">
+<meta name="description" content="This post grew out of a very concrete problem in my own team.
+Over time, code reviews started to feel slower and heavier than they should have.
+Changes were functionally ready, but sat in review queues for days or even weeks.
+Each revision restarted the waiting cycle, and senior engineers increasingly
+became the critical path.
+While the context was specific, the patterns were not. Similar complaints show up
+in many engineering teams once codebases and organizations reach a certain size.
+This post starts from that local pain point and distills several practices that
+generalize well beyond a single team.">
+<meta name="author" content="">
+<link rel="canonical" href="https://liuyiyueyue.github.io/engineering/effective-code-review/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.343cc480b9ffc8f04ccbe5e968ad674880cab773ec19905e93033065c1e7a804.css" integrity="sha256-NDzEgLn/yPBMy&#43;XpaK1nSIDKt3PsGZBekwMwZcHnqAQ=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://liuyiyueyue.github.io/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://liuyiyueyue.github.io/engineering/effective-code-review/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+                color-scheme: dark;
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .toc {
+                background: var(--entry);
+            }
+        }
+
+        @media (prefers-color-scheme: light) {
+            .list::-webkit-scrollbar-thumb {
+                border-color: var(--code-bg);
+            }
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else if (localStorage.getItem("pref-theme") === "light") {
+       document.querySelector("html").dataset.theme = 'light';
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script><meta property="og:url" content="https://liuyiyueyue.github.io/engineering/effective-code-review/">
+  <meta property="og:site_name" content="Yiyue (Lily) Liu">
+  <meta property="og:title" content="Code Review Bottlenecks: From a Team Pain Point to Scalable Practices">
+  <meta property="og:description" content="This post grew out of a very concrete problem in my own team.
+Over time, code reviews started to feel slower and heavier than they should have. Changes were functionally ready, but sat in review queues for days or even weeks. Each revision restarted the waiting cycle, and senior engineers increasingly became the critical path.
+While the context was specific, the patterns were not. Similar complaints show up in many engineering teams once codebases and organizations reach a certain size. This post starts from that local pain point and distills several practices that generalize well beyond a single team.">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="engineering">
+    <meta property="article:published_time" content="2025-12-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-12-25T00:00:00+00:00">
+    <meta property="article:tag" content="Software-Engineering">
+    <meta property="article:tag" content="Code-Review">
+    <meta property="article:tag" content="Productivity">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Code Review Bottlenecks: From a Team Pain Point to Scalable Practices">
+<meta name="twitter:description" content="This post grew out of a very concrete problem in my own team.
+Over time, code reviews started to feel slower and heavier than they should have.
+Changes were functionally ready, but sat in review queues for days or even weeks.
+Each revision restarted the waiting cycle, and senior engineers increasingly
+became the critical path.
+While the context was specific, the patterns were not. Similar complaints show up
+in many engineering teams once codebases and organizations reach a certain size.
+This post starts from that local pain point and distills several practices that
+generalize well beyond a single team.">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Engineering",
+      "item": "https://liuyiyueyue.github.io/engineering/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Code Review Bottlenecks: From a Team Pain Point to Scalable Practices",
+      "item": "https://liuyiyueyue.github.io/engineering/effective-code-review/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Code Review Bottlenecks: From a Team Pain Point to Scalable Practices",
+  "name": "Code Review Bottlenecks: From a Team Pain Point to Scalable Practices",
+  "description": "This post grew out of a very concrete problem in my own team.\nOver time, code reviews started to feel slower and heavier than they should have. Changes were functionally ready, but sat in review queues for days or even weeks. Each revision restarted the waiting cycle, and senior engineers increasingly became the critical path.\nWhile the context was specific, the patterns were not. Similar complaints show up in many engineering teams once codebases and organizations reach a certain size. This post starts from that local pain point and distills several practices that generalize well beyond a single team.\n",
+  "keywords": [
+    "software-engineering", "code-review", "productivity"
+  ],
+  "articleBody": "This post grew out of a very concrete problem in my own team.\nOver time, code reviews started to feel slower and heavier than they should have. Changes were functionally ready, but sat in review queues for days or even weeks. Each revision restarted the waiting cycle, and senior engineers increasingly became the critical path.\nWhile the context was specific, the patterns were not. Similar complaints show up in many engineering teams once codebases and organizations reach a certain size. This post starts from that local pain point and distills several practices that generalize well beyond a single team.\nThe Problem We Ran Into Two symptoms kept recurring.\nLong Review Queues Once a change was submitted, it often waited a long time for an initial review. Follow-up revisions were not much better: each new version re-entered the same queue, compounding the delay.\nFrom the author’s perspective, progress stalled not because the code was blocked, but because feedback was slow.\nSenior Engineers as the Critical Path For non-trivial changes, reviews were frequently expected from senior engineers. This made sense from a quality standpoint, but it also concentrated review load on a small group of people who already had many competing responsibilities.\nOver time, this turned code review into a throughput bottleneck, not because anyone was neglecting reviews, but because demand simply exceeded capacity.\nStepping Back: A More General Pattern After looking at this more closely, it became clear that this was not just a “review culture” issue. It was a systems problem.\nMost code review pain can be described in terms of:\nLatency: how long a change waits before receiving feedback Capacity: how much review load the team can absorb When capacity is fixed and latency is unbounded, queues grow silently. Each extra review iteration adds load without increasing throughput.\nSeen this way, many review problems are less about individual behavior and more about how review work is structured.\nWhat Helped on the Author Side Some of the most effective improvements did not require process changes at all, but changes in how authors prepared their changes.\nAlign on Design Before Writing Code Submitting code that still contains unresolved design questions almost guarantees extended review cycles. Even a brief design alignment upfront can prevent large rewrites later.\nKeep Changes Small and Focused Smaller changes are easier to review, easier to reason about, and easier to iterate on. Mixing refactors, cleanups, and new features in a single change significantly increases review cost.\nTreat Each Revision as Review-Ready Incremental “partial” revisions feel efficient, but they often increase total review time. Each revision should address all existing feedback and be ready to merge on its own.\nWhat Helped on the Reviewer Side Reviewer behavior also played a major role.\nMake Review Latency Explicit When review work is treated as background activity, delays accumulate invisibly. Having a shared expectation—such as responding within a fixed time window—helped prevent reviews from silently stalling.\nSeparate Review Responsibilities Not every change requires deep architectural scrutiny. A useful division was:\npeer reviewers for correctness and readability senior reviewers for design and high-risk changes This reduced unnecessary load on senior engineers without lowering quality.\nAim for Consolidated Feedback One common source of delay was spreading feedback across multiple rounds. Providing more complete feedback in an initial pass, and limiting follow-up comments to genuinely new issues, significantly reduced churn.\nWhat Generalizes Although this discussion started from a specific team experience, the underlying lessons generalize well:\nreview capacity is finite latency compounds quickly concentrating review responsibility creates bottlenecks Treating code review as shared infrastructure rather than an informal activity helps teams scale without sacrificing either quality or sanity.\nClosing The goal of code review is not perfection, but sustainable progress.\nStarting from a local pain point and stepping back to examine the system helped us identify improvements that were both practical and broadly applicable. Many teams will recognize similar patterns, even if the details differ.\nReferences Google Engineering Practices How to Do a Code Review\nhttps://google.github.io/eng-practices/review/reviewer/\nA detailed guide for reviewers, focusing on correctness, readability, and long-term maintainability.\nThe CL Author’s Guide\nhttps://google.github.io/eng-practices/review/developer/\nA practical guide for authors on how to prepare changes that are easier to review and iterate on.\nAdditional Perspectives Code Review in Practice (Chinese) https://zhuanlan.zhihu.com/p/149833474 A discussion of real-world code review challenges in the author’s team. ",
+  "wordCount" : "716",
+  "inLanguage": "en",
+  "datePublished": "2025-12-25T00:00:00Z",
+  "dateModified": "2025-12-25T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://liuyiyueyue.github.io/engineering/effective-code-review/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Yiyue (Lily) Liu",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://liuyiyueyue.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://liuyiyueyue.github.io/" accesskey="h" title="Yiyue (Lily) Liu (Alt + H)">Yiyue (Lily) Liu</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://liuyiyueyue.github.io/about/" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://liuyiyueyue.github.io/engineering/" title="Engineering">
+                    <span>Engineering</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Code Review Bottlenecks: From a Team Pain Point to Scalable Practices
+    </h1>
+    <div class="post-meta"><span title='2025-12-25 00:00:00 +0000 UTC'>December 25, 2025</span>&nbsp;·&nbsp;<span>4 min</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#the-problem-we-ran-into" aria-label="The Problem We Ran Into">The Problem We Ran Into</a><ul>
+                        
+                <li>
+                    <a href="#long-review-queues" aria-label="Long Review Queues">Long Review Queues</a></li>
+                <li>
+                    <a href="#senior-engineers-as-the-critical-path" aria-label="Senior Engineers as the Critical Path">Senior Engineers as the Critical Path</a></li></ul>
+                </li>
+                <li>
+                    <a href="#stepping-back-a-more-general-pattern" aria-label="Stepping Back: A More General Pattern">Stepping Back: A More General Pattern</a></li>
+                <li>
+                    <a href="#what-helped-on-the-author-side" aria-label="What Helped on the Author Side">What Helped on the Author Side</a><ul>
+                        
+                <li>
+                    <a href="#align-on-design-before-writing-code" aria-label="Align on Design Before Writing Code">Align on Design Before Writing Code</a></li>
+                <li>
+                    <a href="#keep-changes-small-and-focused" aria-label="Keep Changes Small and Focused">Keep Changes Small and Focused</a></li>
+                <li>
+                    <a href="#treat-each-revision-as-review-ready" aria-label="Treat Each Revision as Review-Ready">Treat Each Revision as Review-Ready</a></li></ul>
+                </li>
+                <li>
+                    <a href="#what-helped-on-the-reviewer-side" aria-label="What Helped on the Reviewer Side">What Helped on the Reviewer Side</a><ul>
+                        
+                <li>
+                    <a href="#make-review-latency-explicit" aria-label="Make Review Latency Explicit">Make Review Latency Explicit</a></li>
+                <li>
+                    <a href="#separate-review-responsibilities" aria-label="Separate Review Responsibilities">Separate Review Responsibilities</a></li>
+                <li>
+                    <a href="#aim-for-consolidated-feedback" aria-label="Aim for Consolidated Feedback">Aim for Consolidated Feedback</a></li></ul>
+                </li>
+                <li>
+                    <a href="#what-generalizes" aria-label="What Generalizes">What Generalizes</a></li>
+                <li>
+                    <a href="#closing" aria-label="Closing">Closing</a></li>
+                <li>
+                    <a href="#references" aria-label="References">References</a><ul>
+                        
+                <li>
+                    <a href="#google-engineering-practices" aria-label="Google Engineering Practices">Google Engineering Practices</a></li>
+                <li>
+                    <a href="#additional-perspectives" aria-label="Additional Perspectives">Additional Perspectives</a>
+                </li>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><p>This post grew out of a very concrete problem in my own team.</p>
+<p>Over time, code reviews started to feel slower and heavier than they should have.
+Changes were functionally ready, but sat in review queues for days or even weeks.
+Each revision restarted the waiting cycle, and senior engineers increasingly
+became the critical path.</p>
+<p>While the context was specific, the patterns were not. Similar complaints show up
+in many engineering teams once codebases and organizations reach a certain size.
+This post starts from that local pain point and distills several practices that
+generalize well beyond a single team.</p>
+<hr>
+<h2 id="the-problem-we-ran-into">The Problem We Ran Into<a hidden class="anchor" aria-hidden="true" href="#the-problem-we-ran-into">#</a></h2>
+<p>Two symptoms kept recurring.</p>
+<h3 id="long-review-queues">Long Review Queues<a hidden class="anchor" aria-hidden="true" href="#long-review-queues">#</a></h3>
+<p>Once a change was submitted, it often waited a long time for an initial review.
+Follow-up revisions were not much better: each new version re-entered the same
+queue, compounding the delay.</p>
+<p>From the author’s perspective, progress stalled not because the code was blocked,
+but because <strong>feedback was slow</strong>.</p>
+<h3 id="senior-engineers-as-the-critical-path">Senior Engineers as the Critical Path<a hidden class="anchor" aria-hidden="true" href="#senior-engineers-as-the-critical-path">#</a></h3>
+<p>For non-trivial changes, reviews were frequently expected from senior engineers.
+This made sense from a quality standpoint, but it also concentrated review load on
+a small group of people who already had many competing responsibilities.</p>
+<p>Over time, this turned code review into a <strong>throughput bottleneck</strong>, not because
+anyone was neglecting reviews, but because demand simply exceeded capacity.</p>
+<hr>
+<h2 id="stepping-back-a-more-general-pattern">Stepping Back: A More General Pattern<a hidden class="anchor" aria-hidden="true" href="#stepping-back-a-more-general-pattern">#</a></h2>
+<p>After looking at this more closely, it became clear that this was not just a
+“review culture” issue. It was a systems problem.</p>
+<p>Most code review pain can be described in terms of:</p>
+<ul>
+<li><strong>Latency</strong>: how long a change waits before receiving feedback</li>
+<li><strong>Capacity</strong>: how much review load the team can absorb</li>
+</ul>
+<p>When capacity is fixed and latency is unbounded, queues grow silently. Each extra
+review iteration adds load without increasing throughput.</p>
+<p>Seen this way, many review problems are less about individual behavior and more
+about <strong>how review work is structured</strong>.</p>
+<hr>
+<h2 id="what-helped-on-the-author-side">What Helped on the Author Side<a hidden class="anchor" aria-hidden="true" href="#what-helped-on-the-author-side">#</a></h2>
+<p>Some of the most effective improvements did not require process changes at all,
+but changes in how authors prepared their changes.</p>
+<h3 id="align-on-design-before-writing-code">Align on Design Before Writing Code<a hidden class="anchor" aria-hidden="true" href="#align-on-design-before-writing-code">#</a></h3>
+<p>Submitting code that still contains unresolved design questions almost guarantees
+extended review cycles. Even a brief design alignment upfront can prevent large
+rewrites later.</p>
+<h3 id="keep-changes-small-and-focused">Keep Changes Small and Focused<a hidden class="anchor" aria-hidden="true" href="#keep-changes-small-and-focused">#</a></h3>
+<p>Smaller changes are easier to review, easier to reason about, and easier to
+iterate on. Mixing refactors, cleanups, and new features in a single change
+significantly increases review cost.</p>
+<h3 id="treat-each-revision-as-review-ready">Treat Each Revision as Review-Ready<a hidden class="anchor" aria-hidden="true" href="#treat-each-revision-as-review-ready">#</a></h3>
+<p>Incremental “partial” revisions feel efficient, but they often increase total
+review time. Each revision should address all existing feedback and be ready to
+merge on its own.</p>
+<hr>
+<h2 id="what-helped-on-the-reviewer-side">What Helped on the Reviewer Side<a hidden class="anchor" aria-hidden="true" href="#what-helped-on-the-reviewer-side">#</a></h2>
+<p>Reviewer behavior also played a major role.</p>
+<h3 id="make-review-latency-explicit">Make Review Latency Explicit<a hidden class="anchor" aria-hidden="true" href="#make-review-latency-explicit">#</a></h3>
+<p>When review work is treated as background activity, delays accumulate invisibly.
+Having a shared expectation—such as responding within a fixed time window—helped
+prevent reviews from silently stalling.</p>
+<h3 id="separate-review-responsibilities">Separate Review Responsibilities<a hidden class="anchor" aria-hidden="true" href="#separate-review-responsibilities">#</a></h3>
+<p>Not every change requires deep architectural scrutiny. A useful division was:</p>
+<ul>
+<li>peer reviewers for correctness and readability</li>
+<li>senior reviewers for design and high-risk changes</li>
+</ul>
+<p>This reduced unnecessary load on senior engineers without lowering quality.</p>
+<h3 id="aim-for-consolidated-feedback">Aim for Consolidated Feedback<a hidden class="anchor" aria-hidden="true" href="#aim-for-consolidated-feedback">#</a></h3>
+<p>One common source of delay was spreading feedback across multiple rounds.
+Providing more complete feedback in an initial pass, and limiting follow-up
+comments to genuinely new issues, significantly reduced churn.</p>
+<hr>
+<h2 id="what-generalizes">What Generalizes<a hidden class="anchor" aria-hidden="true" href="#what-generalizes">#</a></h2>
+<p>Although this discussion started from a specific team experience, the underlying
+lessons generalize well:</p>
+<ul>
+<li>review capacity is finite</li>
+<li>latency compounds quickly</li>
+<li>concentrating review responsibility creates bottlenecks</li>
+</ul>
+<p>Treating code review as shared infrastructure rather than an informal activity
+helps teams scale without sacrificing either quality or sanity.</p>
+<hr>
+<h2 id="closing">Closing<a hidden class="anchor" aria-hidden="true" href="#closing">#</a></h2>
+<p>The goal of code review is not perfection, but sustainable progress.</p>
+<p>Starting from a local pain point and stepping back to examine the system helped us
+identify improvements that were both practical and broadly applicable. Many teams
+will recognize similar patterns, even if the details differ.</p>
+<hr>
+<h2 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h2>
+<h3 id="google-engineering-practices">Google Engineering Practices<a hidden class="anchor" aria-hidden="true" href="#google-engineering-practices">#</a></h3>
+<ul>
+<li>
+<p><strong>How to Do a Code Review</strong><br>
+<a href="https://google.github.io/eng-practices/review/reviewer/">https://google.github.io/eng-practices/review/reviewer/</a><br>
+A detailed guide for reviewers, focusing on correctness, readability, and
+long-term maintainability.</p>
+</li>
+<li>
+<p><strong>The CL Author’s Guide</strong><br>
+<a href="https://google.github.io/eng-practices/review/developer/">https://google.github.io/eng-practices/review/developer/</a><br>
+A practical guide for authors on how to prepare changes that are easier to
+review and iterate on.</p>
+</li>
+</ul>
+<h3 id="additional-perspectives">Additional Perspectives<a hidden class="anchor" aria-hidden="true" href="#additional-perspectives">#</a></h3>
+<ul>
+<li><strong>Code Review in Practice (Chinese)</strong>
+<a href="https://zhuanlan.zhihu.com/p/149833474">https://zhuanlan.zhihu.com/p/149833474</a>
+A discussion of real-world code review challenges in the author&rsquo;s team.</li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://liuyiyueyue.github.io/tags/software-engineering/">Software-Engineering</a></li>
+      <li><a href="https://liuyiyueyue.github.io/tags/code-review/">Code-Review</a></li>
+      <li><a href="https://liuyiyueyue.github.io/tags/productivity/">Productivity</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://liuyiyueyue.github.io/">Yiyue (Lily) Liu</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
