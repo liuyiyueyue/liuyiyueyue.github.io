@@ -1,7 +1,7 @@
 {
 	"version": 3,
 	"file": "main.css",
-	"sourceRoot": "/home/runner/work/liuyiyuelily-blog/liuyiyuelily-blog",
+	"sourceRoot": "/Users/yiyueliu/projects/liuyiyuelily-blog",
 	"sources": [
 		"ananke/css/main.css"
 	],
