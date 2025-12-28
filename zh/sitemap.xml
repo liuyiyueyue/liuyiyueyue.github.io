@@ -2,6 +2,58 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://liuyiyuelily.github.io/zh/tags/code-review/</loc>
+    <lastmod>2025-12-25T00:00:00+00:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://liuyiyuelily.github.io/tags/code-review/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh"
+                href="https://liuyiyuelily.github.io/zh/tags/code-review/"
+                />
+  </url><url>
+    <loc>https://liuyiyuelily.github.io/zh/tags/productivity/</loc>
+    <lastmod>2025-12-25T00:00:00+00:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://liuyiyuelily.github.io/tags/productivity/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh"
+                href="https://liuyiyuelily.github.io/zh/tags/productivity/"
+                />
+  </url><url>
+    <loc>https://liuyiyuelily.github.io/zh/tags/software-engineering/</loc>
+    <lastmod>2025-12-25T00:00:00+00:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://liuyiyuelily.github.io/tags/software-engineering/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh"
+                href="https://liuyiyuelily.github.io/zh/tags/software-engineering/"
+                />
+  </url><url>
+    <loc>https://liuyiyuelily.github.io/zh/tags/</loc>
+    <lastmod>2025-12-25T00:00:00+00:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://liuyiyuelily.github.io/tags/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh"
+                href="https://liuyiyuelily.github.io/zh/tags/"
+                />
+  </url><url>
     <loc>https://liuyiyuelily.github.io/zh/software_engineering/effective-code-review/</loc>
     <lastmod>2025-12-25T00:00:00+00:00</lastmod>
     <xhtml:link
@@ -39,18 +91,6 @@
                 rel="alternate"
                 hreflang="zh"
                 href="https://liuyiyuelily.github.io/zh/"
-                />
-  </url><url>
-    <loc>https://liuyiyuelily.github.io/zh/tags/</loc>
-    <xhtml:link
-                rel="alternate"
-                hreflang="en"
-                href="https://liuyiyuelily.github.io/tags/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="zh"
-                href="https://liuyiyuelily.github.io/zh/tags/"
                 />
   </url><url>
     <loc>https://liuyiyuelily.github.io/zh/about/</loc>
