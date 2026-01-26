@@ -92,5 +92,17 @@
                 hreflang="zh"
                 href="https://liuyiyuelily.github.io/zh/"
                 />
+  </url><url>
+    <loc>https://liuyiyuelily.github.io/zh/llm/</loc>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://liuyiyuelily.github.io/llm/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh"
+                href="https://liuyiyuelily.github.io/zh/llm/"
+                />
   </url>
 </urlset>
