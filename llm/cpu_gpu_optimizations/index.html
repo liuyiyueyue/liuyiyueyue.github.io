@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyuelily.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyuelily.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyuelily.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyuelily.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyuelily.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    [1/3] CPU-GPU Optimization: Zero-Copy and Pinned Memory | Yiyue Liu Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyuelily.github.io/llm/cpu_gpu_optimizations/"/>
+
+<meta property="og:url" content="https://liuyiyuelily.github.io/llm/cpu_gpu_optimizations/">
+  <meta property="og:site_name" content="Yiyue Liu Blog">
+  <meta property="og:title" content="[1/3] CPU-GPU Optimization: Zero-Copy and Pinned Memory">
+  <meta property="og:description" content="What is pinned memory? # Kernel pinned memory (also called page-locked memory) is memory in a computer system that the operating system marks as non-swappable—meaning it cannot be moved out of RAM into swap space (disk). Why it matters? # Normal memory in an OS can be paged out to disk by the virtual memory manager. This is fine for general workloads but not for I/O devices that need direct and fast access. Pinned memory is “locked” into physical RAM so the OS guarantees it will always stay resident. This is crucial for DMA (Direct Memory Access): when a device (like a GPU, NIC, or storage controller) directly reads/writes memory, the physical addresses must not change during the transfer. In GPU computing (CUDA, etc.), pinned memory allows faster host–device transfers because the GPU can DMA directly without needing a temporary bounce buffer (zero-copy), e.g., CUDA cudaHostAlloc. Trade-offs # Pinned memory reduces OS flexibility. The locked pages can’t be swapped, so excessive use can lower overall system performance. Allocation (pinning memory) is slower compared to pageable memory. Some terminologies # “pageable”: a virtual memory page that can be paged out to disk (swap) and later paged in. It can change physical memory location. “pinned” or “non-pageable”: can’t be swapped or moved. e.g. pinned by kernel or allocated by kernel. “to fault pages”: to trigger page faults on virtual addresses so the kernel resolves them, bringing the pages into memory, creating PTEs, and making them resident/pinnable (or failing if the mapping is invalid). “GUP” stands for “Get User Pages.” “nr”: In Linux kernel naming conventions, nr means “number of”. nr_pages refers to the number of pages. (LOL why do I put it here..?) Kernel APIs # There are three APIs to pin memory so the kernel (or a device) can access them:">
+  <meta property="og:locale" content="en">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2026-01-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-01-25T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Kernel">
+    <meta property="article:tag" content="Optimization">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.2590c799dced549849a460202043cedc7e46dd8b07ae2b2e3d909044b3fb7d00.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu Blog</a>
+    </h1>
+
+    
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/cpu_gpu_optimizations/">[1/3] CPU-GPU Optimization: Zero-Copy and Pinned Memory</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">[1/3] CPU-GPU Optimization: Zero-Copy and Pinned Memory</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2026-01-25T00:00:00&#43;00:00">January 25, 2026</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <h3 class="heading" id="what-is-pinned-memory">
+  What is pinned memory?
+  <a class="anchor" href="#what-is-pinned-memory">#</a>
+</h3>
+<ul>
+<li>Kernel pinned memory (also called <strong>page-locked memory</strong>) is memory in a computer system that the operating system marks as <strong>non-swappable</strong>—meaning it cannot be moved out of RAM into swap space (disk).</li>
+</ul>
+<h3 class="heading" id="why-it-matters">
+  Why it matters?
+  <a class="anchor" href="#why-it-matters">#</a>
+</h3>
+<ul>
+<li><strong>Normal memory</strong> in an OS can be paged out to disk by the virtual memory manager. This is fine for general workloads but not for I/O devices that need <strong>direct and fast access</strong>.</li>
+<li><strong>Pinned memory</strong> is “locked” into physical RAM so the OS guarantees it will always stay resident.</li>
+<li>This is crucial for <strong>DMA (Direct Memory Access)</strong>: when a device (like a GPU, NIC, or storage controller) directly reads/writes memory, the physical addresses must not change during the transfer.</li>
+<li>In GPU computing (CUDA, etc.), pinned memory allows <strong>faster host–device transfers</strong> because the GPU can DMA directly without needing a temporary bounce buffer (<strong>zero-copy</strong>), e.g., CUDA <code>cudaHostAlloc</code>.</li>
+</ul>
+<h3 class="heading" id="trade-offs">
+  Trade-offs
+  <a class="anchor" href="#trade-offs">#</a>
+</h3>
+<ul>
+<li>Pinned memory reduces OS flexibility. The locked pages can’t be swapped, so excessive use can lower overall system performance.</li>
+<li>Allocation (pinning memory) is slower compared to pageable memory.</li>
+</ul>
+<h3 class="heading" id="some-terminologies">
+  Some terminologies
+  <a class="anchor" href="#some-terminologies">#</a>
+</h3>
+<ul>
+<li>“pageable”: a virtual memory page that can be <strong>paged out</strong> to disk (<strong>swap</strong>) and later <strong>paged in</strong>. It can change physical memory location.</li>
+<li>“pinned” or “non-pageable”: can’t be swapped or moved. e.g. pinned by kernel or allocated by kernel.</li>
+<li>“to fault pages”: to trigger page faults on virtual addresses so the kernel resolves them, bringing the pages into memory, creating PTEs, and making them resident/pinnable (or failing if the mapping is invalid).</li>
+<li>“GUP” stands for “Get User Pages.”</li>
+<li>“nr”: In Linux kernel naming conventions, <code>nr</code> means “number of”. nr_pages refers to the number of pages. (LOL why do I put it here..?)</li>
+</ul>
+<h3 class="heading" id="kernel-apis">
+  Kernel APIs
+  <a class="anchor" href="#kernel-apis">#</a>
+</h3>
+<p>There are three APIs to pin memory so the kernel (or a device) can access them:</p>
+<div class="code-block">
+  <pre tabindex="0"><code>pin_user_pages()
+pin_user_pages_fast()
+pin_user_pages_remote()</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Take pin_user_pages() as example:</p>
+<div class="code-block">
+  <pre tabindex="0"><code>long pin_user_pages(unsigned long start, unsigned long nr_pages,
+		    unsigned int gup_flags, struct page **pages)</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<ul>
+<li><code>start</code>: The starting virtual address, aligned to the start of its page.</li>
+<li><code>nr_pages</code>: Number of pages to pin (an integer count).</li>
+<li><code>gup_flags</code>: Controls write permissions for the pinned pages. If this argument is zero the pages are pinned read-only (host to device copy); if non-zero (here FOLL_WRITE) they are pinned for writing (device to host copy).</li>
+<li><code>pages</code>: Output array (struct page *[]) where pointers to the pinned pages are stored (one entry per page).</li>
+<li>Returned value: the number of pages actually pinned (&gt;= 0) or a negative errno on error.</li>
+</ul>
+<p>pin_user_pages_fast() works similarly, but it attempts to pin user pages by walking the page tables directly and without taking locks (the <code>mm-&gt;mmap</code> lock). When _fast path fails, slow path can be used.</p>
+<p>Remote pinning is done via pin_user_pages_remote():</p>
+<div class="code-block">
+  <pre tabindex="0"><code>long pin_user_pages_remote(struct mm_struct *mm,
+                           unsigned long start,
+                           unsigned long nr_pages,
+                           unsigned int gup_flags,
+                           struct page **pages,
+                           struct vm_area_struct **vmas);</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>It is a variant of pin_user_pages() that allows one to pin pages belonging to another process (and that process’s address space), not the current one. It requires a reference to that process’s <code>mm_struct</code>.
+Sample usages of remote pinning are:</p>
+<ul>
+<li>In io_uring, workers running in kernel threads need to pin buffers from the submitter process of userspace.</li>
+<li>User posts a buffer but the kernel thread running the RDMA work queue is not “in” the user’s mm.</li>
+</ul>
+<p>These are the APIs to unpin the memory:</p>
+<div class="code-block">
+  <pre tabindex="0"><code>unpin_user_pages()
+unpin_user_pages_dirty_lock()</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Take <code>unpin_user_pages()</code> as example:</p>
+<div class="code-block">
+  <pre tabindex="0"><code>void unpin_user_pages(struct page **pages, unsigned long npages)</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>This API releases the memory previously pinned by <code>pin_user_pages_*</code>.</p>
+<p>When the pinned pages have been modified, <code>unpin_user_pages_dirty_lock()</code> should be used.</p>
+<p>One can OOM the host (run out of physical memory, not virtual) if one continuously calls the three pinning APIs without eventually unpinning the pages or limiting how many one pins.</p>
+<h3 class="heading" id="compare-to-bounce-buffer">
+  Compare to “bounce-buffer”
+  <a class="anchor" href="#compare-to-bounce-buffer">#</a>
+</h3>
+<p>A bounce buffer is a piece of kernel-allocated staging memory that is
+contiguous and DMA-accessible.</p>
+<p>User-space pages may be discontiguous, pageable (unpinned), or otherwise
+inaccessible to DMA due to device or IOMMU addressing constraints.
+As a result, the kernel allocates a contiguous DMA-capable bounce buffer.</p>
+<p>For a host-to-device transfer, the flow is:</p>
+<ol>
+<li>CPU copies data from the user buffer into the kernel bounce buffer.</li>
+<li>DMA engine reads from the bounce buffer and transfers data to the device.</li>
+</ol>
+<p>The problem with using a bounce buffer is that host-to-device transfers
+require an extra CPU copy:</p>
+<ul>
+<li>Copy 1: User buffer → kernel bounce. This is the extra CPU copy.</li>
+<li>Copy 2: Kernel bounce buffer → device buffer</li>
+</ul>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+
