@@ -92,17 +92,5 @@
                 hreflang="en"
                 href="https://liuyiyuelily.github.io/tags/"
                 />
-  </url><url>
-    <loc>https://liuyiyuelily.github.io/about/</loc>
-    <xhtml:link
-                rel="alternate"
-                hreflang="zh"
-                href="https://liuyiyuelily.github.io/zh/about/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="en"
-                href="https://liuyiyuelily.github.io/about/"
-                />
   </url>
 </urlset>
