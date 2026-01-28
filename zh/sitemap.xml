@@ -104,5 +104,17 @@
                 hreflang="zh"
                 href="https://liuyiyuelily.github.io/zh/llm/"
                 />
+  </url><url>
+    <loc>https://liuyiyuelily.github.io/zh/archives/</loc>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://liuyiyuelily.github.io/archives/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh"
+                href="https://liuyiyuelily.github.io/zh/archives/"
+                />
   </url>
 </urlset>
