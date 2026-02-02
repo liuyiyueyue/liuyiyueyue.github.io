@@ -342,9 +342,12 @@ As a result, the kernel allocates a contiguous DMA-capable bounce buffer.</p>
 <p>The problem with using a bounce buffer is that host-to-device transfers
 require an extra CPU copy:</p>
 <ul>
-<li>Copy 1: User buffer → kernel bounce. This is the extra CPU copy.</li>
+<li>Copy 1: User buffer → kernel bounce buffer. This is the extra CPU copy.</li>
 <li>Copy 2: Kernel bounce buffer → device buffer</li>
 </ul>
+<p>Using zero-copy, we eliminate this extra CPU copy, but at the cost of the additional time required to pin memory. In the next blogs, we will dive deeper
+into the performance analysis of zero-copy and pinned memory and discuss
+the cost of pinning memory.</p>
 
     </div>
   </article>
