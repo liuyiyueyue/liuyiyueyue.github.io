@@ -32,7 +32,7 @@
 
 <title>
     
-    [1/3] CPU-GPU Optimization: Zero-Copy and Pinned Memory | Yiyue Liu Blog
+    [1/3] CPU-GPU Optimization: Pinned Memory and Zero-Copy | Yiyue Liu Blog
     
 </title>
 
@@ -40,8 +40,8 @@
 
 <meta property="og:url" content="https://liuyiyuelily.github.io/llm/cpu_gpu_optimizations_1_kernel/">
   <meta property="og:site_name" content="Yiyue Liu Blog">
-  <meta property="og:title" content="[1/3] CPU-GPU Optimization: Zero-Copy and Pinned Memory">
-  <meta property="og:description" content="What is pinned memory? # Kernel pinned memory (also called page-locked memory) is memory in a computer system that the operating system marks as non-swappable—meaning it cannot be moved out of RAM into swap space (disk). Why it matters? # Normal memory in an OS can be paged out to disk by the virtual memory manager. This is fine for general workloads but not for I/O devices that need direct and fast access. Pinned memory is “locked” into physical RAM so the OS guarantees it will always stay resident. This is crucial for DMA (Direct Memory Access): when a device (like a GPU, NIC, or storage controller) directly reads/writes memory, the physical addresses must not change during the transfer. In GPU computing (CUDA, etc.), pinned memory allows faster host–device transfers because the GPU can DMA directly without needing a temporary bounce buffer (zero-copy), e.g., CUDA cudaHostAlloc. Trade-offs # Pinned memory reduces OS flexibility. The locked pages can’t be swapped, so excessive use can lower overall system performance. Allocation (pinning memory) is slower compared to pageable memory. Some terminologies # “pageable”: a virtual memory page that can be paged out to disk (swap) and later paged in. It can change physical memory location. “pinned” or “non-pageable”: can’t be swapped or moved. e.g. pinned by kernel or allocated by kernel. “to fault pages”: to trigger page faults on virtual addresses so the kernel resolves them, bringing the pages into memory, creating PTEs, and making them resident/pinnable (or failing if the mapping is invalid). “GUP” stands for “Get User Pages.” “nr”: In Linux kernel naming conventions, nr means “number of”. nr_pages refers to the number of pages. (LOL why do I put it here..?) Kernel APIs # There are three APIs to pin memory so the kernel (or a device) can access them:">
+  <meta property="og:title" content="[1/3] CPU-GPU Optimization: Pinned Memory and Zero-Copy">
+  <meta property="og:description" content="What is pinned memory? # Kernel pinned memory (also called page-locked memory) is memory in a computer system that the operating system marks as non-swappable—meaning it cannot be moved out of RAM into swap space (disk). Why it matters? # Normal memory in an OS can be paged out to disk by the virtual memory manager. This is fine for general workloads but not for I/O devices that need direct and fast access. Pinned memory is “locked” into physical RAM so the OS guarantees it will always stay resident. This is crucial for DMA (Direct Memory Access): when a device (like a GPU, NIC, or storage controller) directly reads/writes memory, the physical addresses must not change during the transfer. In GPU computing (CUDA, etc.), pinned memory allows faster host–device transfers because the GPU can DMA directly without needing a temporary bounce buffer (zero-copy), e.g., CUDA cudaMallocHost and cudaHostAlloc. Trade-offs # Pinned memory reduces OS flexibility. The locked pages can’t be swapped, so excessive use can lower overall system performance. Allocation (pinning memory) is slower compared to pageable memory. Some terminologies # “pageable”: a virtual memory page that can be paged out to disk (swap) and later paged in. It can change physical memory location. “pinned” or “non-pageable”: can’t be swapped or moved. e.g. pinned by kernel or allocated by kernel. “to fault pages”: to trigger page faults on virtual addresses so the kernel resolves them, bringing the pages into memory, creating PTEs, and making them resident/pinnable (or failing if the mapping is invalid). “GUP” stands for “Get User Pages.” “nr”: In Linux kernel naming conventions, nr means “number of”. nr_pages refers to the number of pages. (LOL why do I put it here..?) Kernel APIs # There are three APIs to pin memory so the kernel (or a device) can access them:">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -212,14 +212,14 @@
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/cpu_gpu_optimizations_1_kernel/">[1/3] CPU-GPU Optimization: Zero-Copy and Pinned Memory</a></div>
+        <a href="/llm/cpu_gpu_optimizations_1_kernel/">[1/3] CPU-GPU Optimization: Pinned Memory and Zero-Copy</a></div>
 
 
 <div >
   <article>
     <header class="single-intro-container">
         
-        <h1 class="single-title">[1/3] CPU-GPU Optimization: Zero-Copy and Pinned Memory</h1>
+        <h1 class="single-title">[1/3] CPU-GPU Optimization: Pinned Memory and Zero-Copy</h1>
         
         <div class="single-subsummary">
           
@@ -249,7 +249,7 @@
 <li><strong>Normal memory</strong> in an OS can be paged out to disk by the virtual memory manager. This is fine for general workloads but not for I/O devices that need <strong>direct and fast access</strong>.</li>
 <li><strong>Pinned memory</strong> is “locked” into physical RAM so the OS guarantees it will always stay resident.</li>
 <li>This is crucial for <strong>DMA (Direct Memory Access)</strong>: when a device (like a GPU, NIC, or storage controller) directly reads/writes memory, the physical addresses must not change during the transfer.</li>
-<li>In GPU computing (CUDA, etc.), pinned memory allows <strong>faster host–device transfers</strong> because the GPU can DMA directly without needing a temporary bounce buffer (<strong>zero-copy</strong>), e.g., CUDA <code>cudaHostAlloc</code>.</li>
+<li>In GPU computing (CUDA, etc.), pinned memory allows <strong>faster host–device transfers</strong> because the GPU can DMA directly without needing a temporary bounce buffer (<strong>zero-copy</strong>), e.g., CUDA <code>cudaMallocHost</code> and <code>cudaHostAlloc</code>.</li>
 </ul>
 <h3 class="heading" id="trade-offs">
   Trade-offs
@@ -340,14 +340,15 @@ As a result, the kernel allocates a contiguous DMA-capable bounce buffer.</p>
 <li>DMA engine reads from the bounce buffer and transfers data to the device.</li>
 </ol>
 <p>The problem with using a bounce buffer is that host-to-device transfers
-require an extra CPU copy:</p>
+require an extra CPU memcpy:</p>
 <ul>
-<li>Copy 1: User buffer → kernel bounce buffer. This is the extra CPU copy.</li>
-<li>Copy 2: Kernel bounce buffer → device buffer</li>
+<li>Copy 1: User buffer → kernel bounce buffer. This is done via a CPU memcpy.</li>
+<li>Copy 2: Kernel bounce buffer → device buffer. This is done via PCIe DMA.</li>
 </ul>
-<p>Using zero-copy, we eliminate this extra CPU copy, but at the cost of the additional time required to pin memory. In the next blogs, we will dive deeper
-into the performance analysis of zero-copy and pinned memory and discuss
-the cost of pinning memory.</p>
+<p>Using pinning memory, we eliminate that extra CPU memcpy, but at the cost of the
+additional time required to pin memory, plus the risk of running out of pagable
+memory.
+In the next blogs, we will dive deeper into the performance analysis of pinned-memory and zero-copy and discuss the cost of pinning memory.</p>
 
     </div>
   </article>
