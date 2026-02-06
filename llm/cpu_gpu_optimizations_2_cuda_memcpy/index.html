@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyuelily.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyuelily.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyuelily.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyuelily.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyuelily.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    [2/4] CPU-GPU Optimization: CUDA Memory Allocation and Memcpy | Yiyue Liu Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyuelily.github.io/llm/cpu_gpu_optimizations_2_cuda_memcpy/"/>
+
+<meta property="og:url" content="https://liuyiyuelily.github.io/llm/cpu_gpu_optimizations_2_cuda_memcpy/">
+  <meta property="og:site_name" content="Yiyue Liu Blog">
+  <meta property="og:title" content="[2/4] CPU-GPU Optimization: CUDA Memory Allocation and Memcpy">
+  <meta property="og:description" content="This is the second blog of the “CPU-GPU Optimization” series. Using the foundations built from the previous blog, we will discuss 4 types of memory allocation and transfer methods in CUDA.
+1. Normal Memcpy # Data moves slowly and may incur an extra CPU memcpy
+malloc to allocate memory on CPU. cudaMalloc to allocate memory on GPU. cudaMemcpy to transfer data from the CPU memory to the GPU memory. This call hides a subtle performance trap. As described in the Compare to “bounce-buffer” section of the previous blog, the kernel implicitly allocates a temporary buffer and results in an extra CPU memcpy. free to free the CPU memory. cudaFree to free the GPU memory. The below example shows a host-to-device transfer:">
+  <meta property="og:locale" content="en">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2026-02-05T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-02-05T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Optimization">
+    <meta property="article:tag" content="Cuda">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.ec1cb1295de3dde3caaea524689a83d88207da8aff8cc7829338c2a88f36f956.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="https://liuyiyuelily.github.io/">Yiyue Liu Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/cpu_gpu_optimizations_2_cuda_memcpy/">[2/4] CPU-GPU Optimization: CUDA Memory Allocation and Memcpy</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">[2/4] CPU-GPU Optimization: CUDA Memory Allocation and Memcpy</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2026-02-05T00:00:00&#43;00:00">February 5, 2026</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <p>This is the second blog of the &ldquo;CPU-GPU Optimization&rdquo; series. Using the foundations
+built from the previous blog, we will discuss 4 types of memory allocation and transfer
+methods in CUDA.</p>
+<h4 class="heading" id="1-normal-memcpy">
+  1. Normal Memcpy
+  <a class="anchor" href="#1-normal-memcpy">#</a>
+</h4>
+<p><strong>Data moves slowly and may incur an extra CPU memcpy</strong></p>
+<ul>
+<li><code>malloc</code> to allocate memory on CPU.</li>
+<li><code>cudaMalloc</code> to allocate memory on GPU.</li>
+<li><code>cudaMemcpy</code> to transfer data from the CPU memory to the GPU memory. This call hides a subtle performance trap.
+As described in the <a href="/llm/cpu_gpu_optimizations_1_kernel/#compare-to-bounce-buffer">Compare to “bounce-buffer”</a>
+section of the previous blog, the kernel implicitly allocates a temporary buffer and results in <strong>an extra CPU memcpy</strong>.</li>
+<li><code>free</code> to free the CPU memory.</li>
+<li><code>cudaFree</code> to free the GPU memory.</li>
+</ul>
+<p>The below example shows a host-to-device transfer:</p>
+<div class="code-block">
+  <pre tabindex="0"><code class="language-cuda" data-lang="cuda">size_t transfer_size = N * sizeof(float);
+
+float *host_mem = malloc(transfer_size);
+float *device_mem;
+cudaMalloc((void **)&amp;device_mem, transfer_size);
+
+cudaMemcpy(device_mem, host_mem, transfer_size, cudaMemcpyHostToDevice);
+
+free(host_mem);
+cudaFree(device_mem);</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<h4 class="heading" id="2-pinned-memory--memcpy">
+  2. Pinned Memory + Memcpy
+  <a class="anchor" href="#2-pinned-memory--memcpy">#</a>
+</h4>
+<p><strong>Faster transfers, most common and balanced</strong></p>
+<ul>
+<li><code>cudaMallocHost</code> replaces <code>malloc</code> to <strong>allocate pinned memory on CPU</strong>.</li>
+<li><code>cudaMalloc</code> stays exactly the same to allocate memory on GPU.</li>
+<li><code>cudaMemcpy</code> stays exactly the same, but its internal execution mechanism is completely different.</li>
+<li><code>cudaFreeHost</code> replaces <code>free</code> to free the pinned CPU memory.</li>
+<li><code>cudaFree</code> stays exactly the same to free the GPU memory.</li>
+</ul>
+<p>The below example shows a host-to-device transfer with pinned host memory:</p>
+<div class="code-block">
+  <pre tabindex="0"><code class="language-cuda" data-lang="cuda">size_t transfer_size = N * sizeof(float);
+
+float *host_mem;
+cudaMallocHost((void **)&amp;host_mem, transfer_size);
+float *device_mem;
+cudaMalloc((void **)&amp;device_mem, transfer_size);
+
+cudaMemcpy(device_mem, host_mem, transfer_size, cudaMemcpyHostToDevice);
+
+cudaFreeHost(host_mem);
+cudaFree(device_mem);</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<h4 class="heading" id="3-zero-copy">
+  3. Zero-copy
+  <a class="anchor" href="#3-zero-copy">#</a>
+</h4>
+<p><strong>GPU stores no data, but remotely accesses and modifies CPU memory</strong></p>
+<ul>
+<li><code>cudaHostAlloc</code> replaces <code>cudaMallocHost</code>. The <code>flags</code> parameter is the key, and we use <code>cudaHostAllocMapped</code>, which allocates <strong>pinned</strong> CPU memory
+and <strong>maps this memory into GPU address space</strong>.</li>
+<li><code>cudaHostGetDevicePointer</code> obtains the GPU-mapped address of the host pinned memory.</li>
+<li><code>cudaFreeHost</code> replaces <code>free</code>.</li>
+<li>Zero-copy uses <strong>no device memory</strong>; data always stays on the CPU. So there is no <code>cudaMemcpy</code>. The GPU modifies host memory directly via PCIe transactions (still DMA read/write). So while <code>cudaMemcpy</code> is an explicit DMA copy initiated by the runtime/driver API, zero-copy is an <strong>implicit DMA copy</strong> initiated by GPU hardware.</li>
+<li>Zero-copy turns compute intensity into “memory-access intensity.” Thus, it is rarely used for compute-intensive workloads such as ML and HPC.</li>
+</ul>
+<p>The below example shows a GPU kernel directly accesses host memory without an explicit cudaMemcpy:</p>
+<div class="code-block">
+  <pre tabindex="0"><code class="language-cuda" data-lang="cuda">__global__ void editData(float* data, int N) {
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx &lt; N)
+    data[idx] += 2.0f;
+}
+
+int threadsPerBlock = 256;
+int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
+size_t transfer_size = N * sizeof(float);
+
+float *host_mem;
+cudaHostAlloc((void **)&amp;host_mem, transfer_size, cudaHostAllocMapped);
+float *device_ptr;
+cudaHostGetDevicePointer((void**)&amp;device_ptr, host_mem, 0);
+
+editData&lt;&lt;&lt;blocksPerGrid, threadsPerBlock&gt;&gt;&gt;(device_ptr, N);
+cudaDeviceSynchronize();
+
+cudaFreeHost(host_mem);</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<h4 class="heading" id="4-unified-memory-uvm">
+  4. Unified Memory (UVM)
+  <a class="anchor" href="#4-unified-memory-uvm">#</a>
+</h4>
+<p><strong>A unified address space across CPU and all GPUs</strong></p>
+<ul>
+<li>
+<p><code>cudaMallocManaged</code> allocates a unified virtual address whose physical pages reside on either CPU or GPU memory.
+When it is called, the kernel driver only reserves a VA, but CPU or GPU PA pages are populated lazily on the first access.</p>
+</li>
+<li>
+<p>Different from zero-copy and pinned memory approaches, with UVM, CPU and all GPUs share the <strong>same virtual address (VA) space</strong>.
+At any moment, a VA maps to <strong>one side’s</strong> physical pages (PA): either CPU DRAM or GPU HBM.</p>
+</li>
+<li>
+<p>With UVM, there is no need for a device pointer via <code>cudaHostGetDevicePointer</code>.
+Pages migrate on demand between CPU and GPU memory via <strong>CPU/GPU page faults</strong>, with residency managed by the CUDA driver.
+When the CPU accesses a VA whose page is resident in GPU memory and not CPU-accessible, a CPU page fault occurs.
+The kernel driver migrates the page by DMA from GPU memory to host memory, update page tables, and resume execution with the page now resident on the CPU.
+Vice versa, but it&rsquo;s a GPU page fault.</p>
+</li>
+<li>
+<p>ML / HPC rarely use UVM as well.</p>
+</li>
+</ul>
+<p>The below example shows an example of UVM without <code>cudaHostGetDevicePointer</code>:</p>
+<div class="code-block">
+  <pre tabindex="0"><code class="language-cuda" data-lang="cuda">float *mem;
+cudaMallocManaged((void **)&amp;mem, N * sizeof(float));
+for (int i = 0; i &lt; N; i++) {
+  mem[i] = 1.0f;
+}
+
+editData&lt;&lt;&lt;blocksPerGrid, threadsPerBlock&gt;&gt;&gt;(mem, N);
+cudaDeviceSynchronize();
+
+cudaFree(mem);</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/llm/cpu_gpu_optimizations_1_kernel/">
+                        [1/4] CPU-GPU Optimization: Pinned Memory in Kernel
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+

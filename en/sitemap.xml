@@ -2,11 +2,14 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://liuyiyuelily.github.io/llm/cpu_gpu_optimizations_1_kernel/</loc>
-    <lastmod>2026-01-25T00:00:00+00:00</lastmod>
+    <loc>https://liuyiyuelily.github.io/llm/cpu_gpu_optimizations_2_cuda_memcpy/</loc>
+    <lastmod>2026-02-05T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyuelily.github.io/tags/cuda/</loc>
+    <lastmod>2026-02-05T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyuelily.github.io/</loc>
-    <lastmod>2026-01-25T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-05T00:00:00+00:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="zh"
@@ -18,14 +21,11 @@
                 href="https://liuyiyuelily.github.io/"
                 />
   </url><url>
-    <loc>https://liuyiyuelily.github.io/tags/kernel/</loc>
-    <lastmod>2026-01-25T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>https://liuyiyuelily.github.io/tags/llm/</loc>
-    <lastmod>2026-01-25T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-05T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyuelily.github.io/llm/</loc>
-    <lastmod>2026-01-25T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-05T00:00:00+00:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="zh"
@@ -38,10 +38,10 @@
                 />
   </url><url>
     <loc>https://liuyiyuelily.github.io/tags/optimization/</loc>
-    <lastmod>2026-01-25T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-05T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyuelily.github.io/tags/</loc>
-    <lastmod>2026-01-25T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-05T00:00:00+00:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="zh"
@@ -52,6 +52,12 @@
                 hreflang="en"
                 href="https://liuyiyuelily.github.io/tags/"
                 />
+  </url><url>
+    <loc>https://liuyiyuelily.github.io/llm/cpu_gpu_optimizations_1_kernel/</loc>
+    <lastmod>2026-01-25T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyuelily.github.io/tags/kernel/</loc>
+    <lastmod>2026-01-25T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyuelily.github.io/software_engineering/effective-code-review/</loc>
     <lastmod>2025-12-25T00:00:00+00:00</lastmod>
