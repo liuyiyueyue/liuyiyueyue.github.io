@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyuelily.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyuelily.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyuelily.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyuelily.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyuelily.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    [3/4] CPU-GPU Optimization: CUDA Stream and Async Memcpy | Yiyue Liu Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyuelily.github.io/llm/cpu_gpu_optimizations_3_cuda_stream/"/>
+
+<meta property="og:url" content="https://liuyiyuelily.github.io/llm/cpu_gpu_optimizations_3_cuda_stream/">
+  <meta property="og:site_name" content="Yiyue Liu Blog">
+  <meta property="og:title" content="[3/4] CPU-GPU Optimization: CUDA Stream and Async Memcpy">
+  <meta property="og:description" content="In this blog, we will discuss techniques to squeeze the memcpy “bubbles” with kernel executions. We first discuss CUDA streams which allows operations to run concurrently. Then we discuss asynchronous memcpys to overlap data transfers with kernels.
+CUDA Streams # What is a CUDA Stream? # A CUDA stream is a sequence of GPU commands that execute in order.
+Operations in the same stream run sequentially. Operations in different streams run concurrently, if hardware allows. Think of each stream as a queue of GPU work:">
+  <meta property="og:locale" content="en">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2026-02-06T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-02-06T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Optimization">
+    <meta property="article:tag" content="Cuda">
+    <meta property="article:tag" content="Async">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.ec1cb1295de3dde3caaea524689a83d88207da8aff8cc7829338c2a88f36f956.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="https://liuyiyuelily.github.io/">Yiyue Liu Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/cpu_gpu_optimizations_3_cuda_stream/">[3/4] CPU-GPU Optimization: CUDA Stream and Async Memcpy</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">[3/4] CPU-GPU Optimization: CUDA Stream and Async Memcpy</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2026-02-06T00:00:00&#43;00:00">February 6, 2026</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <p>In this blog, we will discuss techniques to squeeze the memcpy &ldquo;bubbles&rdquo; with kernel executions.
+We first discuss CUDA streams which allows operations to run concurrently.
+Then we discuss asynchronous memcpys to overlap data transfers with kernels.</p>
+<h2 class="heading" id="cuda-streams">
+  CUDA Streams
+  <a class="anchor" href="#cuda-streams">#</a>
+</h2>
+<h4 class="heading" id="what-is-a-cuda-stream">
+  What is a CUDA Stream?
+  <a class="anchor" href="#what-is-a-cuda-stream">#</a>
+</h4>
+<ul>
+<li>
+<p>A CUDA stream is a sequence of GPU commands that execute in order.</p>
+<ul>
+<li>Operations in the same stream run sequentially.</li>
+<li>Operations in different streams run concurrently, if hardware allows.</li>
+</ul>
+</li>
+<li>
+<p>Think of each stream as a queue of GPU work:</p>
+<p>Stream 0: kernel1 → kernel2 → memcpy → kernel3</p>
+<p>Stream 1: kernelA → kernelB → memcpy</p>
+</li>
+<li>
+<p>Default stream (<code>cudaStreamDefault</code>) is synchronizing (everything waits for it).</p>
+</li>
+<li>
+<p>Explicit streams (<code>cudaStreamCreate</code>) allow true concurrency.</p>
+</li>
+</ul>
+<h4 class="heading" id="why-use-streams">
+  Why Use Streams?
+  <a class="anchor" href="#why-use-streams">#</a>
+</h4>
+<ul>
+<li>Run independent kernels concurrently</li>
+<li>Overlap kernel execution</li>
+<li>Overlap H2D/D2H memcpy with kernels</li>
+<li>Pipeline mini-batches</li>
+</ul>
+<h4 class="heading" id="sample-usage-of-streams">
+  Sample Usage of Streams
+  <a class="anchor" href="#sample-usage-of-streams">#</a>
+</h4>
+<div class="code-block">
+  <pre tabindex="0"><code class="language-cuda" data-lang="cuda">cudaStream_t s1, s2;
+cudaStreamCreate(&amp;s1);
+cudaStreamCreate(&amp;s2);
+
+// Kernels in s1 can run concurrently with kernels in s2.
+myKernel&lt;&lt;&lt;grid, block, 0, s1&gt;&gt;&gt;(...);
+myKernel&lt;&lt;&lt;grid, block, 0, s2&gt;&gt;&gt;(...);
+
+cudaStreamDestroy(s1);
+cudaStreamDestroy(s2);</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<h4 class="heading" id="stream-synchronization">
+  Stream Synchronization
+  <a class="anchor" href="#stream-synchronization">#</a>
+</h4>
+<ul>
+<li>Synchronize a stream: <code>cudaStreamSynchronize(s1);</code> blocks the CPU until all
+previously issued GPU executions in <code>s1</code> has completed.</li>
+<li>Synchronize an event: <code>cudaEventSynchronize(ev);</code> blocks the CPU until the
+specified CUDA event <code>ev</code> has been recorded.</li>
+<li>This is how PyTorch, cuBLAS, FlashAttention, etc. build sophisticated pipelines.</li>
+</ul>
+<h2 class="heading" id="async-memcpy">
+  Async Memcpy
+  <a class="anchor" href="#async-memcpy">#</a>
+</h2>
+<p>In this section, we introduce <code>cudaMemcpyAsync</code>, the <strong>non-blocking, asynchronous</strong> counterpart to
+<code>cudaMemcpy</code> from the previous post. Unlike <code>cudaMemcpy</code>, <code>cudaMemcpyAsync</code> returns immediately;
+the transfer is enqueued into a specified CUDA stream. This makes it possible to
+<strong>overlap memcpy with kernel execution</strong> or with other memcpy operations
+(when the hardware and stream setup allow it).</p>
+<p>To use <code>cudaMemcpyAsync</code>, the <strong>host memory must be pinned</strong> via <code>cudaMallocHost</code> or <code>cudaHostAlloc</code>,
+and the device memory must be a valid device pointer (typically allocated with <code>cudaMalloc</code>).</p>
+<p>Below is an example of one stream. Within one stream, the (async) memcpys and kernels execute sequentially.
+That means the execution order is H2D → Kernel → D2H.</p>
+<div class="code-block">
+  <pre tabindex="0"><code class="language-cuda" data-lang="cuda">size_t transfer_size = N * sizeof(float);
+
+float *host_mem;
+float *device_mem;
+cudaMallocHost((void **)&amp;host_mem, transfer_size);
+cudaMalloc((void **)&amp;device_mem, transfer_size);
+
+cudaStream_t s;
+cudaStreamCreate(&amp;s);
+
+cudaMemcpyAsync(device_mem, host_mem, transfer_size, cudaMemcpyHostToDevice, s);
+kernel&lt;&lt;&lt;grid, block, 0, s&gt;&gt;&gt;(device_mem, device_mem);
+cudaMemcpyAsync(host_mem, device_mem, transfer_size, cudaMemcpyDeviceToHost, s);
+
+cudaStreamSynchronize(s);</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Below is an enhanced example of multiple streams.</p>
+<div class="code-block">
+  <pre tabindex="0"><code class="language-cuda" data-lang="cuda">size_t transfer_size = N * sizeof(float);
+size_t transfer_size_per_stream = transfer_size / num_streams;
+size_t transfer_element_per_stream = N / num_streams;
+
+float *host_mem;
+float *device_mem;
+cudaMallocHost((void **)&amp;host_mem, transfer_size);
+cudaMalloc((void **)&amp;device_mem, transfer_size);
+
+cudaStream_t s[num_streams];
+for (int i = 0; i &lt; num_streams; i++) {
+  cudaStreamCreate(&amp;s[i]);
+}
+
+for (int i = 0; i &lt; num_streams; i++) {
+  int offset = i * transfer_element_per_stream;
+  cudaMemcpyAsync(device_mem + offset, host_mem + offset, transfer_size_per_stream, cudaMemcpyHostToDevice, s[i]);
+  kernel&lt;&lt;&lt;grid, block, 0, s[i]&gt;&gt;&gt;(device_mem + offset, transfer_element_per_stream);
+  cudaMemcpyAsync(host_mem + offset, device_mem + offset, transfer_size_per_stream, cudaMemcpyDeviceToHost, s[i]);
+}
+
+for (int i = 0; i &lt; num_streams; i++) {
+  cudaStreamSynchronize(s[i]);
+}</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Although H2D and D2H transfers are issued from different CUDA streams,
+they share the same PCIe interconnect and are serviced by a limited number of copy engines.
+As a result, transfers in the same direction are typically serialized,
+while copy and compute can overlap, leading to a pipelined execution pattern.</p>
+<p>Comparing serial version and multi stream version of the memcpy using a graph below,
+we can see the concurrency reduced the total execution time and bubbles.</p>
+<div class="code-block">
+  <pre tabindex="0"><code>Time →
+
+# serial version (one stream):
+Stream 0: H2D ────────────────────────&gt; Kernel ────────────────────────&gt; D2H
+
+# multi stream version (three streams)
+Stream 0: H2D ──&gt; Kernel ──&gt; D2H
+Stream 1:         H2D    ──&gt; Kernel ──&gt; D2H
+Stream 2:                    H2D    ──&gt; Kernel ──&gt; D2H</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/llm/cpu_gpu_optimizations_2_cuda_memcpy/">
+                        [2/4] CPU-GPU Optimization: CUDA Memory Allocation and Memcpy
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+
