@@ -337,6 +337,12 @@ contiguous and DMA-accessible.</p>
 <p>User-space pages may be discontiguous, pageable (unpinned), or otherwise
 inaccessible to DMA due to device or IOMMU addressing constraints.
 As a result, the kernel allocates a contiguous DMA-capable bounce buffer.</p>
+<figure><img src="/llm/cpu_gpu_optimizations_1_kernel/pinned_memory.png"
+    alt="Memcpy with Pinned Memory"><figcaption>
+      <p>Memcpy with Pinned Memory</p>
+    </figcaption>
+</figure>
+
 <p>For a host-to-device transfer, the flow is:</p>
 <ol>
 <li>CPU copies data from the user buffer into the kernel bounce buffer.</li>
@@ -348,10 +354,16 @@ require an extra CPU memcpy:</p>
 <li>Copy 1: User buffer → kernel bounce buffer. This is done via a CPU memcpy.</li>
 <li>Copy 2: Kernel bounce buffer → device buffer. This is done via PCIe DMA.</li>
 </ul>
-<p>Using pinning memory, we eliminate that extra CPU memcpy, but at the cost of the
+<p>Using pinned memory, we eliminate that extra CPU memcpy, but at the cost of the
 additional time required to pin memory, plus the risk of running out of pagable
-memory.
-In the next blogs, we will dive deeper into the performance analysis of pinned-memory and zero-copy and discuss the cost of pinning memory.</p>
+memory.</p>
+<figure><img src="/llm/cpu_gpu_optimizations_1_kernel/bounce_buffer.png"
+    alt="Memcpy with Bounce Buffer"><figcaption>
+      <p>Memcpy with Bounce Buffer</p>
+    </figcaption>
+</figure>
+
+<p>In the next blogs, we will dive deeper into the performance analysis of pinned-memory and zero-copy and discuss the cost of pinning memory.</p>
 
     </div>
   </article>
