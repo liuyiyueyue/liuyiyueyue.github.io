@@ -32,7 +32,7 @@
 
 <title>
     
-    [1/4] CPU-GPU Optimization: Pinned Memory in Kernel | Yiyue Liu Blog
+    [1/4] CPU-GPU Optimization: Pinned Memory in Linux Kernel | Yiyue Liu Blog
     
 </title>
 
@@ -40,7 +40,7 @@
 
 <meta property="og:url" content="https://liuyiyuelily.github.io/llm/cpu_gpu_optimizations_1_kernel/">
   <meta property="og:site_name" content="Yiyue Liu Blog">
-  <meta property="og:title" content="[1/4] CPU-GPU Optimization: Pinned Memory in Kernel">
+  <meta property="og:title" content="[1/4] CPU-GPU Optimization: Pinned Memory in Linux Kernel">
   <meta property="og:description" content="This is the first post in the “CPU‑GPU Optimization” series. It lays the kernel‑level foundation for pinned memory, which later posts build on.
 What is pinned memory? # Kernel pinned memory (also called page-locked memory) is memory in a computer system that the operating system marks as non-swappable—meaning it cannot be moved out of RAM into swap space (disk). Why it matters? # Normal memory in an OS can be paged out to disk by the virtual memory manager. This is fine for general workloads but not for I/O devices that need direct and fast access. Pinned memory is “locked” into physical RAM so the OS guarantees it will always stay resident. This is crucial for DMA (Direct Memory Access): when a device (like a GPU, NIC, or storage controller) directly reads/writes memory, the physical addresses must not change during the transfer. In GPU computing (CUDA, etc.), pinned memory allows faster host–device transfers because the GPU can DMA directly without needing a temporary bounce buffer (zero-copy), e.g., CUDA cudaMallocHost and cudaHostAlloc. Trade-offs # Pinned memory reduces OS flexibility. The locked pages can’t be swapped, so excessive use can lower overall system performance. Allocation (pinning memory) is slower compared to pageable memory. Some terminologies # “pageable”: a virtual memory page that can be paged out to disk (swap) and later paged in. It can change physical memory location. “pinned” or “non-pageable”: can’t be swapped or moved. e.g. pinned by kernel or allocated by kernel. “to fault pages”: to trigger page faults on virtual addresses so the kernel resolves them, bringing the pages into memory, creating PTEs, and making them resident/pinnable (or failing if the mapping is invalid). “GUP” stands for “Get User Pages.” “nr”: In Linux kernel naming conventions, nr means “number of”. nr_pages refers to the number of pages. (LOL why do I put it here..?) Kernel APIs # There are three APIs to pin memory so the kernel (or a device) can access them:">
   <meta property="og:locale" content="en">
@@ -213,14 +213,14 @@ What is pinned memory? # Kernel pinned memory (also called page-locked memory) i
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/cpu_gpu_optimizations_1_kernel/">[1/4] CPU-GPU Optimization: Pinned Memory in Kernel</a></div>
+        <a href="/llm/cpu_gpu_optimizations_1_kernel/">[1/4] CPU-GPU Optimization: Pinned Memory in Linux Kernel</a></div>
 
 
 <div >
   <article>
     <header class="single-intro-container">
         
-        <h1 class="single-title">[1/4] CPU-GPU Optimization: Pinned Memory in Kernel</h1>
+        <h1 class="single-title">[1/4] CPU-GPU Optimization: Pinned Memory in Linux Kernel</h1>
         
         <div class="single-subsummary">
           
@@ -337,9 +337,9 @@ contiguous and DMA-accessible.</p>
 <p>User-space pages may be discontiguous, pageable (unpinned), or otherwise
 inaccessible to DMA due to device or IOMMU addressing constraints.
 As a result, the kernel allocates a contiguous DMA-capable bounce buffer.</p>
-<figure><img src="/llm/cpu_gpu_optimizations_1_kernel/pinned_memory.png"
-    alt="Memcpy with Pinned Memory"><figcaption>
-      <p>Memcpy with Pinned Memory</p>
+<figure><img src="/llm/cpu_gpu_optimizations_1_kernel/bounce_buffer.png"
+    alt="Memcpy with Bounce Buffer"><figcaption>
+      <p>Memcpy with Bounce Buffer</p>
     </figcaption>
 </figure>
 
@@ -357,9 +357,9 @@ require an extra CPU memcpy:</p>
 <p>Using pinned memory, we eliminate that extra CPU memcpy, but at the cost of the
 additional time required to pin memory, plus the risk of running out of pagable
 memory.</p>
-<figure><img src="/llm/cpu_gpu_optimizations_1_kernel/bounce_buffer.png"
-    alt="Memcpy with Bounce Buffer"><figcaption>
-      <p>Memcpy with Bounce Buffer</p>
+<figure><img src="/llm/cpu_gpu_optimizations_1_kernel/pinned_memory.png"
+    alt="Memcpy with Pinned Memory"><figcaption>
+      <p>Memcpy with Pinned Memory</p>
     </figcaption>
 </figure>
 

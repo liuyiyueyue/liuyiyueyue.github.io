@@ -311,7 +311,7 @@ specified CUDA event <code>ev</code> has been recorded.</li>
   <a class="anchor" href="#async-memcpy">#</a>
 </h2>
 <p>In this section, we introduce <code>cudaMemcpyAsync</code>, the <strong>non-blocking, asynchronous</strong> counterpart to
-<code>cudaMemcpy</code> from the previous post. Unlike <code>cudaMemcpy</code>, <code>cudaMemcpyAsync</code> returns immediately;
+<code>cudaMemcpy</code> described in previous blog (See <a href="/llm/cpu_gpu_optimizations_2_cuda_memcpy/#2-pinned-memory--memcpy">Pinned Memory + Memcpy</a>). Unlike <code>cudaMemcpy</code>, <code>cudaMemcpyAsync</code> returns immediately;
 the transfer is enqueued into a specified CUDA stream. This makes it possible to
 <strong>overlap memcpy with kernel execution</strong> or with other memcpy operations
 (when the hardware and stream setup allow it).</p>

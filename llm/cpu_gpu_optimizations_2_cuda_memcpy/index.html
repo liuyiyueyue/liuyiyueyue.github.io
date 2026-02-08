@@ -304,7 +304,7 @@ cudaFree(device_mem);</code></pre>
 and <strong>maps this memory into GPU address space</strong>.</li>
 <li><code>cudaHostGetDevicePointer</code> obtains the GPU-mapped address of the host pinned memory.</li>
 <li><code>cudaFreeHost</code> replaces <code>free</code>.</li>
-<li>Zero-copy uses <strong>no device memory</strong>; data always stays on the CPU. So there is no <code>cudaMemcpy</code>. The GPU modifies host memory directly via PCIe transactions (still DMA read/write). So while <code>cudaMemcpy</code> is an explicit DMA copy initiated by the runtime/driver API, zero-copy is an <strong>implicit DMA copy</strong> initiated by GPU hardware.</li>
+<li>Zero-copy uses <strong>no device memory</strong>; data always stays on the CPU. So there is no <code>cudaMemcpy</code>. The GPU modifies host memory directly <strong>via PCIe transactions (still DMA read/write)</strong>. So while <code>cudaMemcpy</code> is an explicit DMA copy initiated by the runtime/driver API, zero-copy is an <strong>implicit DMA copy</strong> initiated by GPU hardware.</li>
 <li>Zero-copy turns compute intensity into “memory-access intensity.” Thus, it is rarely used for compute-intensive workloads such as ML and HPC.</li>
 </ul>
 <p>The below example shows a GPU kernel directly accesses host memory without an explicit cudaMemcpy:</p>
@@ -391,7 +391,7 @@ cudaFree(mem);</code></pre>
                 <div class="single-pagination-text">←</div>
                 <div class="single-pagination-text">
                     <a href="/llm/cpu_gpu_optimizations_1_kernel/">
-                        [1/4] CPU-GPU Optimization: Pinned Memory in Kernel
+                        [1/4] CPU-GPU Optimization: Pinned Memory in Linux Kernel
                     </a>
                 </div>
             </div>
