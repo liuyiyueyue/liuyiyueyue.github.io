@@ -294,6 +294,10 @@ cudaFreeHost(host_mem);
 cudaFree(device_mem);</code></pre>
   <button class="copy-code-button">copy</button>
 </div>
+<p>References:</p>
+<ol>
+<li><a href="https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#pinned-memory">https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#pinned-memory</a></li>
+</ol>
 <h4 class="heading" id="3-zero-copy">
   3. Zero-copy
   <a class="anchor" href="#3-zero-copy">#</a>
@@ -330,6 +334,10 @@ cudaDeviceSynchronize();
 cudaFreeHost(host_mem);</code></pre>
   <button class="copy-code-button">copy</button>
 </div>
+<p>References:</p>
+<ol>
+<li>CUDA Official Documentation: <a href="https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#zero-copy">https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#zero-copy</a></li>
+</ol>
 <h4 class="heading" id="4-unified-memory-uvm">
   4. Unified Memory (UVM)
   <a class="anchor" href="#4-unified-memory-uvm">#</a>
@@ -369,6 +377,10 @@ cudaDeviceSynchronize();
 cudaFree(mem);</code></pre>
   <button class="copy-code-button">copy</button>
 </div>
+<p>References:</p>
+<ol>
+<li><a href="https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#unified-virtual-addressing">https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#unified-virtual-addressing</a></li>
+</ol>
 
     </div>
   </article>
