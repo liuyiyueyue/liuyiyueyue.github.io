@@ -318,7 +318,7 @@ the transfer is enqueued into a specified CUDA stream. This makes it possible to
 <p>To use <code>cudaMemcpyAsync</code>, the <strong>host memory must be pinned</strong> via <code>cudaMallocHost</code> or <code>cudaHostAlloc</code>,
 and the device memory must be a valid device pointer (typically allocated with <code>cudaMalloc</code>).</p>
 <p>Below is an example of one stream. Within one stream, the (async) memcpys and kernels execute sequentially.
-That means the execution order is H2D → Kernel → D2H.</p>
+That means the execution order is H2D → Kernel.</p>
 <div class="code-block">
   <pre tabindex="0"><code class="language-cuda" data-lang="cuda">size_t transfer_size = N * sizeof(float);
 
@@ -332,7 +332,6 @@ cudaStreamCreate(&amp;s);
 
 cudaMemcpyAsync(device_mem, host_mem, transfer_size, cudaMemcpyHostToDevice, s);
 kernel&lt;&lt;&lt;grid, block, 0, s&gt;&gt;&gt;(device_mem, device_mem);
-cudaMemcpyAsync(host_mem, device_mem, transfer_size, cudaMemcpyDeviceToHost, s);
 
 cudaStreamSynchronize(s);</code></pre>
   <button class="copy-code-button">copy</button>
@@ -357,7 +356,6 @@ for (int i = 0; i &lt; num_streams; i++) {
   int offset = i * transfer_element_per_stream;
   cudaMemcpyAsync(device_mem + offset, host_mem + offset, transfer_size_per_stream, cudaMemcpyHostToDevice, s[i]);
   kernel&lt;&lt;&lt;grid, block, 0, s[i]&gt;&gt;&gt;(device_mem + offset, transfer_element_per_stream);
-  cudaMemcpyAsync(host_mem + offset, device_mem + offset, transfer_size_per_stream, cudaMemcpyDeviceToHost, s[i]);
 }
 
 for (int i = 0; i &lt; num_streams; i++) {
@@ -365,7 +363,7 @@ for (int i = 0; i &lt; num_streams; i++) {
 }</code></pre>
   <button class="copy-code-button">copy</button>
 </div>
-<p>Although H2D and D2H transfers are issued from different CUDA streams,
+<p>Although H2D transfers are issued from different CUDA streams,
 they share the same PCIe interconnect and are serviced by a limited number of copy engines.
 As a result, transfers in the same direction are typically serialized,
 while copy and compute can overlap, leading to a pipelined execution pattern.</p>
@@ -375,12 +373,12 @@ we can see the concurrency reduced the total execution time and bubbles.</p>
   <pre tabindex="0"><code>Time →
 
 # serial version (one stream):
-Stream 0: H2D ────────────────────────&gt; Kernel ────────────────────────&gt; D2H
+Copy Engine: |────────────────H2D────────────────|
+GPU:                                             |───────────────Kernel───────────────|
 
 # multi stream version (three streams)
-Stream 0: H2D ──&gt; Kernel ──&gt; D2H
-Stream 1:         H2D    ──&gt; Kernel ──&gt; D2H
-Stream 2:                    H2D    ──&gt; Kernel ──&gt; D2H</code></pre>
+Copy Engine: |────H2D────|────H2D────|────H2D────|
+GPU:                     |───Kernel───|───Kernel───|───Kernel───|</code></pre>
   <button class="copy-code-button">copy</button>
 </div>
 <p>References:</p>
