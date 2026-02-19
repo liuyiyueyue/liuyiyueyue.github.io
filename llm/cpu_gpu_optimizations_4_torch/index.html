@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyuelily.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyuelily.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyuelily.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyuelily.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyuelily.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    [4/4] CPU-GPU Optimization: PyTorch | Yiyue Liu Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyuelily.github.io/llm/cpu_gpu_optimizations_4_torch/"/>
+
+<meta property="og:url" content="https://liuyiyuelily.github.io/llm/cpu_gpu_optimizations_4_torch/">
+  <meta property="og:site_name" content="Yiyue Liu Blog">
+  <meta property="og:title" content="[4/4] CPU-GPU Optimization: PyTorch">
+  <meta property="og:description" content="This is the final post in the “CPU‑GPU Optimization” series. Here we use kernel‑ and CUDA‑level techniques from earlier posts to explain asynchronous execution in PyTorch and how to reduce CPU‑GPU synchronization costs.
+Asynchronous Execution # When a PyTorch program runs on the CPU, each line executes in program order. Below is a simple example:
+import torch device = torch.device(&#34;cpu&#34;) x = torch.randn(50_000_000, device=device) y = torch.randn(50_000_000, device=device) z = torch.randn(50_000_000, device=device) copy Figure 1: CPU execution timeline (sequential execution on main thread). Note: cudaDeviceSynchronize in this trace is introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code.">
+  <meta property="og:locale" content="en">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2026-02-08T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-02-08T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Pytorch">
+    <meta property="article:tag" content="Optimization">
+    <meta property="article:tag" content="Cuda">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.ec1cb1295de3dde3caaea524689a83d88207da8aff8cc7829338c2a88f36f956.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="https://liuyiyuelily.github.io/">Yiyue Liu Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/cpu_gpu_optimizations_4_torch/">[4/4] CPU-GPU Optimization: PyTorch</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">[4/4] CPU-GPU Optimization: PyTorch</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2026-02-08T00:00:00&#43;00:00">February 8, 2026</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <p>This is the final post in the “CPU‑GPU Optimization” series.
+Here we use kernel‑ and CUDA‑level techniques from earlier posts to explain
+asynchronous execution in PyTorch and how to reduce CPU‑GPU synchronization costs.</p>
+<h2 class="heading" id="asynchronous-execution">
+  Asynchronous Execution
+  <a class="anchor" href="#asynchronous-execution">#</a>
+</h2>
+<p>When a PyTorch program runs on the CPU, each line executes in program order.
+Below is a simple example:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">torch</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>device = torch.device(<span style="color:#666;font-style:italic">&#34;cpu&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>x = torch.randn(50_000_000, device=device)
+</span></span><span style="display:flex;"><span>y = torch.randn(50_000_000, device=device)
+</span></span><span style="display:flex;"><span>z = torch.randn(50_000_000, device=device)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<figure><img src="/llm/cpu_gpu_optimizations_4_torch/1_cpu_execution_trace.png"
+    alt="Figure 1: CPU execution timeline (sequential execution on main thread). Note: cudaDeviceSynchronize in this trace is introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code."><figcaption>
+      <p>Figure 1: CPU execution timeline (sequential execution on main thread)<!-- raw HTML omitted --><!-- raw HTML omitted -->. Note: cudaDeviceSynchronize in this trace is introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code.<!-- raw HTML omitted --></p>
+    </figcaption>
+</figure>
+
+<p>Now switch from CPU to GPU by using <code>device = torch.device(&quot;cuda&quot;)</code>,
+while keeping the rest of the code the same. The execution model changes completely.
+The CPU submits kernel and memcpy work to a CUDA stream and immediately continues.
+The GPU then fetches and executes operations in submission order.
+As a result, the Python code returns quickly even though the GPU is still busy.
+This collaboration between CPU and GPU is called <strong>asynchronous execution</strong>.</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">torch</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>device = torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>) <span style="color:#888;font-style:italic"># cpu replaced by gpu</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>x = torch.randn(50_000_000, device=device)
+</span></span><span style="display:flex;"><span>y = torch.randn(50_000_000, device=device)
+</span></span><span style="display:flex;"><span>z = torch.randn(50_000_000, device=device)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Below is a diagram:</p>
+<figure><img src="/llm/cpu_gpu_optimizations_4_torch/2_gpu_async_execution.png"
+    alt="Figure 2: CPU-GPU asynchronous execution timeline. Note: cudaDeviceSynchronize in this trace is also introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code."><figcaption>
+      <p>Figure 2: CPU-GPU asynchronous execution timeline<!-- raw HTML omitted --><!-- raw HTML omitted -->. Note: cudaDeviceSynchronize in this trace is also introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code.<!-- raw HTML omitted --></p>
+    </figcaption>
+</figure>
+
+<p>In practice, if you want the CPU to wait for the GPU to finish,
+call <code>torch.cuda.synchronize</code>. For accurate timing, record timestamps
+only after a synchronize call, i.e. <code>time.time()</code> should follow
+<code>torch.cuda.synchronize</code>.
+Here is a modified example with synchronization:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">torch</span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">time</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>torch.cuda.synchronize()
+</span></span><span style="display:flex;"><span>t0 = time.time()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>x = torch.randn(10_000_000, device=device)
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">for</span> _ <span style="font-weight:bold">in</span> <span style="font-weight:bold;font-style:italic">range</span>(100):
+</span></span><span style="display:flex;"><span>    y = x + 1
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">&#34;CPU finishes&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>torch.cuda.synchronize()
+</span></span><span style="display:flex;"><span>t1 = time.time()
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">&#34;GPU finishes. Time:&#34;</span>, t1 - t0)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<figure><img src="/llm/cpu_gpu_optimizations_4_torch/3_synchronize_trace.png"
+    alt="Figure 3: CPU waits for GPU completion after synchronization"><figcaption>
+      <p>Figure 3: CPU waits for GPU completion after synchronization</p>
+    </figcaption>
+</figure>
+
+<p>During debugging, it’s fine to switch back to CPU execution or call <code>torch.cuda.synchronize</code>.
+In production, both reduce performance and should be avoided.</p>
+<h2 class="heading" id="implicit-synchronization">
+  Implicit Synchronization
+  <a class="anchor" href="#implicit-synchronization">#</a>
+</h2>
+<p><code>torch.cuda.synchronize</code> explicitly synchronizes CPU and GPU.
+However, some PyTorch operations are implicitly synchronous and can become performance
+bottlenecks. These operations often require the <strong>CPU to know a data‑dependent result</strong>
+(e.g., output shape, indices, or a scalar value) produced on the GPU before execution can continue.</p>
+<p>The most common cases are <strong>GPU tensor operations</strong>, for example:</p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Operation Name</th>
+                <th>Examples</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>indexing</td>
+                <td><code>tensor.item()</code> and <code>tensor[0]</code></td>
+            </tr>
+            <tr>
+                <td>copy to CPU</td>
+                <td><code>tensor.cpu()</code> and <code>tensor.numpy()</code></td>
+            </tr>
+            <tr>
+                <td>data-dependency</td>
+                <td><code>print(tensor)</code> and <code>torch.nonzero(x)</code> — both operations must wait until the GPU kernel finishes</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p>Below is an example of how <code>torch.nonzero(z)</code> introduces implicit synchronization:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">torch</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>device = torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Make workload large enough to show clear GPU time</span>
+</span></span><span style="display:flex;"><span>N = 10_000_000
+</span></span><span style="display:flex;"><span>x = torch.randn(N, device=device)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>torch.cuda.synchronize()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>z = x
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">for</span> _ <span style="font-weight:bold">in</span> <span style="font-weight:bold;font-style:italic">range</span>(20): <span style="color:#888;font-style:italic"># all done asynchronously</span>
+</span></span><span style="display:flex;"><span>	z = z * 1.000001
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># ---- implicit synchronization ----</span>
+</span></span><span style="display:flex;"><span>idx = torch.nonzero(z)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>To execute <code>torch.nonzero(z)</code>, the GPU must finish all prior kernels that write to <code>z</code>,
+scan for non‑zero elements, and allocate an output tensor. The output tensor size is data‑dependent.
+Thus the CPU waits for these GPU operations to finish.
+There is no explicit <code>torch.cuda.synchronize</code> call, but this is still an implicit synchronization point.</p>
+<figure><img src="/llm/cpu_gpu_optimizations_4_torch/4_implicit_sync.png"
+    alt="Figure 4: Implicit synchronization in a data-dependent GPU operation"><figcaption>
+      <p>Figure 4: Implicit synchronization in a data-dependent GPU operation</p>
+    </figcaption>
+</figure>
+
+<h2 class="heading" id="tensor-allocation-and-memcpy">
+  Tensor Allocation and Memcpy
+  <a class="anchor" href="#tensor-allocation-and-memcpy">#</a>
+</h2>
+<p>In PyTorch, by default, a CPU tensor uses pageable host memory, backed by <code>malloc</code> under the hood.
+To do a H2D memcpy, the CUDA runtime allocates a bounce buffer (<a href="/llm/cpu_gpu_optimizations_1_kernel/#compare-to-bounce-buffer">Compare to “bounce-buffer”</a>).</p>
+<p>Here is an example:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>x = torch.randn(10)  <span style="color:#888;font-style:italic"># Pageable host memory</span>
+</span></span><span style="display:flex;"><span>y = x.to(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>)     <span style="color:#888;font-style:italic"># Synchronous H2D transfer with bounce buffer, or `y = x.cuda()`</span>
+</span></span><span style="display:flex;"><span>x_cpu = y.cpu()      <span style="color:#888;font-style:italic"># Synchronous D2H transfer (implicit sync)</span></span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>With <code>pin_memory=True</code>, PyTorch calls <code>cudaMallocHost</code> and allocates pinned host memory.
+With <code>non_blocking=True</code>, PyTorch calls <code>cudaMemcpyAsync</code>, submits work to the copy stream, and uses an event to synchronize with the compute stream. The CPU won’t wait for the H2D transfer to finish.
+Here is an example:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>x = torch.randn(10, pin_memory=<span style="font-weight:bold;text-decoration:underline">True</span>)  <span style="color:#888;font-style:italic"># Pinned host memory</span>
+</span></span><span style="display:flex;"><span>y = x.to(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, non_blocking=<span style="font-weight:bold;text-decoration:underline">True</span>)   <span style="color:#888;font-style:italic"># Asynchronous H2D transfer</span>
+</span></span><span style="display:flex;"><span>x_cpu = y.cpu()                       <span style="color:#888;font-style:italic"># Synchronous D2H transfer (implicit sync)</span></span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>To allocate a tensor on GPU, use the <code>device=&quot;cuda&quot;</code> flag:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>x = torch.randn(10, device=<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<h2 class="heading" id="overlap-data-transfer-and-computation-double-buffering">
+  Overlap Data Transfer and Computation (Double Buffering)
+  <a class="anchor" href="#overlap-data-transfer-and-computation-double-buffering">#</a>
+</h2>
+<p>Now, using all the techniques above, we can achieve parallelism between data movement
+and GPU computation by assigning data transfers (e.g. <code>cudaMemcpyAsync</code>)
+and model execution kernels to different CUDA streams.</p>
+<p>Concretely, we alternate submission of transfer tasks and compute tasks across two
+CUDA streams. As Stream A executes the kernels, Stream B does the data transfers
+for the next batch. Once they are done, the streams swap roles.
+This pipeline hides data transfer latency behind computation time.</p>
+<p>This technique is similar to the double-buffering technique used in inference systems.</p>
+<p>Conceptually, without any overlap, the total time is total copy time plus total
+compute time:</p>
+<div class="code-block">
+  <pre tabindex="0"><code>[ Copy0 ] → [ Compute0 ] → [ Copy1 ] → [ Compute1 ] → [ Copy2 ] → [ Compute2 ]</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>With double buffering, the total time is the max of total copy time vs. total
+compute time:</p>
+<div class="code-block">
+  <pre tabindex="0"><code>Compute:  [ Compute0 ]    [ Compute1 ]    [ Compute2 ]
+Transfer:       [ Copy1 ]     [ Copy2 ]     [ Copy3 ]</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Below are some examples.</p>
+<p>With double buffering:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">torch</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>device = torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>batch_size = 10_000_000
+</span></span><span style="display:flex;"><span>num_steps = 10
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Create two CUDA streams</span>
+</span></span><span style="display:flex;"><span>compute_stream = torch.cuda.Stream()
+</span></span><span style="display:flex;"><span>transfer_stream = torch.cuda.Stream()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Allocate pinned host buffers (required for async H2D overlap)</span>
+</span></span><span style="display:flex;"><span>host_buffers = [
+</span></span><span style="display:flex;"><span>    torch.randn(batch_size, pin_memory=<span style="font-weight:bold;text-decoration:underline">True</span>),
+</span></span><span style="display:flex;"><span>    torch.randn(batch_size, pin_memory=<span style="font-weight:bold;text-decoration:underline">True</span>),
+</span></span><span style="display:flex;"><span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Allocate device buffers</span>
+</span></span><span style="display:flex;"><span>device_buffers = [
+</span></span><span style="display:flex;"><span>    torch.empty(batch_size, device=device),
+</span></span><span style="display:flex;"><span>    torch.empty(batch_size, device=device),
+</span></span><span style="display:flex;"><span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>torch.cuda.synchronize()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">for</span> step <span style="font-weight:bold">in</span> <span style="font-weight:bold;font-style:italic">range</span>(num_steps):
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    buf_id = step % 2
+</span></span><span style="display:flex;"><span>    next_buf = (step + 1) % 2
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># 1. Launch compute on current buffer</span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">with</span> torch.cuda.stream(compute_stream):
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span> step &gt; 0:
+</span></span><span style="display:flex;"><span>            x = device_buffers[buf_id]
+</span></span><span style="display:flex;"><span>            y = x * 2.0
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># 2. Launch transfer for next batch</span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span> step &lt; num_steps - 1:
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">with</span> torch.cuda.stream(transfer_stream):
+</span></span><span style="display:flex;"><span>            device_buffers[next_buf].copy_(
+</span></span><span style="display:flex;"><span>                host_buffers[next_buf],
+</span></span><span style="display:flex;"><span>                non_blocking=<span style="font-weight:bold;text-decoration:underline">True</span>
+</span></span><span style="display:flex;"><span>            )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># 3. Make compute wait for transfer of its buffer</span>
+</span></span><span style="display:flex;"><span>    compute_stream.wait_stream(transfer_stream)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>torch.cuda.synchronize()</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<figure><img src="/llm/cpu_gpu_optimizations_4_torch/5_double_buffer_trace.png"
+    alt="Figure 5.1: Data-compute overlap with double buffering"><figcaption>
+      <p>Figure 5.1: Data-compute overlap with double buffering</p>
+    </figcaption>
+</figure>
+
+<p>Without double buffering and without pinned memory:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">torch</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>device = torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>batch_size = 10_000_000
+</span></span><span style="display:flex;"><span>num_steps = 10
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>host_buffer = torch.randn(batch_size) <span style="color:#888;font-style:italic"># Regular pageable host memory (NOT pinned)</span>
+</span></span><span style="display:flex;"><span>device_buffer = torch.empty(batch_size, device=device) <span style="color:#888;font-style:italic"># Single device buffer</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>torch.cuda.synchronize()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">for</span> step <span style="font-weight:bold">in</span> <span style="font-weight:bold;font-style:italic">range</span>(num_steps):
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># 1. Blocking H2D copy</span>
+</span></span><span style="display:flex;"><span>    device_buffer.copy_(host_buffer)  <span style="color:#888;font-style:italic"># blocking copy</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># 2. GPU compute (default stream)</span>
+</span></span><span style="display:flex;"><span>    y = device_buffer * 2.0
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Optional: force full sync each iteration</span>
+</span></span><span style="display:flex;"><span>    torch.cuda.synchronize()</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<figure><img src="/llm/cpu_gpu_optimizations_4_torch/5_no_double_buffer_trace.png"
+    alt="Figure 5.2: No overlap"><figcaption>
+      <p>Figure 5.2: No overlap</p>
+    </figcaption>
+</figure>
+
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/llm/cpu_gpu_optimizations_3_cuda_stream/">
+                        [3/4] CPU-GPU Optimization: CUDA Stream and Async Memcpy
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+

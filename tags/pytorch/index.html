@@ -26,22 +26,22 @@
 <link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyuelily.github.io/android-chrome-192x192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyuelily.github.io/apple-touch-icon.png">
 
-<link rel="alternate" type="application/rss+xml" href="https://liuyiyuelily.github.io/llm/index.xml" title="Yiyue Liu Blog">
+<link rel="alternate" type="application/rss+xml" href="https://liuyiyuelily.github.io/tags/pytorch/index.xml" title="Yiyue Liu Blog">
 <meta name="description" content=""/>
 
 
 
 <title>
     
-    LLM | Yiyue Liu Blog
+    Pytorch | Yiyue Liu Blog
     
 </title>
 
-<link rel="canonical" href="https://liuyiyuelily.github.io/llm/"/>
+<link rel="canonical" href="https://liuyiyuelily.github.io/tags/pytorch/"/>
 
-<meta property="og:url" content="https://liuyiyuelily.github.io/llm/">
+<meta property="og:url" content="https://liuyiyuelily.github.io/tags/pytorch/">
   <meta property="og:site_name" content="Yiyue Liu Blog">
-  <meta property="og:title" content="LLM">
+  <meta property="og:title" content="Pytorch">
   <meta property="og:description" content="A Tech Blog">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="website">
@@ -144,7 +144,7 @@
         </p>
         
         
-        <p class="small  bold ">
+        <p class="small ">
             <a href="/llm/" >
                 /LLM
             </a>
@@ -178,15 +178,19 @@
 
             
             
+
+            
+            
               
+                
+              
+                
+                  
                 
               
             
 
-            
-            
-
-            <a href="/zh/llm/">中文</a>
+            <a href="/zh/">中文</a>
           
 
           
@@ -201,10 +205,10 @@
 
 <div class="list-container">
 
-    <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/">LLM</a></div>
+    <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/tags/">Tags</a><span class="breadcrumbs-separator">/</span>
+        <a href="/tags/pytorch/">Pytorch</a></div>
 
-    <h1>LLM</h1>
+    <h1>Pytorch</h1>
     
 
     
@@ -509,413 +513,6 @@
         
         
         <p class="line-summary">This is the final post in the “CPU‑GPU Optimization” series. Here we use kernel‑ and CUDA‑level techniques from earlier posts to explain asynchronous execution in PyTorch and how to reduce CPU‑GPU synchronization costs. Asynchronous Execution When a PyTorch program runs on the CPU, each line executes in program order....</p>
-        
-    </div>
-</div>
-
-    
-
-    
-
-    
-    <div class="post-line">
-
-    
-
-    
-        <p class="line-date">6 Feb 2026 </p>
-    
-
-    <div>
-        <p class="line-title">
-            <a href="/llm/cpu_gpu_optimizations_3_cuda_stream/">
-                [3/4] CPU-GPU Optimization: CUDA Stream and Async Memcpy
-            </a>
-        </p>
-
-        
-        
-        
-        
-        
-        
-        
-            
-        
-        
-            
-            
-                
-                    
-                
-            
-                
-                    
-                
-            
-                
-                    
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-        
-        
-        <p class="line-summary">In this blog, we will discuss techniques to squeeze the memcpy &amp;ldquo;bubbles&amp;rdquo; with kernel executions. We first discuss CUDA streams which allows operations to run concurrently. Then we discuss asynchronous memcpys to overlap data transfers with kernels....</p>
-        
-    </div>
-</div>
-
-    
-
-    
-
-    
-    <div class="post-line">
-
-    
-
-    
-        <p class="line-date">5 Feb 2026 </p>
-    
-
-    <div>
-        <p class="line-title">
-            <a href="/llm/cpu_gpu_optimizations_2_cuda_memcpy/">
-                [2/4] CPU-GPU Optimization: CUDA Memory Allocation and Memcpy
-            </a>
-        </p>
-
-        
-        
-        
-        
-        
-        
-        
-            
-        
-        
-            
-            
-                
-                    
-                
-            
-                
-                    
-                
-            
-                
-                    
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-        
-        
-        <p class="line-summary">This is the second blog of the &amp;ldquo;CPU-GPU Optimization&amp;rdquo; series. Using the foundations built from the previous blog, we will discuss 4 types of memory allocation and transfer methods in CUDA. 1....</p>
-        
-    </div>
-</div>
-
-    
-
-    
-
-    
-    <div class="post-line">
-
-    
-
-    
-        <p class="line-date">25 Jan 2026 </p>
-    
-
-    <div>
-        <p class="line-title">
-            <a href="/llm/cpu_gpu_optimizations_1_kernel/">
-                [1/4] CPU-GPU Optimization: Pinned Memory in Linux Kernel
-            </a>
-        </p>
-
-        
-        
-        
-        
-        
-        
-        
-            
-        
-        
-            
-            
-                
-                    
-                
-            
-                
-                    
-                
-            
-                
-                    
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-        
-        
-        <p class="line-summary">This is the first post in the “CPU‑GPU Optimization” series. It lays the kernel‑level foundation for pinned memory, which later posts build on. What is pinned memory?...</p>
         
     </div>
 </div>
