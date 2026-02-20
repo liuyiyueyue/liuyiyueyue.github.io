@@ -2,73 +2,73 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on Yiyue Liu Blog</title>
-    <link>https://liuyiyuelily.github.io/tags/</link>
+    <link>https://liuyiyueyue.github.io/tags/</link>
     <description>Recent content in Tags on Yiyue Liu Blog</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Thu, 19 Feb 2026 00:00:00 +0000</lastBuildDate>
-    <atom:link href="https://liuyiyuelily.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://liuyiyueyue.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Cuda</title>
-      <link>https://liuyiyuelily.github.io/tags/cuda/</link>
+      <link>https://liuyiyueyue.github.io/tags/cuda/</link>
       <pubDate>Thu, 19 Feb 2026 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyuelily.github.io/tags/cuda/</guid>
+      <guid>https://liuyiyueyue.github.io/tags/cuda/</guid>
       <description></description>
     </item>
     <item>
       <title>Llm</title>
-      <link>https://liuyiyuelily.github.io/tags/llm/</link>
+      <link>https://liuyiyueyue.github.io/tags/llm/</link>
       <pubDate>Thu, 19 Feb 2026 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyuelily.github.io/tags/llm/</guid>
+      <guid>https://liuyiyueyue.github.io/tags/llm/</guid>
       <description></description>
     </item>
     <item>
       <title>Optimization</title>
-      <link>https://liuyiyuelily.github.io/tags/optimization/</link>
+      <link>https://liuyiyueyue.github.io/tags/optimization/</link>
       <pubDate>Thu, 19 Feb 2026 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyuelily.github.io/tags/optimization/</guid>
+      <guid>https://liuyiyueyue.github.io/tags/optimization/</guid>
       <description></description>
     </item>
     <item>
       <title>Pytorch</title>
-      <link>https://liuyiyuelily.github.io/tags/pytorch/</link>
+      <link>https://liuyiyueyue.github.io/tags/pytorch/</link>
       <pubDate>Thu, 19 Feb 2026 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyuelily.github.io/tags/pytorch/</guid>
+      <guid>https://liuyiyueyue.github.io/tags/pytorch/</guid>
       <description></description>
     </item>
     <item>
       <title>Async</title>
-      <link>https://liuyiyuelily.github.io/tags/async/</link>
+      <link>https://liuyiyueyue.github.io/tags/async/</link>
       <pubDate>Fri, 06 Feb 2026 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyuelily.github.io/tags/async/</guid>
+      <guid>https://liuyiyueyue.github.io/tags/async/</guid>
       <description></description>
     </item>
     <item>
       <title>Kernel</title>
-      <link>https://liuyiyuelily.github.io/tags/kernel/</link>
+      <link>https://liuyiyueyue.github.io/tags/kernel/</link>
       <pubDate>Sun, 25 Jan 2026 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyuelily.github.io/tags/kernel/</guid>
+      <guid>https://liuyiyueyue.github.io/tags/kernel/</guid>
       <description></description>
     </item>
     <item>
       <title>Code-Review</title>
-      <link>https://liuyiyuelily.github.io/tags/code-review/</link>
+      <link>https://liuyiyueyue.github.io/tags/code-review/</link>
       <pubDate>Thu, 25 Dec 2025 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyuelily.github.io/tags/code-review/</guid>
+      <guid>https://liuyiyueyue.github.io/tags/code-review/</guid>
       <description></description>
     </item>
     <item>
       <title>Productivity</title>
-      <link>https://liuyiyuelily.github.io/tags/productivity/</link>
+      <link>https://liuyiyueyue.github.io/tags/productivity/</link>
       <pubDate>Thu, 25 Dec 2025 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyuelily.github.io/tags/productivity/</guid>
+      <guid>https://liuyiyueyue.github.io/tags/productivity/</guid>
       <description></description>
     </item>
     <item>
       <title>Software-Engineering</title>
-      <link>https://liuyiyuelily.github.io/tags/software-engineering/</link>
+      <link>https://liuyiyueyue.github.io/tags/software-engineering/</link>
       <pubDate>Thu, 25 Dec 2025 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyuelily.github.io/tags/software-engineering/</guid>
+      <guid>https://liuyiyueyue.github.io/tags/software-engineering/</guid>
       <description></description>
     </item>
   </channel>

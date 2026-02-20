@@ -2,10 +2,10 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>首页 on Yiyue Liu Blog</title>
-    <link>https://liuyiyuelily.github.io/zh/</link>
+    <link>https://liuyiyueyue.github.io/zh/</link>
     <description>Recent content in 首页 on Yiyue Liu Blog</description>
     <generator>Hugo</generator>
     <language>zh</language>
-    <atom:link href="https://liuyiyuelily.github.io/zh/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://liuyiyueyue.github.io/zh/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

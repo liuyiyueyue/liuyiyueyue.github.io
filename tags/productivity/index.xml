@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Productivity on Yiyue Liu Blog</title>
-    <link>https://liuyiyuelily.github.io/tags/productivity/</link>
+    <link>https://liuyiyueyue.github.io/tags/productivity/</link>
     <description>Recent content in Productivity on Yiyue Liu Blog</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Thu, 25 Dec 2025 00:00:00 +0000</lastBuildDate>
-    <atom:link href="https://liuyiyuelily.github.io/tags/productivity/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://liuyiyueyue.github.io/tags/productivity/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Code Review Bottlenecks: From a Team Pain Point to Scalable Practices</title>
-      <link>https://liuyiyuelily.github.io/software_engineering/effective-code-review/</link>
+      <link>https://liuyiyueyue.github.io/software_engineering/effective-code-review/</link>
       <pubDate>Thu, 25 Dec 2025 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyuelily.github.io/software_engineering/effective-code-review/</guid>
+      <guid>https://liuyiyueyue.github.io/software_engineering/effective-code-review/</guid>
       <description>&lt;p&gt;This post grew out of a very concrete problem in my own team.&lt;/p&gt;&#xA;&lt;p&gt;Over time, code reviews started to feel slower and heavier than they should have.&#xA;Changes were functionally ready, but sat in review queues for days or even weeks.&#xA;Each revision restarted the waiting cycle, and senior engineers increasingly&#xA;became the critical path.&lt;/p&gt;&#xA;&lt;p&gt;While the context was specific, the patterns were not. Similar complaints show up&#xA;in many engineering teams once codebases and organizations reach a certain size.&#xA;This post starts from that local pain point and distills several practices that&#xA;generalize well beyond a single team.&lt;/p&gt;</description>
     </item>
   </channel>
