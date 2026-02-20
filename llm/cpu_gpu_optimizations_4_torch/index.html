@@ -43,7 +43,7 @@
   <meta property="og:title" content="[4/4] CPU-GPU Optimization: PyTorch">
   <meta property="og:description" content="This is the final post in the “CPU‑GPU Optimization” series. Here we use kernel‑ and CUDA‑level techniques from earlier posts to explain asynchronous execution in PyTorch and how to reduce CPU‑GPU synchronization costs.
 Asynchronous Execution # When a PyTorch program runs on the CPU, each line executes in program order. Below is a simple example:
-import torch device = torch.device(&#34;cpu&#34;) x = torch.randn(50_000_000, device=device) y = torch.randn(50_000_000, device=device) z = torch.randn(50_000_000, device=device) copy Figure 1: CPU execution timeline (sequential execution on main thread). Note: cudaDeviceSynchronize in this trace is introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code.">
+import torch device = torch.device(&#34;cpu&#34;) x = torch.randn(50_000_000, device=device) y = torch.randn(50_000_000, device=device) z = torch.randn(50_000_000, device=device) copy Figure 1: CPU execution timeline (sequential execution on main thread). Note: cudaDeviceSynchronize in this trace is introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code. Code source: 1_cpu.py">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -256,9 +256,9 @@ Below is a simple example:</p>
 </span></span><span style="display:flex;"><span>z = torch.randn(50_000_000, device=device)</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
-<figure><img src="/llm/cpu_gpu_optimizations_4_torch/1_cpu_execution_trace.png"
-    alt="Figure 1: CPU execution timeline (sequential execution on main thread). Note: cudaDeviceSynchronize in this trace is introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code."><figcaption>
-      <p>Figure 1: CPU execution timeline (sequential execution on main thread)<!-- raw HTML omitted --><!-- raw HTML omitted -->. Note: cudaDeviceSynchronize in this trace is introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code.<!-- raw HTML omitted --></p>
+<figure><img src="/llm/cpu_gpu_optimizations_4_torch/images/1_cpu_execution_trace.png"
+    alt="Figure 1: CPU execution timeline (sequential execution on main thread). Note: cudaDeviceSynchronize in this trace is introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code. Code source: 1_cpu.py"><figcaption>
+      <p>Figure 1: CPU execution timeline (sequential execution on main thread)<!-- raw HTML omitted --><!-- raw HTML omitted -->. Note: cudaDeviceSynchronize in this trace is introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code. <!-- raw HTML omitted --><!-- raw HTML omitted --><a href="./code/1_cpu.py">Code source: 1_cpu.py</a></p>
     </figcaption>
 </figure>
 
@@ -279,9 +279,9 @@ This collaboration between CPU and GPU is called <strong>asynchronous execution<
   <button class="copy-code-button">copy</button>
 </div>
 <p>Below is a diagram:</p>
-<figure><img src="/llm/cpu_gpu_optimizations_4_torch/2_gpu_async_execution.png"
-    alt="Figure 2: CPU-GPU asynchronous execution timeline. Note: cudaDeviceSynchronize in this trace is also introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code."><figcaption>
-      <p>Figure 2: CPU-GPU asynchronous execution timeline<!-- raw HTML omitted --><!-- raw HTML omitted -->. Note: cudaDeviceSynchronize in this trace is also introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code.<!-- raw HTML omitted --></p>
+<figure><img src="/llm/cpu_gpu_optimizations_4_torch/images/2_gpu_async_execution.png"
+    alt="Figure 2: CPU-GPU asynchronous execution timeline. Note: cudaDeviceSynchronize in this trace is also introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code. Code source: 2_gpu.py"><figcaption>
+      <p>Figure 2: CPU-GPU asynchronous execution timeline<!-- raw HTML omitted --><!-- raw HTML omitted -->. Note: cudaDeviceSynchronize in this trace is also introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code. <!-- raw HTML omitted --><!-- raw HTML omitted --><a href="./code/2_gpu.py">Code source: 2_gpu.py</a></p>
     </figcaption>
 </figure>
 
@@ -307,9 +307,9 @@ Here is a modified example with synchronization:</p>
 </span></span><span style="display:flex;"><span><span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">&#34;GPU finishes. Time:&#34;</span>, t1 - t0)</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
-<figure><img src="/llm/cpu_gpu_optimizations_4_torch/3_synchronize_trace.png"
-    alt="Figure 3: CPU waits for GPU completion after synchronization"><figcaption>
-      <p>Figure 3: CPU waits for GPU completion after synchronization</p>
+<figure><img src="/llm/cpu_gpu_optimizations_4_torch/images/3_synchronize_trace.png"
+    alt="Figure 3: CPU waits for GPU completion after synchronization. Code source: 3_synchronize.py"><figcaption>
+      <p>Figure 3: CPU waits for GPU completion after synchronization. <!-- raw HTML omitted --><a href="./code/3_synchronize.py">Code source: 3_synchronize.py</a></p>
     </figcaption>
 </figure>
 
@@ -372,9 +372,9 @@ bottlenecks. These operations often require the <strong>CPU to know a data‑dep
 scan for non‑zero elements, and allocate an output tensor. The output tensor size is data‑dependent.
 Thus the CPU waits for these GPU operations to finish.
 There is no explicit <code>torch.cuda.synchronize</code> call, but this is still an implicit synchronization point.</p>
-<figure><img src="/llm/cpu_gpu_optimizations_4_torch/4_implicit_sync.png"
-    alt="Figure 4: Implicit synchronization in a data-dependent GPU operation"><figcaption>
-      <p>Figure 4: Implicit synchronization in a data-dependent GPU operation</p>
+<figure><img src="/llm/cpu_gpu_optimizations_4_torch/images/4_implicit_sync.png"
+    alt="Figure 4: Implicit synchronization in a data-dependent GPU operation. Code source: 4_implicit_synchronize.py"><figcaption>
+      <p>Figure 4: Implicit synchronization in a data-dependent GPU operation. <!-- raw HTML omitted --><a href="./code/4_implicit_synchronize.py">Code source: 4_implicit_synchronize.py</a></p>
     </figcaption>
 </figure>
 
@@ -458,9 +458,9 @@ Transfer:       [ Copy1 ]     [ Copy2 ]     [ Copy3 ]</code></pre>
 </span></span><span style="display:flex;"><span>    torch.cuda.synchronize()</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
-<figure><img src="/llm/cpu_gpu_optimizations_4_torch/5_no_double_buffer_trace.png"
-    alt="Figure 5.1: No overlap"><figcaption>
-      <p>Figure 5.1: No overlap</p>
+<figure><img src="/llm/cpu_gpu_optimizations_4_torch/images/5_no_double_buffer_trace.png"
+    alt="Figure 5.1: No overlap. Code source: 5_no_double_buffer.py"><figcaption>
+      <p>Figure 5.1: No overlap. <!-- raw HTML omitted --><a href="./code/5_no_double_buffer.py">Code source: 5_no_double_buffer.py</a></p>
     </figcaption>
 </figure>
 
@@ -516,9 +516,9 @@ Transfer:       [ Copy1 ]     [ Copy2 ]     [ Copy3 ]</code></pre>
 </span></span><span style="display:flex;"><span>torch.cuda.synchronize()</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
-<figure><img src="/llm/cpu_gpu_optimizations_4_torch/5_double_buffer_trace.png"
-    alt="Figure 5.2: Data-compute overlap with double buffering"><figcaption>
-      <p>Figure 5.2: Data-compute overlap with double buffering</p>
+<figure><img src="/llm/cpu_gpu_optimizations_4_torch/images/5_double_buffer_trace.png"
+    alt="Figure 5.2: Data-compute overlap with double buffering. Code source: 5_double_buffer.py"><figcaption>
+      <p>Figure 5.2: Data-compute overlap with double buffering. <!-- raw HTML omitted --><a href="./code/5_double_buffer.py">Code source: 5_double_buffer.py</a></p>
     </figcaption>
 </figure>
 
