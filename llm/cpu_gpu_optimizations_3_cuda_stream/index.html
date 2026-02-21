@@ -367,7 +367,7 @@ for (int i = 0; i &lt; num_streams; i++) {
 they share the same PCIe interconnect and are serviced by a limited number of copy engines.
 As a result, transfers in the same direction are typically serialized,
 while copy and compute can overlap, leading to a pipelined execution pattern.</p>
-<p>Comparing serial version and multi stream version of the memcpy using a graph below,
+<p>Comparing serial version and multi stream version of the memcpy using a diagram below,
 we can see the concurrency reduced the total execution time and bubbles.</p>
 <div class="code-block">
   <pre tabindex="0"><code>Time →
@@ -381,15 +381,16 @@ Copy Engine: |────H2D────|────H2D────|───�
 GPU:                     |───Kernel───|───Kernel───|───Kernel───|</code></pre>
   <button class="copy-code-button">copy</button>
 </div>
+<p>Below are Nsight profile examples:</p>
 <figure><img src="/llm/cpu_gpu_optimizations_3_cuda_stream/images/single_stream_report.png"
-    alt="Figure 1: Nsight Systems profile with a single CUDA stream."><figcaption>
-      <p>Figure 1: Nsight Systems profile with a single CUDA stream.</p>
+    alt="Figure 1: Nsight Systems profile with a single CUDA stream. Source code: single_stream.txt."><figcaption>
+      <p>Figure 1: Nsight Systems profile with a single CUDA stream. Source code: <a href="./code/single_stream.txt">single_stream.txt</a>.</p>
     </figcaption>
 </figure>
 
 <figure><img src="/llm/cpu_gpu_optimizations_3_cuda_stream/images/multi_stream_report.png"
-    alt="Figure 2: Nsight Systems profile with multiple CUDA streams."><figcaption>
-      <p>Figure 2: Nsight Systems profile with multiple CUDA streams.</p>
+    alt="Figure 2: Nsight Systems profile with multiple CUDA streams. Source code: multi_stream.txt."><figcaption>
+      <p>Figure 2: Nsight Systems profile with multiple CUDA streams. Source code: <a href="./code/multi_stream.txt">multi_stream.txt</a>.</p>
     </figcaption>
 </figure>
 

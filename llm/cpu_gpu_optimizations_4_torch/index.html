@@ -431,7 +431,7 @@ Transfer:       [ Copy1 ]     [ Copy2 ]     [ Copy3 ]</code></pre>
 </div>
 <p>This technique is similar to the double-buffering technique used in inference systems.</p>
 <p>The <code>DataLoader()</code> can be use with the similar idea to achieve concurrency, with arguments like <code>pin_memory=True</code> and <code>non_blocking=True</code>.</p>
-<p>Below are some code examples.</p>
+<p>Below are some code examples and <code>torch.profiler</code> profiles.</p>
 <p>Without double buffering and without pinned memory:</p>
 <div class="code-block">
   <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">torch</span>
