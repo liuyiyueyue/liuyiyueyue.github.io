@@ -6,8 +6,15 @@
     <description>Recent content in Llm on Yiyue Liu&#39;s Blog</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Thu, 19 Feb 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 13 Mar 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://liuyiyueyue.github.io/tags/llm/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>JAX (Part 1): Thinking in Pure Functions</title>
+      <link>https://liuyiyueyue.github.io/llm/jax_1/</link>
+      <pubDate>Fri, 13 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/jax_1/</guid>
+      <description>&lt;h3 class=&#34;heading&#34; id=&#34;pure-functions&#34;&gt;&#xA;  Pure functions&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#pure-functions&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;&lt;strong&gt;Functional Programming in JAX&lt;/strong&gt;&lt;/p&gt;&#xA;&lt;p&gt;JAX requires to express all computations as &lt;strong&gt;pure functions&lt;/strong&gt;, where any state change is represented explicitly through function arguments.&lt;/p&gt;&#xA;&lt;p&gt;Not allowed&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;Modifying or relying on global variables&lt;/li&gt;&#xA;&lt;li&gt;In-place mutation of arrays&lt;/li&gt;&#xA;&lt;li&gt;Hidden or implicit state&lt;/li&gt;&#xA;&lt;li&gt;Generating random numbers without explicitly passing a PRNG key&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;Allowed&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;Functions that depend only on their input arguments&lt;/li&gt;&#xA;&lt;li&gt;Outputs that are fully determined by inputs&lt;/li&gt;&#xA;&lt;li&gt;No side effects that modify the external world&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;&lt;strong&gt;Why?&lt;/strong&gt;&lt;/p&gt;</description>
+    </item>
     <item>
       <title>[4/4] CPU-GPU Optimization: PyTorch</title>
       <link>https://liuyiyueyue.github.io/llm/cpu_gpu_optimizations_4_torch/</link>

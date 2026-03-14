@@ -6,20 +6,48 @@
     <description>Recent content in Tags on Yiyue Liu&#39;s Blog</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Thu, 19 Feb 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 13 Mar 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://liuyiyueyue.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Cuda</title>
-      <link>https://liuyiyueyue.github.io/tags/cuda/</link>
-      <pubDate>Thu, 19 Feb 2026 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyueyue.github.io/tags/cuda/</guid>
+      <title>Compiler</title>
+      <link>https://liuyiyueyue.github.io/tags/compiler/</link>
+      <pubDate>Fri, 13 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/tags/compiler/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Jax</title>
+      <link>https://liuyiyueyue.github.io/tags/jax/</link>
+      <pubDate>Fri, 13 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/tags/jax/</guid>
       <description></description>
     </item>
     <item>
       <title>Llm</title>
       <link>https://liuyiyueyue.github.io/tags/llm/</link>
-      <pubDate>Thu, 19 Feb 2026 00:00:00 +0000</pubDate>
+      <pubDate>Fri, 13 Mar 2026 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/tags/llm/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Programming Languages</title>
+      <link>https://liuyiyueyue.github.io/tags/programming-languages/</link>
+      <pubDate>Fri, 13 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/tags/programming-languages/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Training</title>
+      <link>https://liuyiyueyue.github.io/tags/training/</link>
+      <pubDate>Fri, 13 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/tags/training/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Cuda</title>
+      <link>https://liuyiyueyue.github.io/tags/cuda/</link>
+      <pubDate>Thu, 19 Feb 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/tags/cuda/</guid>
       <description></description>
     </item>
     <item>

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    JAX (Part 1): Thinking in Pure Functions | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/jax_1/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/jax_1/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="JAX (Part 1): Thinking in Pure Functions">
+  <meta property="og:description" content="Pure functions # Functional Programming in JAX
+JAX requires to express all computations as pure functions, where any state change is represented explicitly through function arguments.
+Not allowed
+Modifying or relying on global variables In-place mutation of arrays Hidden or implicit state Generating random numbers without explicitly passing a PRNG key Allowed
+Functions that depend only on their input arguments Outputs that are fully determined by inputs No side effects that modify the external world Why?">
+  <meta property="og:locale" content="en">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2026-03-13T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-03-13T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Jax">
+    <meta property="article:tag" content="Training">
+    <meta property="article:tag" content="Programming Languages">
+    <meta property="article:tag" content="Compiler">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/jax_1/">JAX (Part 1): Thinking in Pure Functions</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">JAX (Part 1): Thinking in Pure Functions</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2026-03-13T00:00:00&#43;00:00">March 13, 2026</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <h3 class="heading" id="pure-functions">
+  Pure functions
+  <a class="anchor" href="#pure-functions">#</a>
+</h3>
+<p><strong>Functional Programming in JAX</strong></p>
+<p>JAX requires to express all computations as <strong>pure functions</strong>, where any state change is represented explicitly through function arguments.</p>
+<p>Not allowed</p>
+<ul>
+<li>Modifying or relying on global variables</li>
+<li>In-place mutation of arrays</li>
+<li>Hidden or implicit state</li>
+<li>Generating random numbers without explicitly passing a PRNG key</li>
+</ul>
+<p>Allowed</p>
+<ul>
+<li>Functions that depend only on their input arguments</li>
+<li>Outputs that are fully determined by inputs</li>
+<li>No side effects that modify the external world</li>
+</ul>
+<p><strong>Why?</strong></p>
+<p>In large-scale ML systems, hidden mutable state often becomes a liability.
+Object-oriented abstractions tend to hide parameters and state inside objects, which makes program transformations such as JIT compilation, autodiff, parallelization, and vectorization harder for the compiler to reason about.</p>
+<p>By contrast, functional programs make all dependencies explicit through function arguments, allowing systems like JAX to apply aggressive optimizations and transformations in a principled way.</p>
+<p>Example 1:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>a = 1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">stateful</span>(x):     <span style="color:#888;font-style:italic"># If &#39;a&#39; changes, the result also changes</span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">return</span> x + a
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">stateless</span>(a, x): <span style="color:#888;font-style:italic"># &#39;a&#39; is now passed explicitly</span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">return</span> a + x
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>result1 = stateful(x)
+</span></span><span style="display:flex;"><span>result2 = stateless(a, x)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Example 2:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>x[0] = 10             <span style="color:#888;font-style:italic"># Not allowed in JAX: NumPy-style in-place mutation</span>
+</span></span><span style="display:flex;"><span>x = x.at[0].set(10)   <span style="color:#888;font-style:italic"># Allowed in JAX: Functional update returns a new array without mutating the old one</span></span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>References: <a href="https://docs.jax.dev/en/latest/notebooks/Common_Gotchas_in_JAX.html#pure-functions">https://docs.jax.dev/en/latest/notebooks/Common_Gotchas_in_JAX.html#pure-functions</a></p>
+<h3 class="heading" id="from-pytorch-to-jax">
+  From PyTorch to JAX
+  <a class="anchor" href="#from-pytorch-to-jax">#</a>
+</h3>
+<p>The key challenge when moving from PyTorch to JAX is learning how to <strong>convert stateful code into stateless functions</strong>.</p>
+<p>In PyTorch, state is often hidden inside objects (e.g., model parameters stored in <code>nn.Module</code>). In JAX, however, all state must be passed explicitly as function inputs. This shift requires restructuring code so that computations are expressed as pure functions.</p>
+<p>A practical way to approach this transition:</p>
+<ul>
+<li>
+<p>Identify the inputs and outputs.
+Analyze what data goes into the computation and what results it produces.</p>
+</li>
+<li>
+<p>Understand what changes during execution.
+Determine which values are being updated or generated as the function runs.</p>
+</li>
+<li>
+<p>Track the state involved in each function call.
+Make sure you understand which pieces of state the computation depends on.</p>
+</li>
+<li>
+<p>Extract hidden state from objects.
+Take the state that PyTorch stores inside objects (such as model parameters or buffers) and turn them into explicit arguments to a pure function.</p>
+</li>
+</ul>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>PyTorch                                      JAX
+</span></span><span style="display:flex;"><span>(Stateful: hidden state)                     (Functional: explicit state)
+</span></span><span style="display:flex;"><span><span style="">─────────────────────────────────────</span>        <span style="">────────────────────────────────────</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Create model object                        # Create model object</span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Parameters live inside the model           # Parameters are created explicitly</span>
+</span></span><span style="display:flex;"><span>model = MyMod(arg_model)                     model = Model(arg_model)
+</span></span><span style="display:flex;"><span>                                             params = model.init(key)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Create optimizer                           # Create optimizer</span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Optimizer reads params from model          # Optimizer state is explicit</span>
+</span></span><span style="display:flex;"><span>opt = MyOpt(model.params, arg_opt)           opt = MyOpt(arg_opt, params)
+</span></span><span style="display:flex;"><span>                                             opt_state = opt.init(params)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Training loop                              # Training loop</span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">for</span> x, target <span style="font-weight:bold">in</span> data:                       <span style="font-weight:bold;text-decoration:underline">for</span> x, target <span style="font-weight:bold">in</span> data:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Forward pass                           # Define pure loss function</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Model implicitly uses internal params  # Parameters are passed explicitly</span>
+</span></span><span style="display:flex;"><span>    y = model(x)                             <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">loss_func</span>(params, x, target):
+</span></span><span style="display:flex;"><span>                                                 y = model.apply(params, x)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Compute loss                           # Compute loss</span>
+</span></span><span style="display:flex;"><span>    loss = loss_f(y, target)                     loss = loss_f(y, target)
+</span></span><span style="display:flex;"><span>                                                 <span style="font-weight:bold;text-decoration:underline">return</span> loss
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Backpropagation                        # Backpropagation</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Autograd accumulates gradients         # Transform pure function to get grads</span>
+</span></span><span style="display:flex;"><span>    loss.backward()                          loss, grads = jax.value_and_grad(loss_func)(
+</span></span><span style="display:flex;"><span>                                                 params, x, target
+</span></span><span style="display:flex;"><span>                                             )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Optimizer step                         # Optimizer step</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Mutates parameters in-place            # Returns new params and optimizer state</span>
+</span></span><span style="display:flex;"><span>    opt.step()                               opt_state, params = opt.step(
+</span></span><span style="display:flex;"><span>                                                 grads, opt_state, params
+</span></span><span style="display:flex;"><span>                                             )</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/llm/cpu_gpu_optimizations_4_torch/">
+                        [4/4] CPU-GPU Optimization: PyTorch
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+
