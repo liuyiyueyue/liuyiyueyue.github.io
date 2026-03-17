@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Parallelism on Yiyue Liu&#39;s Blog</title>
+    <link>https://liuyiyueyue.github.io/tags/parallelism/</link>
+    <description>Recent content in Parallelism on Yiyue Liu&#39;s Blog</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 08 Dec 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://liuyiyueyue.github.io/tags/parallelism/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Distributed Training: Parallelism Strategies</title>
+      <link>https://liuyiyueyue.github.io/llm/distributed_training_1_parallelism/</link>
+      <pubDate>Mon, 08 Dec 2025 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/distributed_training_1_parallelism/</guid>
+      <description>&lt;h3 class=&#34;heading&#34; id=&#34;why-parallelism&#34;&gt;&#xA;  Why Parallelism?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#why-parallelism&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;As training datasets grow, training takes longer.&lt;/p&gt;&#xA;&lt;p&gt;At the same time, models are getting larger, and some no longer fit on a single device without running out of memory.&lt;/p&gt;&#xA;&lt;p&gt;Distributed training addresses these scaling limits by partitioning computation across multiple devices or nodes.&lt;/p&gt;&#xA;&lt;p&gt;This is usually done through sharding or parallelism strategies, which mainly fall into two categories: &lt;strong&gt;data parallelism&lt;/strong&gt;, which partitions data, and &lt;strong&gt;model parallelism&lt;/strong&gt;, which partitions the model.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>
