@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"
+<html lang="en-us"
   dir="ltr">
 
 <head>
@@ -44,7 +44,7 @@
   <meta property="og:description" content="This is the final post in the “CPU‑GPU Optimization” series. Here we use kernel‑ and CUDA‑level techniques from earlier posts to explain asynchronous execution in PyTorch and how to reduce CPU‑GPU synchronization costs.
 Asynchronous Execution # When a PyTorch program runs on the CPU, each line executes in program order. Below is a simple example:
 import torch device = torch.device(&#34;cpu&#34;) x = torch.randn(50_000_000, device=device) y = torch.randn(50_000_000, device=device) z = torch.randn(50_000_000, device=device) copy Figure 1: CPU execution timeline (sequential execution on main thread). Note: cudaDeviceSynchronize in this trace is introduced by the PyTorch Profiler instrumentation, not explicitly called in the example code. Source code: 1_cpu.py">
-  <meta property="og:locale" content="en">
+  <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
     <meta property="article:published_time" content="2026-02-19T00:00:00+00:00">

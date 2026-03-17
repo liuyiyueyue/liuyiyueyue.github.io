@@ -2,11 +2,14 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://liuyiyueyue.github.io/tags/compiler/</loc>
-    <lastmod>2026-03-13T00:00:00+00:00</lastmod>
+    <loc>https://liuyiyueyue.github.io/llm/distributed_trainining_1_ddp/</loc>
+    <lastmod>2026-03-17T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/distributed-training/</loc>
+    <lastmod>2026-03-17T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/</loc>
-    <lastmod>2026-03-13T00:00:00+00:00</lastmod>
+    <lastmod>2026-03-17T00:00:00+00:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="zh"
@@ -14,21 +17,15 @@
                 />
     <xhtml:link
                 rel="alternate"
-                hreflang="en"
+                hreflang="en-us"
                 href="https://liuyiyueyue.github.io/"
                 />
   </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/jax/</loc>
-    <lastmod>2026-03-13T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/jax_1/</loc>
-    <lastmod>2026-03-13T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>https://liuyiyueyue.github.io/tags/llm/</loc>
-    <lastmod>2026-03-13T00:00:00+00:00</lastmod>
+    <lastmod>2026-03-17T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/</loc>
-    <lastmod>2026-03-13T00:00:00+00:00</lastmod>
+    <lastmod>2026-03-17T00:00:00+00:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="zh"
@@ -36,15 +33,15 @@
                 />
     <xhtml:link
                 rel="alternate"
-                hreflang="en"
+                hreflang="en-us"
                 href="https://liuyiyueyue.github.io/llm/"
                 />
   </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/programming-languages/</loc>
-    <lastmod>2026-03-13T00:00:00+00:00</lastmod>
+    <loc>https://liuyiyueyue.github.io/tags/pytorch/</loc>
+    <lastmod>2026-03-17T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/</loc>
-    <lastmod>2026-03-13T00:00:00+00:00</lastmod>
+    <lastmod>2026-03-17T00:00:00+00:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="zh"
@@ -52,9 +49,21 @@
                 />
     <xhtml:link
                 rel="alternate"
-                hreflang="en"
+                hreflang="en-us"
                 href="https://liuyiyueyue.github.io/tags/"
                 />
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/compiler/</loc>
+    <lastmod>2026-03-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/jax/</loc>
+    <lastmod>2026-03-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/jax_1/</loc>
+    <lastmod>2026-03-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/programming-languages/</loc>
+    <lastmod>2026-03-13T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/training/</loc>
     <lastmod>2026-03-13T00:00:00+00:00</lastmod>
@@ -66,9 +75,6 @@
     <lastmod>2026-02-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/optimization/</loc>
-    <lastmod>2026-02-19T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/pytorch/</loc>
     <lastmod>2026-02-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/cpu_gpu_optimizations_3_cuda_stream/</loc>
@@ -104,7 +110,7 @@
                 />
     <xhtml:link
                 rel="alternate"
-                hreflang="en"
+                hreflang="en-us"
                 href="https://liuyiyueyue.github.io/software_engineering/"
                 />
   </url><url>
@@ -119,7 +125,7 @@
                 />
     <xhtml:link
                 rel="alternate"
-                hreflang="en"
+                hreflang="en-us"
                 href="https://liuyiyueyue.github.io/archives/"
                 />
   </url>

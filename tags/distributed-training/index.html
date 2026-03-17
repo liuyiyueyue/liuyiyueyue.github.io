@@ -26,22 +26,22 @@
 <link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
 
-<link rel="alternate" type="application/rss+xml" href="https://liuyiyueyue.github.io/tags/jax/index.xml" title="Yiyue Liu's Blog">
+<link rel="alternate" type="application/rss+xml" href="https://liuyiyueyue.github.io/tags/distributed-training/index.xml" title="Yiyue Liu's Blog">
 <meta name="description" content=""/>
 
 
 
 <title>
     
-    Jax | Yiyue Liu&#39;s Blog
+    Distributed-Training | Yiyue Liu&#39;s Blog
     
 </title>
 
-<link rel="canonical" href="https://liuyiyueyue.github.io/tags/jax/"/>
+<link rel="canonical" href="https://liuyiyueyue.github.io/tags/distributed-training/"/>
 
-<meta property="og:url" content="https://liuyiyueyue.github.io/tags/jax/">
+<meta property="og:url" content="https://liuyiyueyue.github.io/tags/distributed-training/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="Jax">
+  <meta property="og:title" content="Distributed-Training">
   <meta property="og:description" content="A Tech Blog">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
@@ -206,9 +206,9 @@
 <div class="list-container">
 
     <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/tags/">Tags</a><span class="breadcrumbs-separator">/</span>
-        <a href="/tags/jax/">Jax</a></div>
+        <a href="/tags/distributed-training/">Distributed-Training</a></div>
 
-    <h1>Jax</h1>
+    <h1>Distributed-Training</h1>
     
 
     
@@ -228,13 +228,13 @@
     
 
     
-        <p class="line-date">13 Mar 2026 </p>
+        <p class="line-date">17 Mar 2026 </p>
     
 
     <div>
         <p class="line-title">
-            <a href="/llm/jax_1/">
-                JAX (Part 1): Thinking in Pure Functions
+            <a href="/llm/distributed_trainining_1_ddp/">
+                Distributed Training: PyTorch DP vs DDP
             </a>
         </p>
 
@@ -322,9 +322,111 @@
             
                 
             
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
         
         
-        <p class="line-summary"> Pure functions Functional Programming in JAX JAX requires to express all computations as pure functions, where any state change is represented explicitly through function arguments. Not allowed Modifying or relying on global variables In-place mutation of arrays Hidden or implicit state Generating random numbers without explicitly passing a PRNG key Allowed Functions that depend only on their input arguments Outputs that are fully determined by inputs No side effects that modify the external world Why? In large-scale ML systems, hidden mutable state often becomes a liability....</p>
+        <p class="line-summary"> nn.DataParallel (DP) DP is a single-node, multi-GPU parallelization method (单机多卡). How It Works PyTorch&amp;rsquo;s DataParallel, or DP, uses a parameter-server architecture and runs in a single process....</p>
         
     </div>
 </div>
