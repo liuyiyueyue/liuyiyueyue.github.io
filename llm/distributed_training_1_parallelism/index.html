@@ -252,14 +252,14 @@ This is usually done through sharding or parallelism strategies, which mainly fa
 </h3>
 <p><strong>Data parallelism (DP)</strong> runs different subsets of a batch on different GPUs.</p>
 <ul>
-<li>Common approaches evolve from <a href="../distributed_trainining_2_ddp/">parameter-server style <strong>DP</strong> to distributed style <strong>DDP</strong></a>, and then to memory-optimized methods such as <strong>ZeRO and FSDP</strong></li>
+<li>Common approaches evolve from <a href="../distributed_trainining_2_ddp/">parameter-server style <strong>DP</strong> to distributed style <strong>DDP</strong></a>, and then to memory-optimized methods such as <strong>ZeRO and FSDP</strong> <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>.</li>
 <li>DP sometimes also refers to the number of nodes, data-parallel degrees, or replica count</li>
 </ul>
 <p><strong>Model parallelism</strong> splits the model itself, including weights, optimizer states, and gradients, across GPUs.</p>
 <ul>
-<li><strong>Pipeline parallelism (PP)</strong> runs different layers of the model on different GPUs. (GPipe)</li>
-<li><strong>Tensor parallelism (TP)</strong> breaks up the math for a single operation such as a matrix multiplication within a layer. (GShard)</li>
-<li><strong>Mixture-of-Experts parallelism (EP)</strong> processes each example with only a subset of the experts in each layer.</li>
+<li><strong>Pipeline parallelism (PP)</strong> runs different layers of the model on different GPUs. Common approaches include PipeDream, PipeDream-2BW, HetPipe, GPipe, DAPPLE, and Chimera <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup> <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup> <sup id="fnref:6"><a href="#fn:6" class="footnote-ref" role="doc-noteref">6</a></sup> <sup id="fnref:7"><a href="#fn:7" class="footnote-ref" role="doc-noteref">7</a></sup> <sup id="fnref:8"><a href="#fn:8" class="footnote-ref" role="doc-noteref">8</a></sup> <sup id="fnref:9"><a href="#fn:9" class="footnote-ref" role="doc-noteref">9</a></sup>.</li>
+<li><strong>Tensor parallelism (TP)</strong> breaks up the math for a single operation such as a matrix multiplication within a layer. Common approaches include Megatron-LM, Mesh-TensorFlow, Colossal-AI, and GShard <sup id="fnref:10"><a href="#fn:10" class="footnote-ref" role="doc-noteref">10</a></sup> <sup id="fnref:11"><a href="#fn:11" class="footnote-ref" role="doc-noteref">11</a></sup> <sup id="fnref:12"><a href="#fn:12" class="footnote-ref" role="doc-noteref">12</a></sup> <sup id="fnref:13"><a href="#fn:13" class="footnote-ref" role="doc-noteref">13</a></sup>.</li>
+<li><strong>Mixture-of-Experts parallelism (EP)</strong> processes each example with only a subset of the experts in each layer <sup id="fnref:14"><a href="#fn:14" class="footnote-ref" role="doc-noteref">14</a></sup> <sup id="fnref1:13"><a href="#fn:13" class="footnote-ref" role="doc-noteref">13</a></sup>.</li>
 <li><strong>Sequence parallelism (SP)</strong> splits along the sequence length.</li>
 </ul>
 <h3 class="heading" id="multi-dimension-parallelism">
@@ -295,9 +295,9 @@ This is usually done through sharding or parallelism strategies, which mainly fa
             </tr>
         </tbody>
     </table>
-</div><h3 class="heading" id="optimization-steps">
-  Optimization Steps
-  <a class="anchor" href="#optimization-steps">#</a>
+</div><h3 class="heading" id="common-optimization-steps">
+  Common Optimization Steps
+  <a class="anchor" href="#common-optimization-steps">#</a>
 </h3>
 <p>A typical development workflow for distributed training looks like this:</p>
 <ol>
@@ -317,6 +317,53 @@ This is usually done through sharding or parallelism strategies, which mainly fa
 <p>For extremely large models, you may need to combine multiple distributed strategies, including pipeline parallelism, tensor parallelism, data parallelism, and <code>ZeRO</code>.</p>
 </li>
 </ol>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>PyTorch Distributed: Experiences on Accelerating Data Parallel Training. <a href="https://arxiv.org/abs/2006.15704">https://arxiv.org/abs/2006.15704</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p>ZeRO: Memory Optimizations Toward Training Trillion Parameter Models. <a href="https://dl.acm.org/doi/10.5555/3433701.3433727">https://dl.acm.org/doi/10.5555/3433701.3433727</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:3">
+<p>Fully Sharded Data Parallel: Faster AI Training with Fewer GPUs. <a href="https://engineering.fb.com/2021/07/15/open-source/fsdp/">https://engineering.fb.com/2021/07/15/open-source/fsdp/</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:4">
+<p>PipeDream: Fast and Efficient Pipeline Parallel DNN Training. <a href="https://arxiv.org/abs/1806.03377">https://arxiv.org/abs/1806.03377</a>&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:5">
+<p>Memory-Efficient Pipeline-Parallel DNN Training. <a href="https://arxiv.org/abs/2006.09503">https://arxiv.org/abs/2006.09503</a>&#160;<a href="#fnref:5" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:6">
+<p>HetPipe: Enabling Large DNN Training on (Whimpy) Heterogeneous GPU Clusters through Integration of Pipelined Model Parallelism and Data Parallelism. <a href="https://www.usenix.org/conference/atc20/presentation/park">https://www.usenix.org/conference/atc20/presentation/park</a>&#160;<a href="#fnref:6" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:7">
+<p>GPipe: Efficient Training of Giant Neural Networks using Pipeline Parallelism. <a href="https://arxiv.org/abs/1811.06965">https://arxiv.org/abs/1811.06965</a>&#160;<a href="#fnref:7" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:8">
+<p>DAPPLE: A Pipelined Data Parallel Approach for Training Large Models. <a href="https://arxiv.org/abs/2007.01045">https://arxiv.org/abs/2007.01045</a>&#160;<a href="#fnref:8" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:9">
+<p>Chimera: Efficiently Training Large-Scale Neural Networks with Bidirectional Pipelines. <a href="https://dl.acm.org/doi/10.1145/3458817.3476145">https://dl.acm.org/doi/10.1145/3458817.3476145</a>&#160;<a href="#fnref:9" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:10">
+<p>Efficient Large-Scale Language Model Training on GPU Clusters. <a href="https://arxiv.org/abs/2104.04473">https://arxiv.org/abs/2104.04473</a>&#160;<a href="#fnref:10" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:11">
+<p>Mesh-TensorFlow: Deep Learning for Supercomputers. <a href="https://arxiv.org/abs/1811.02084">https://arxiv.org/abs/1811.02084</a>&#160;<a href="#fnref:11" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:12">
+<p>Colossal-AI: A Unified Deep Learning System For Large-Scale Parallel Training. <a href="https://arxiv.org/abs/2110.14883">https://arxiv.org/abs/2110.14883</a>&#160;<a href="#fnref:12" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:13">
+<p>GShard: Scaling Giant Models with Conditional Computation and Automatic Sharding. <a href="https://arxiv.org/abs/2006.16668">https://arxiv.org/abs/2006.16668</a>&#160;<a href="#fnref:13" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref1:13" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:14">
+<p>Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer. <a href="https://arxiv.org/abs/1701.06538">https://arxiv.org/abs/1701.06538</a>&#160;<a href="#fnref:14" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
 
     </div>
   </article>
