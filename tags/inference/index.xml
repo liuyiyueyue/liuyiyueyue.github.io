@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Inference on Yiyue Liu&#39;s Blog</title>
+    <link>https://liuyiyueyue.github.io/tags/inference/</link>
+    <description>Recent content in Inference on Yiyue Liu&#39;s Blog</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 13 Dec 2023 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://liuyiyueyue.github.io/tags/inference/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>KV Cache</title>
+      <link>https://liuyiyueyue.github.io/llm/inference_1_kv_cache/</link>
+      <pubDate>Wed, 13 Dec 2023 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/inference_1_kv_cache/</guid>
+      <description>&lt;h3 class=&#34;heading&#34; id=&#34;what-is-kv-cache&#34;&gt;&#xA;  What is KV Cache?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#what-is-kv-cache&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;In LLM &lt;strong&gt;inference&lt;/strong&gt;, &lt;strong&gt;KV cache&lt;/strong&gt; is used to improve performance by avoiding repeated computation of the attention &lt;strong&gt;Key&lt;/strong&gt; and &lt;strong&gt;Value&lt;/strong&gt; tensors for all previously generated tokens.&lt;/p&gt;&#xA;&lt;p&gt;With KV Cache, when generating token &lt;code&gt;t+1&lt;/code&gt;, the model only needs to compute &lt;code&gt;Q_{t+1}&lt;/code&gt;, &lt;code&gt;K_{t+1}&lt;/code&gt;, and &lt;code&gt;V_{t+1}&lt;/code&gt;. The new &lt;code&gt;K_{t+1}&lt;/code&gt; and &lt;code&gt;V_{t+1}&lt;/code&gt; are then appended to the cache, and &lt;code&gt;Q_{t+1}&lt;/code&gt; attends over the entire cached sequence of keys and values.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

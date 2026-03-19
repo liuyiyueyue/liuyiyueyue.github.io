@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en-us"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    KV Cache | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/inference_1_kv_cache/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/inference_1_kv_cache/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="KV Cache">
+  <meta property="og:description" content="What is KV Cache? # In LLM inference, KV cache is used to improve performance by avoiding repeated computation of the attention Key and Value tensors for all previously generated tokens.
+With KV Cache, when generating token t&#43;1, the model only needs to compute Q_{t&#43;1}, K_{t&#43;1}, and V_{t&#43;1}. The new K_{t&#43;1} and V_{t&#43;1} are then appended to the cache, and Q_{t&#43;1} attends over the entire cached sequence of keys and values.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2023-12-13T00:00:00+00:00">
+    <meta property="article:modified_time" content="2023-12-13T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Inference">
+    <meta property="article:tag" content="Optimization">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/inference_1_kv_cache/">KV Cache</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">KV Cache</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2023-12-13T00:00:00&#43;00:00">December 13, 2023</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <h3 class="heading" id="what-is-kv-cache">
+  What is KV Cache?
+  <a class="anchor" href="#what-is-kv-cache">#</a>
+</h3>
+<p>In LLM <strong>inference</strong>, <strong>KV cache</strong> is used to improve performance by avoiding repeated computation of the attention <strong>Key</strong> and <strong>Value</strong> tensors for all previously generated tokens.</p>
+<p>With KV Cache, when generating token <code>t+1</code>, the model only needs to compute <code>Q_{t+1}</code>, <code>K_{t+1}</code>, and <code>V_{t+1}</code>. The new <code>K_{t+1}</code> and <code>V_{t+1}</code> are then appended to the cache, and <code>Q_{t+1}</code> attends over the entire cached sequence of keys and values.</p>
+<p>It is important to note that KV cache only applies to the <strong>decoder</strong>, together with <strong>masked self-attention</strong>. KV caching happens across multiple token-generation steps and only exists in the decoder, either in decoder-only models such as GPT or in the decoder portion of encoder-decoder models such as T5. Models like BERT are not generative, so they do not use KV cache.</p>
+<h3 class="heading" id="why-is-there-a-kv-cache-but-no-q-cache">
+  Why Is There a KV Cache but No Q Cache?
+  <a class="anchor" href="#why-is-there-a-kv-cache-but-no-q-cache">#</a>
+</h3>
+<ul>
+<li>In the decoder stage, each inference step only uses the <strong>current query</strong>. Once that step is finished, that query will not be reused in later steps, so there is no real benefit to caching <code>Q</code>.</li>
+<li>In contrast, each new decoder step needs access to the <strong>current and all previous</strong> keys and values. The <code>K</code> and <code>V</code> tensors computed in this step will be used again immediately in the next step, which is why caching them speeds up inference.</li>
+</ul>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+            <div class="single-pagination-container-next">
+                <div class="single-pagination-text">
+                    <a href="/llm/distributed_training_1_parallelism/">
+                        Distributed Training: Parallelism Strategies
+                    </a>
+                </div>
+                <div class="single-pagination-text">→</div>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+

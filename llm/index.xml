@@ -64,5 +64,12 @@
       <guid>https://liuyiyueyue.github.io/llm/distributed_training_1_parallelism/</guid>
       <description>&lt;h3 class=&#34;heading&#34; id=&#34;why-parallelism&#34;&gt;&#xA;  Why Parallelism?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#why-parallelism&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;As training datasets grow, training takes longer.&lt;/p&gt;&#xA;&lt;p&gt;At the same time, models are getting larger, and some no longer fit on a single device without running out of memory.&lt;/p&gt;&#xA;&lt;p&gt;Distributed training addresses these scaling limits by partitioning computation across multiple devices or nodes, and trade communication overhead for lower memory usage.&lt;/p&gt;&#xA;&lt;p&gt;This is usually done through sharding or parallelism strategies, which mainly fall into two categories: &lt;strong&gt;data parallelism&lt;/strong&gt;, which partitions data, and &lt;strong&gt;model parallelism&lt;/strong&gt;, which partitions the model.&lt;/p&gt;</description>
     </item>
+    <item>
+      <title>KV Cache</title>
+      <link>https://liuyiyueyue.github.io/llm/inference_1_kv_cache/</link>
+      <pubDate>Wed, 13 Dec 2023 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/inference_1_kv_cache/</guid>
+      <description>&lt;h3 class=&#34;heading&#34; id=&#34;what-is-kv-cache&#34;&gt;&#xA;  What is KV Cache?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#what-is-kv-cache&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;In LLM &lt;strong&gt;inference&lt;/strong&gt;, &lt;strong&gt;KV cache&lt;/strong&gt; is used to improve performance by avoiding repeated computation of the attention &lt;strong&gt;Key&lt;/strong&gt; and &lt;strong&gt;Value&lt;/strong&gt; tensors for all previously generated tokens.&lt;/p&gt;&#xA;&lt;p&gt;With KV Cache, when generating token &lt;code&gt;t+1&lt;/code&gt;, the model only needs to compute &lt;code&gt;Q_{t+1}&lt;/code&gt;, &lt;code&gt;K_{t+1}&lt;/code&gt;, and &lt;code&gt;V_{t+1}&lt;/code&gt;. The new &lt;code&gt;K_{t+1}&lt;/code&gt; and &lt;code&gt;V_{t+1}&lt;/code&gt; are then appended to the cache, and &lt;code&gt;Q_{t+1}&lt;/code&gt; attends over the entire cached sequence of keys and values.&lt;/p&gt;</description>
+    </item>
   </channel>
 </rss>
