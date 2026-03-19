@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Transformer on Yiyue Liu&#39;s Blog</title>
+    <link>https://liuyiyueyue.github.io/tags/transformer/</link>
+    <description>Recent content in Transformer on Yiyue Liu&#39;s Blog</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 12 Jul 2023 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://liuyiyueyue.github.io/tags/transformer/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Transformer</title>
+      <link>https://liuyiyueyue.github.io/llm/transformer/</link>
+      <pubDate>Wed, 12 Jul 2023 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/transformer/</guid>
+      <description>&lt;h2 class=&#34;heading&#34; id=&#34;overview&#34;&gt;&#xA;  Overview&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#overview&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h2&gt;&#xA;&lt;p&gt;&lt;strong&gt;Transformer&lt;/strong&gt; is a neural network architecture designed to process sequences. It was introduced as an alternative to RNN-based models, with the core idea that a model should not pass information only step by step through time. Instead, it should be able to directly look at the whole sequence and decide which parts matter most.&lt;/p&gt;&#xA;&lt;p&gt;The key mechanism is &lt;strong&gt;attention&lt;/strong&gt;, which aggregates information from a sequence by assigning different weights to different tokens. Because of this, a Transformer can model long-range dependencies more effectively than traditional recurrent models.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

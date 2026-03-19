@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en-us"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    Transformer | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/transformer/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/transformer/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="Transformer">
+  <meta property="og:description" content="Overview # Transformer is a neural network architecture designed to process sequences. It was introduced as an alternative to RNN-based models, with the core idea that a model should not pass information only step by step through time. Instead, it should be able to directly look at the whole sequence and decide which parts matter most.
+The key mechanism is attention, which aggregates information from a sequence by assigning different weights to different tokens. Because of this, a Transformer can model long-range dependencies more effectively than traditional recurrent models.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2023-07-12T00:00:00+00:00">
+    <meta property="article:modified_time" content="2023-07-12T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Transformer">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/transformer/">Transformer</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">Transformer</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2023-07-12T00:00:00&#43;00:00">July 12, 2023</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <h2 class="heading" id="overview">
+  Overview
+  <a class="anchor" href="#overview">#</a>
+</h2>
+<p><strong>Transformer</strong> is a neural network architecture designed to process sequences. It was introduced as an alternative to RNN-based models, with the core idea that a model should not pass information only step by step through time. Instead, it should be able to directly look at the whole sequence and decide which parts matter most.</p>
+<p>The key mechanism is <strong>attention</strong>, which aggregates information from a sequence by assigning different weights to different tokens. Because of this, a Transformer can model long-range dependencies more effectively than traditional recurrent models.</p>
+<p>A standard Transformer contains an <strong>encoder</strong> and a <strong>decoder</strong>.</p>
+<ul>
+<li>The <strong>encoder</strong> is built from repeated blocks of multi-head self-attention, residual connections, feed-forward layers, and layer normalization.</li>
+<li>The <strong>decoder</strong> is built from masked multi-head self-attention, encoder-decoder attention, feed-forward layers, residual connections, and layer normalization.</li>
+</ul>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 1050; --h: 700;">
+            <img loading="lazy" alt="Transformer architecture" src="/llm/transformer/transformer.png" width="1050" height="700">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
+<p>In practice, modern large language models often use decoder-only variants, but the original encoder-decoder design is still the standard starting point for understanding the architecture.</p>
+<h2 class="heading" id="transformer-vs-rnn">
+  Transformer vs. RNN
+  <a class="anchor" href="#transformer-vs-rnn">#</a>
+</h2>
+<p>Transformer and RNN both aim to model sequence data, and both use nonlinear layers such as MLPs to transform representations into richer semantic spaces. The main difference is how they pass sequence information.</p>
+<p>In an <strong>RNN</strong>, information is propagated recurrently:</p>
+<ul>
+<li>the hidden state at time step <code>t</code> is passed to time step <code>t + 1</code></li>
+<li>each step depends on previous steps in order</li>
+<li>computation is naturally sequential</li>
+</ul>
+<p>This design makes it difficult to parallelize training across tokens. It also makes learning long-range dependencies harder, because information has to travel through many recurrent steps.</p>
+<p>In a <strong>Transformer</strong>, sequence information is propagated through attention:</p>
+<ul>
+<li>each token can directly attend to all relevant tokens in the sequence</li>
+<li>the model does not need to move information one step at a time</li>
+<li>training is much more parallelizable</li>
+</ul>
+<p>So the difference is not that one understands sequences and the other does not. Both do. The difference is <strong>how sequence information is transmitted</strong> (如何传递序列信息):</p>
+<ul>
+<li><strong>RNN</strong>: passes information forward through recurrent hidden states</li>
+<li><strong>Transformer</strong>: aggregates information globally through attention</li>
+</ul>
+<h2 class="heading" id="attention-and-its-math">
+  Attention and Its Math
+  <a class="anchor" href="#attention-and-its-math">#</a>
+</h2>
+<p>Attention measures how much one token should focus on another token. It can be understood as a weighted aggregation of sequence information, regardless of distance in the sequence.</p>
+<p>At a high level:</p>
+<ul>
+<li><code>weight = similarity(query, key)</code></li>
+<li><code>output = weighted sum of values</code></li>
+</ul>
+<h3 class="heading" id="self-attention">
+  Self-Attention
+  <a class="anchor" href="#self-attention">#</a>
+</h3>
+<p>In <strong>self-attention</strong>, <code>Q</code>, <code>K</code>, and <code>V</code> all come from the same input sequence:</p>
+<ul>
+<li><strong>Query (Q)</strong>: what the current token is looking for</li>
+<li><strong>Key (K)</strong>: what each token offers for matching</li>
+<li><strong>Value (V)</strong>: the information carried by each token</li>
+</ul>
+<p>So self-attention means that each token compares itself with all tokens in the same sequence and then gathers the most relevant information.</p>
+<h3 class="heading" id="masked-attention">
+  Masked Attention
+  <a class="anchor" href="#masked-attention">#</a>
+</h3>
+<p>In <strong>masked self-attention</strong>, token <code>t</code> is not allowed to see tokens after <code>t</code>. This is required in autoregressive language models, where prediction at position <code>t</code> must not use future tokens.</p>
+<h3 class="heading" id="multi-head-attention">
+  Multi-Head Attention
+  <a class="anchor" href="#multi-head-attention">#</a>
+</h3>
+<p><strong>Multi-head attention</strong> means using several attention heads in parallel. Each head can learn a different type of relation, such as syntax, local dependency, or long-range dependency. This is loosely similar to how different CNN channels can capture different patterns.</p>
+<h3 class="heading" id="scaled-dot-product-attention">
+  Scaled Dot-Product Attention
+  <a class="anchor" href="#scaled-dot-product-attention">#</a>
+</h3>
+<p>The Transformer paper defines scaled dot-product attention as:</p>
+
+$$
+\operatorname{Attention}(Q, K, V)
+=
+\operatorname{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right)V
+$$
+
+
+<p>Here,</p>
+<ul>
+<li>$Q$ is the query matrix, $K$ is the key matrix, and $V$ is the value matrix.</li>
+<li>The term $QK^\top$ is the inner product (cosine) and measures <strong>similarity</strong> between tokens.</li>
+<li>$\sqrt{d_k}$ rescales the scores for numerical stability.</li>
+<li>$\frac{QK^\top}{\sqrt{d_k}}$ is called the <strong>attention weight matrix</strong>.</li>
+<li><code>softmax</code> turns the scores into attention weights used to combine the values.</li>
+</ul>
+<p>So we calculated the attetion using two matrix multiplications. This makes parallel execution easy.</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 1053; --h: 627;">
+            <img loading="lazy" alt="Attention mechanism" src="/llm/transformer/attention.png" width="1053" height="627">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
+<h2 class="heading" id="layer-norm-vs-batch-norm">
+  Layer Norm vs. Batch Norm
+  <a class="anchor" href="#layer-norm-vs-batch-norm">#</a>
+</h2>
+<p>Both layer normalization and batch normalization are used to stabilize training, but they normalize over different dimensions.</p>
+<p><strong>Batch normalization</strong> computes statistics across the batch. Its behavior depends on the distribution of examples inside the mini-batch. This works well in many vision settings, but it is less suitable for sequence models when:</p>
+<ul>
+<li>sequence lengths vary a lot</li>
+<li>token distributions change across positions</li>
+<li>batch statistics become unstable or less meaningful</li>
+</ul>
+<p><strong>Layer normalization</strong> computes statistics within each individual token representation. It does not depend on other examples in the batch, which makes it more stable for variable-length sequence modeling.</p>
+<p>This is why Transformers typically use <strong>layer normalization instead of batch normalization</strong>. For language tasks, each token representation should be normalized independently, without relying on the composition of the current mini-batch.</p>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+            <div class="single-pagination-container-next">
+                <div class="single-pagination-text">
+                    <a href="/llm/inference_1_kv_cache/">
+                        KV Cache
+                    </a>
+                </div>
+                <div class="single-pagination-text">→</div>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+  <link rel="stylesheet" 
+  href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  
+<script defer 
+  src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+
+<script defer
+  src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body);"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    renderMathInElement(document.body, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false }
+      ]
+    });
+  });
+</script>
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+
