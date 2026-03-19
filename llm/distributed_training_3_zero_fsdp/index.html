@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en-us"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    Distributed Training: ZeRO and FSDP | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/distributed_training_3_zero_fsdp/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/distributed_training_3_zero_fsdp/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="Distributed Training: ZeRO and FSDP">
+  <meta property="og:description" content="Two Types of Memory # We refer to the memory used by model parameters as static memory, meaning its lifetime is effectively unbounded and it must always occupy HBM. The optimizer states, model parameters, and usually gradients are static memory, since they must persist across training steps rather than being freed immediately after one operator finishes. We refer to activation memory as dynamic memory, meaning its lifetime is short and its memory can be reused. Activations have dynamic memory since they are created during forward pass and released or recomputed after backward. ZeRo 1 # In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out. As a result, memory often becomes the main bottleneck in data-parallel training.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2025-12-15T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-12-15T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Distributed-Training">
+    <meta property="article:tag" content="Zero">
+    <meta property="article:tag" content="Fsdp">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/distributed_training_3_zero_fsdp/">Distributed Training: ZeRO and FSDP</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">Distributed Training: ZeRO and FSDP</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2025-12-15T00:00:00&#43;00:00">December 15, 2025</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <h3 class="heading" id="two-types-of-memory">
+  Two Types of Memory
+  <a class="anchor" href="#two-types-of-memory">#</a>
+</h3>
+<ul>
+<li>We refer to the memory used by model parameters as <strong>static memory</strong>, meaning its lifetime is effectively unbounded and it must always occupy HBM. The optimizer states, model parameters, and usually gradients are static memory, since they must persist across training steps rather than being freed immediately after one operator finishes.</li>
+<li>We refer to activation memory as <strong>dynamic memory</strong>, meaning its lifetime is short and its memory can be reused. Activations have dynamic memory since they are created during forward pass and released or recomputed after backward.</li>
+</ul>
+<h3 class="heading" id="zero">
+  ZeRo <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>
+  <a class="anchor" href="#zero">#</a>
+</h3>
+<p>In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out. As a result, memory often becomes the main bottleneck in data-parallel training.</p>
+<p>Microsoft proposed a highly influential algorithm called <strong>Zero Redundancy Optimizer (ZeRO)</strong> to address the memory limitations of data-parallel training, and later built the distributed training framework <strong>DeepSpeed</strong> on top of PyTorch around it. Its core idea is to partition model states evenly across GPUs, so the memory usage on each GPU becomes inversely proportional to the degree of data parallelism, while communication efficiency remains largely unaffected.</p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>ZeRO Stage</th>
+                <th>What’s Sharded</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Stage 1</strong></td>
+                <td>Optimizer states</td>
+            </tr>
+            <tr>
+                <td><strong>Stage 2</strong></td>
+                <td>+ Gradients</td>
+            </tr>
+            <tr>
+                <td><strong>Stage 3</strong></td>
+                <td>+ Model parameters</td>
+            </tr>
+        </tbody>
+    </table>
+</div><h3 class="heading" id="fsdp">
+  FSDP <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>
+  <a class="anchor" href="#fsdp">#</a>
+</h3>
+<p>Facebook introduced <strong>FSDP (Fully Sharded Data Parallel)</strong> as PyTorch’s counterpart to Microsoft’s <strong>ZeRO</strong> in DeepSpeed. FSDP can be viewed as an optimized version of <strong>DDP</strong> within PyTorch. It is still a form of data parallelism, but unlike DDP, FSDP uses <strong>parameter sharding</strong>. In other words, model parameters are partitioned across GPUs, whereas in DDP each GPU keeps a full copy of the parameters. This allows FSDP to achieve better training efficiency, both in terms of speed and GPU memory usage.</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fsdp_module = FullyShardedDataParallel(module)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<figure><img src="/llm/distributed_training_3_zero_fsdp/images/fsdp-graph-2.png"
+    alt="FSDP execution flow."><figcaption>
+      <p>FSDP execution flow.</p>
+    </figcaption>
+</figure>
+
+<p><strong>Constructor</strong></p>
+<ul>
+<li>Shard the model parameters and distribute the shards across ranks.</li>
+</ul>
+<p><strong>Forward pass</strong></p>
+<ol>
+<li>For each FSDP unit, run <code>all_gather</code> to collect parameter shards from all ranks, so each rank temporarily holds the full parameters for the current unit. This is also why FSDP still belongs to data parallelism: although the parameters are sharded for storage, computation still uses the original full parameters rather than computing directly on weight shards as in tensor parallelism.</li>
+<li>Execute the forward computation.</li>
+<li>Reshard the parameters, discard the portions that do not belong to the current rank, and free the corresponding memory.</li>
+</ol>
+<p><strong>Backward pass</strong></p>
+<ol>
+<li>For each FSDP unit, run <code>all_gather</code> again to collect parameter shards from all ranks.</li>
+<li>Execute the backward computation.</li>
+<li>Reshard the parameters again, discard the portions that do not belong to the current rank, and free the corresponding memory.</li>
+<li>Run <code>reduce_scatter</code> to synchronize gradients across ranks.</li>
+</ol>
+<p><strong>Optimizer updates</strong></p>
+<ul>
+<li>Each rank updates the local shard of gradients and parameters that it owns.</li>
+</ul>
+<h4 class="heading" id="fsdp-2">
+  FSDP 2
+  <a class="anchor" href="#fsdp-2">#</a>
+</h4>
+<p>略 ;-) 写累了</p>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>ZeRO: Memory Optimizations Toward Training Trillion Parameter Models. arXiv, October 4, 2019. <a href="https://arxiv.org/abs/1910.02054">https://arxiv.org/abs/1910.02054</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p>Fully Sharded Data Parallel: Faster AI Training with Fewer GPUs. Meta Engineering, July 15, 2021. <a href="https://engineering.fb.com/2021/07/15/open-source/fsdp/">https://engineering.fb.com/2021/07/15/open-source/fsdp/</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:3">
+<p>PyTorch FSDP: Experiences on Scaling Fully Sharded Data Parallel. arXiv, April 21, 2023. <a href="https://arxiv.org/abs/2304.11277">https://arxiv.org/abs/2304.11277</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/llm/distributed_trainining_2_ddp/">
+                        Distributed Training: PyTorch DP vs DDP
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+            <div class="single-pagination-container-next">
+                <div class="single-pagination-text">
+                    <a href="/llm/cpu_gpu_optimizations_1_kernel/">
+                        [1/4] CPU-GPU Optimization: Pinned Memory in Linux Kernel
+                    </a>
+                </div>
+                <div class="single-pagination-text">→</div>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+

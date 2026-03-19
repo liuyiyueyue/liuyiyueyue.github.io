@@ -43,7 +43,7 @@
   <meta property="og:title" content="Distributed Training: Parallelism Strategies">
   <meta property="og:description" content="Why Parallelism? # As training datasets grow, training takes longer.
 At the same time, models are getting larger, and some no longer fit on a single device without running out of memory.
-Distributed training addresses these scaling limits by partitioning computation across multiple devices or nodes.
+Distributed training addresses these scaling limits by partitioning computation across multiple devices or nodes, and trade communication overhead for lower memory usage.
 This is usually done through sharding or parallelism strategies, which mainly fall into two categories: data parallelism, which partitions data, and model parallelism, which partitions the model.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
@@ -243,7 +243,7 @@ This is usually done through sharding or parallelism strategies, which mainly fa
 </h3>
 <p>As training datasets grow, training takes longer.</p>
 <p>At the same time, models are getting larger, and some no longer fit on a single device without running out of memory.</p>
-<p>Distributed training addresses these scaling limits by partitioning computation across multiple devices or nodes.</p>
+<p>Distributed training addresses these scaling limits by partitioning computation across multiple devices or nodes, and trade communication overhead for lower memory usage.</p>
 <p>This is usually done through sharding or parallelism strategies, which mainly fall into two categories: <strong>data parallelism</strong>, which partitions data, and <strong>model parallelism</strong>, which partitions the model.</p>
 <p>This post gives a high-level overview of both. Later posts will examine each strategy in more detail.</p>
 <h3 class="heading" id="common-parallelism-strategies">
