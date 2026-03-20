@@ -242,6 +242,91 @@ With KV Cache, when generating token t&#43;1, the model only needs to compute Q_
 <p>In LLM <strong>inference</strong>, <strong>KV cache</strong> is used to improve performance by avoiding repeated computation of the attention <strong>Key</strong> and <strong>Value</strong> tensors for all previously generated tokens.</p>
 <p>With KV Cache, when generating token <code>t+1</code>, the model only needs to compute <code>Q_{t+1}</code>, <code>K_{t+1}</code>, and <code>V_{t+1}</code>. The new <code>K_{t+1}</code> and <code>V_{t+1}</code> are then appended to the cache, and <code>Q_{t+1}</code> attends over the entire cached sequence of keys and values.</p>
 <p>It is important to note that KV cache only applies to the <strong>decoder</strong>, together with <strong>masked self-attention</strong>. KV caching happens across multiple token-generation steps and only exists in the decoder, either in decoder-only models such as GPT or in the decoder portion of encoder-decoder models such as T5. Models like BERT are not generative, so they do not use KV cache.</p>
+<h3 class="heading" id="visual-intuition">
+  Visual Intuition
+  <a class="anchor" href="#visual-intuition">#</a>
+</h3>
+<p>The diagrams below show the difference between regular masked self-attention and the KV-cache version used during autoregressive decoder stage. <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
+<p>Without KV Cache:
+
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 1440; --h: 561;">
+            <img loading="lazy" alt="Masked self-attention over the current decoder step" src="/llm/inference_1_kv_cache/masked-self-attention-step.png" width="1440" height="561">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 1440; --h: 500;">
+            <img loading="lazy" alt="Masked self-attention over the full sequence" src="/llm/inference_1_kv_cache/masked-self-attention-full.png" width="1440" height="500">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
+<p>With KV Cache:
+
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 1440; --h: 532;">
+            <img loading="lazy" alt="KV cache reusing previously computed keys and values" src="/llm/inference_1_kv_cache/kv-cache-step.png" width="1440" height="532">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
 <h3 class="heading" id="why-is-there-a-kv-cache-but-no-q-cache">
   Why Is There a KV Cache but No Q Cache?
   <a class="anchor" href="#why-is-there-a-kv-cache-but-no-q-cache">#</a>
@@ -250,6 +335,14 @@ With KV Cache, when generating token t&#43;1, the model only needs to compute Q_
 <li>In the decoder stage, each inference step only uses the <strong>current query</strong>. Once that step is finished, that query will not be reused in later steps, so there is no real benefit to caching <code>Q</code>.</li>
 <li>In contrast, each new decoder step needs access to the <strong>current and all previous</strong> keys and values. The <code>K</code> and <code>V</code> tensors computed in this step will be used again immediately in the next step, which is why caching them speeds up inference.</li>
 </ul>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>LLM 推理优化之 KV Cache. SayHelloCode, Zhihu. <a href="https://zhuanlan.zhihu.com/p/673923443">https://zhuanlan.zhihu.com/p/673923443</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
 
     </div>
   </article>
