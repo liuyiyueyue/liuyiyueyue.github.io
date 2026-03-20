@@ -32,7 +32,7 @@
 
 <title>
     
-    KV Cache | Yiyue Liu&#39;s Blog
+    LLM Inference: KV Cache | Yiyue Liu&#39;s Blog
     
 </title>
 
@@ -40,7 +40,7 @@
 
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/inference_1_kv_cache/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="KV Cache">
+  <meta property="og:title" content="LLM Inference: KV Cache">
   <meta property="og:description" content="What is KV Cache? # In LLM inference, KV cache is used to improve performance by avoiding repeated computation of the attention Key and Value tensors for all previously generated tokens.
 With KV Cache, when generating token t&#43;1, the model only needs to compute Q_{t&#43;1}, K_{t&#43;1}, and V_{t&#43;1}. The new K_{t&#43;1} and V_{t&#43;1} are then appended to the cache, and Q_{t&#43;1} attends over the entire cached sequence of keys and values.">
   <meta property="og:locale" content="en_us">
@@ -213,14 +213,14 @@ With KV Cache, when generating token t&#43;1, the model only needs to compute Q_
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/inference_1_kv_cache/">KV Cache</a></div>
+        <a href="/llm/inference_1_kv_cache/">LLM Inference: KV Cache</a></div>
 
 
 <div >
   <article>
     <header class="single-intro-container">
         
-        <h1 class="single-title">KV Cache</h1>
+        <h1 class="single-title">LLM Inference: KV Cache</h1>
         
         <div class="single-subsummary">
           
