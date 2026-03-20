@@ -247,8 +247,11 @@ With KV Cache, when generating token t&#43;1, the model only needs to compute Q_
   <a class="anchor" href="#visual-intuition">#</a>
 </h3>
 <p>The diagrams below show the difference between regular masked self-attention and the KV-cache version used during autoregressive decoder stage. <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
-<p>Without KV Cache:
-
+<p>Without using KV Cache, we need the whole Q matrix to compute attention:</p>
+<p>$$
+Q K^\top V
+$$</p>
+<p>
 
 
 
@@ -300,8 +303,11 @@ With KV Cache, when generating token t&#43;1, the model only needs to compute Q_
     
 </figure>
 </p>
-<p>With KV Cache:
-
+<p>Using KV Cache, we only need the last line q_t:</p>
+<p>$$
+q_t K^\top V
+$$</p>
+<p>
 
 
 
@@ -376,8 +382,8 @@ With KV Cache, when generating token t&#43;1, the model only needs to compute Q_
             
             <div class="single-pagination-container-next">
                 <div class="single-pagination-text">
-                    <a href="/llm/distributed_training_1_parallelism/">
-                        Distributed Training: Parallelism Strategies
+                    <a href="/llm/inference_2_prefill_decode/">
+                        LLM Inference: Prefill and Decode
                     </a>
                 </div>
                 <div class="single-pagination-text">→</div>
@@ -450,6 +456,27 @@ With KV Cache, when generating token t&#43;1, the model only needs to compute Q_
 
   </footer>
 
+  
+  <link rel="stylesheet" 
+  href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  
+<script defer 
+  src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+
+<script defer
+  src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body);"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    renderMathInElement(document.body, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false }
+      ]
+    });
+  });
+</script>
   
 </body>
 

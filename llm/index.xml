@@ -65,6 +65,13 @@
       <description>&lt;h3 class=&#34;heading&#34; id=&#34;why-parallelism&#34;&gt;&#xA;  Why Parallelism?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#why-parallelism&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;As training datasets grow, training takes longer.&lt;/p&gt;&#xA;&lt;p&gt;At the same time, models are getting larger, and some no longer fit on a single device without running out of memory.&lt;/p&gt;&#xA;&lt;p&gt;Distributed training addresses these scaling limits by partitioning computation across multiple devices or nodes, and trade communication overhead for lower memory usage.&lt;/p&gt;&#xA;&lt;p&gt;This is usually done through sharding or parallelism strategies, which mainly fall into two categories: &lt;strong&gt;data parallelism&lt;/strong&gt;, which partitions data, and &lt;strong&gt;model parallelism&lt;/strong&gt;, which partitions the model.&lt;/p&gt;</description>
     </item>
     <item>
+      <title>LLM Inference: Prefill and Decode</title>
+      <link>https://liuyiyueyue.github.io/llm/inference_2_prefill_decode/</link>
+      <pubDate>Thu, 14 Dec 2023 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/inference_2_prefill_decode/</guid>
+      <description>&lt;h3 class=&#34;heading&#34; id=&#34;what-are-prefill-and-decode&#34;&gt;&#xA;  What Are Prefill and Decode?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#what-are-prefill-and-decode&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;In LLM inference, prefill and decode are two distinct phases of text generation:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;Prefill phase is the first forward pass through the model, where the &lt;strong&gt;entire prompt&lt;/strong&gt; (all user input tokens) is processed. It builds the &lt;strong&gt;initial KV cache&lt;/strong&gt;.&lt;/li&gt;&#xA;&lt;li&gt;Decode phase produces &lt;strong&gt;one new token at a time&lt;/strong&gt; (or a few tokens in parallel if speculative/parallel decoding is used). At each step, it uses the KV from the prefill, only calculates the attention on the newest token, and extend the KV cache.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;(The backward pass only appears in training, not inference&amp;hellip;!)&lt;/p&gt;</description>
+    </item>
+    <item>
       <title>LLM Inference: KV Cache</title>
       <link>https://liuyiyueyue.github.io/llm/inference_1_kv_cache/</link>
       <pubDate>Wed, 13 Dec 2023 00:00:00 +0000</pubDate>
