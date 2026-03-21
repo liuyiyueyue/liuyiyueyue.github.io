@@ -42,7 +42,7 @@
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="LLM Inference: Prefill and Decode">
   <meta property="og:description" content="What Are Prefill and Decode? # In LLM inference, prefill and decode are two distinct phases of text generation:
-Prefill phase is the first forward pass through the model, where the entire prompt (all user input tokens) is processed. It builds the initial KV cache. Decode phase produces one new token at a time (or a few tokens in parallel if speculative/parallel decoding is used). At each step, it uses the KV from the prefill, only calculates the attention on the newest token, and extend the KV cache.">
+Prefill phase is the first forward pass through the model, where the entire prompt (all user input tokens) is processed. It builds the initial KV cache. It’s also called Context Encoding. Decode phase produces one new token at a time (or a few tokens in parallel if speculative/parallel decoding is used). At each step, it uses the KV from the prefill, only calculates the attention on the newest token, and extend the KV cache. It’s also called Token Generation / tokengen.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -241,8 +241,8 @@ Prefill phase is the first forward pass through the model, where the entire p
 </h3>
 <p>In LLM inference, prefill and decode are two distinct phases of text generation:</p>
 <ul>
-<li>Prefill phase is the first forward pass through the model, where the <strong>entire prompt</strong> (all user input tokens) is processed. It builds the <strong>initial KV cache</strong>.</li>
-<li>Decode phase produces <strong>one new token at a time</strong> (or a few tokens in parallel if speculative/parallel decoding is used). At each step, it uses the KV from the prefill, only calculates the attention on the newest token, and extend the KV cache.</li>
+<li>Prefill phase is the first forward pass through the model, where the <strong>entire prompt</strong> (all user input tokens) is processed. It builds the <strong>initial KV cache</strong>. It&rsquo;s also called Context Encoding.</li>
+<li>Decode phase produces <strong>one new token at a time</strong> (or a few tokens in parallel if speculative/parallel decoding is used). At each step, it uses the KV from the prefill, only calculates the attention on the newest token, and extend the KV cache. It&rsquo;s also called Token Generation / tokengen.</li>
 </ul>
 <p>
 
