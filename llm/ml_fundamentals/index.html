@@ -435,7 +435,7 @@ Table of Contents # Basic Terms Training Workflow Inference Workflow Basic ML Al
 <li>Now, for <strong>multivariable</strong> functions, the same idea becomes the <strong>Jacobian chain rule</strong>:
 <ul>
 <li>Given $\mathbf{y}=f(\mathbf{u}), \mathbf{u}=g(\mathbf{x})$, that is, $\mathbf{y}=f(g(\mathbf{x}))$, the derivative with respect to $\mathbf{x}$ is given by the Jacobian chain rule: $J_{f\circ g}=J_f\cdot J_g$, where $J_f = \frac{\partial u}{\partial y}$ and $J_f = \frac{\partial u}{\partial x}$</li>
-<li>Jacobian matrix: $J_f =\begin{bmatrix}\frac{\partial y_1}{\partial x_1} &amp; \frac{\partial y_1}{\partial x_2} &amp; \cdots &amp; \frac{\partial y_1}{\partial x_n} \\frac{\partial y_2}{\partial x_1} &amp; \frac{\partial y_2}{\partial x_2} &amp; \cdots &amp; \frac{\partial y_2}{\partial x_n} \\vdots &amp; \vdots &amp; \ddots &amp; \vdots \\frac{\partial y_m}{\partial x_1} &amp; \frac{\partial y_m}{\partial x_2} &amp; \cdots &amp; \frac{\partial y_m}{\partial x_n}\end{bmatrix}$</li>
+<li>Jacobian matrix: $J_f = \begin{bmatrix}\frac{\partial y_1}{\partial x_1} &amp; \frac{\partial y_1}{\partial x_2} &amp; \cdots &amp; \frac{\partial y_1}{\partial x_n} \\ \frac{\partial y_2}{\partial x_1} &amp; \frac{\partial y_2}{\partial x_2} &amp; \cdots &amp; \frac{\partial y_2}{\partial x_n} \\ \vdots &amp; \vdots &amp; \ddots &amp; \vdots \\ \frac{\partial y_m}{\partial x_1} &amp; \frac{\partial y_m}{\partial x_2} &amp; \cdots &amp; \frac{\partial y_m}{\partial x_n}\end{bmatrix}$</li>
 </ul>
 </li>
 </ul>
@@ -676,19 +676,19 @@ Table of Contents # Basic Terms Training Workflow Inference Workflow Basic ML Al
         <tbody>
             <tr>
                 <td><strong>Recall@k</strong></td>
-                <td>$\text{Recall@k} = \frac{#\text{ relevant items in top k}}{\text{total relevant items}}$</td>
+                <td>$\text{Recall@k} = \frac{\text{# relevant items in top k}}{\text{total relevant items}}$</td>
                 <td>Fraction of relevant items retrieved in top-k</td>
                 <td>$[0, 1]$</td>
             </tr>
             <tr>
                 <td><strong>Precision@k</strong></td>
-                <td>$\frac{#\text{ relevant items in top k}}{k}$</td>
+                <td>$\frac{#{\text{relevant items in top } k}}{k}$</td>
                 <td>Fraction of top-k items that are relevant</td>
                 <td>$[0, 1]$</td>
             </tr>
             <tr>
                 <td><strong>nDCG@k (Normalized Discounted Cumulative Gain)</strong></td>
-                <td>$\text{nDCG@k} = \frac{\text{DCG@k}}{\text{IDCG@k}}$ where $\text{DCG@k} = \sum_{i=1}^{k}\frac{2^{rel_i}-1}{\log_2(i+1)}$</td>
+                <td>$\frac{\mathrm{DCG}@k}{\mathrm{IDCG}@k}$ where $\mathrm{DCG}@k = \sum_{i=1}^{k}\frac{2^{rel_i}-1}{\log_2(i+1)}$</td>
                 <td>Rewards putting relevant items near the top</td>
                 <td>$[0, 1]$</td>
             </tr>
