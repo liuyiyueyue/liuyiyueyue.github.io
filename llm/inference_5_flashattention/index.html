@@ -32,22 +32,22 @@
 
 <title>
     
-    LLM Inference: KV Cache | Yiyue Liu&#39;s Blog
+    FlashAttention | Yiyue Liu&#39;s Blog
     
 </title>
 
-<link rel="canonical" href="https://liuyiyueyue.github.io/llm/inference_1_kv_cache/"/>
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/inference_5_flashattention/"/>
 
-<meta property="og:url" content="https://liuyiyueyue.github.io/llm/inference_1_kv_cache/">
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/inference_5_flashattention/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="LLM Inference: KV Cache">
-  <meta property="og:description" content="What is KV Cache? # In LLM inference, KV cache is used to improve performance by avoiding repeated computation of the attention Key and Value tensors for all previously generated tokens.
-With KV Cache, when generating token t&#43;1, the model only needs to compute Q_{t&#43;1}, K_{t&#43;1}, and V_{t&#43;1}. The new K_{t&#43;1} and V_{t&#43;1} are then appended to the cache, and Q_{t&#43;1} attends over the entire cached sequence of keys and values.">
+  <meta property="og:title" content="FlashAttention">
+  <meta property="og:description" content="What Is FlashAttention? # FlashAttention is a fast, memory-efficient, exact attention algorithm designed with IO awareness. 1
+Fast: speeds up attention computation. Memory-efficient: reduces GPU memory usage. Exact: preserves the exact attention result instead of using an approximation. IO-aware: improves performance by reducing data movement between GPU memory levels. Why Regular Attention Is Expensive # In a naive attention implementation, the matrices Q, K, and V are stored in high-bandwidth memory (HBM). Intermediate results are also repeatedly written to and read back from HBM:">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
-    <meta property="article:published_time" content="2023-12-13T00:00:00+00:00">
-    <meta property="article:modified_time" content="2023-12-13T00:00:00+00:00">
+    <meta property="article:published_time" content="2023-12-10T00:00:00+00:00">
+    <meta property="article:modified_time" content="2023-12-10T00:00:00+00:00">
     <meta property="article:tag" content="Llm">
     <meta property="article:tag" content="Inference">
     <meta property="article:tag" content="Optimization">
@@ -213,21 +213,21 @@ With KV Cache, when generating token t&#43;1, the model only needs to compute Q_
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/inference_1_kv_cache/">LLM Inference: KV Cache</a></div>
+        <a href="/llm/inference_5_flashattention/">FlashAttention</a></div>
 
 
 <div >
   <article>
     <header class="single-intro-container">
         
-        <h1 class="single-title">LLM Inference: KV Cache</h1>
+        <h1 class="single-title">FlashAttention</h1>
         
         <div class="single-subsummary">
           
           <div>
             
             <p class="single-date">
-              <time datetime="2023-12-13T00:00:00&#43;00:00">December 13, 2023</time>
+              <time datetime="2023-12-10T00:00:00&#43;00:00">December 10, 2023</time>
             </p>
           </div>
         </div>
@@ -235,117 +235,58 @@ With KV Cache, when generating token t&#43;1, the model only needs to compute Q_
     </header>
     
     <div class="single-content">
-      <h3 class="heading" id="what-is-kv-cache">
-  What is KV Cache?
-  <a class="anchor" href="#what-is-kv-cache">#</a>
+      <h3 class="heading" id="what-is-flashattention">
+  What Is FlashAttention?
+  <a class="anchor" href="#what-is-flashattention">#</a>
 </h3>
-<p>In LLM <strong>inference</strong>, <strong>KV cache</strong> is used to improve performance by avoiding repeated computation of the attention <strong>Key</strong> and <strong>Value</strong> tensors for all previously generated tokens.</p>
-<p>With KV Cache, when generating token <code>t+1</code>, the model only needs to compute <code>Q_{t+1}</code>, <code>K_{t+1}</code>, and <code>V_{t+1}</code>. The new <code>K_{t+1}</code> and <code>V_{t+1}</code> are then appended to the cache, and <code>Q_{t+1}</code> attends over the entire cached sequence of keys and values.</p>
-<p>It is important to note that KV cache only applies to the <strong>decoder</strong>, together with <strong>masked self-attention</strong>. KV caching happens across multiple token-generation steps and only exists in the decoder, either in decoder-only models such as GPT or in the decoder portion of encoder-decoder models such as T5. Models like BERT are not generative, so they do not use KV cache.</p>
-<h3 class="heading" id="visual-intuition">
-  Visual Intuition
-  <a class="anchor" href="#visual-intuition">#</a>
-</h3>
-<p>The diagrams below show the difference between regular masked self-attention and the KV-cache version used during autoregressive decoder stage. <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
-<p>Without using KV Cache, we need the whole Q matrix to compute attention:</p>
-<p>$$
-Q K^\top V
-$$</p>
-<p>
-
-
-
-
-
-
-
-
-
-
-
-<figure class="">
-
-    
-    
-      
-        <div class="img-container" style="--w: 1440; --h: 561;">
-            <img loading="lazy" alt="Masked self-attention over the current decoder step" src="/llm/inference_1_kv_cache/masked-self-attention-step.png" width="1440" height="561">
-        </div>
-      
-    
-
-    
-</figure>
-</p>
-<p>
-
-
-
-
-
-
-
-
-
-
-
-<figure class="">
-
-    
-    
-      
-        <div class="img-container" style="--w: 1440; --h: 500;">
-            <img loading="lazy" alt="Masked self-attention over the full sequence" src="/llm/inference_1_kv_cache/masked-self-attention-full.png" width="1440" height="500">
-        </div>
-      
-    
-
-    
-</figure>
-</p>
-<p>Using KV Cache, we only need the last line q_t:</p>
-<p>$$
-q_t K^\top V
-$$</p>
-<p>
-
-
-
-
-
-
-
-
-
-
-
-<figure class="">
-
-    
-    
-      
-        <div class="img-container" style="--w: 1440; --h: 532;">
-            <img loading="lazy" alt="KV cache reusing previously computed keys and values" src="/llm/inference_1_kv_cache/kv-cache-step.png" width="1440" height="532">
-        </div>
-      
-    
-
-    
-</figure>
-</p>
-<h3 class="heading" id="why-is-there-a-kv-cache-but-no-q-cache">
-  Why Is There a KV Cache but No Q Cache?
-  <a class="anchor" href="#why-is-there-a-kv-cache-but-no-q-cache">#</a>
-</h3>
+<p>FlashAttention is a fast, memory-efficient, exact attention algorithm designed with IO awareness. <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
 <ul>
-<li>In the decoder stage, each inference step only uses the <strong>current query</strong>. Once that step is finished, that query will not be reused in later steps, so there is no real benefit to caching <code>Q</code>.</li>
-<li>In contrast, each new decoder step needs access to the <strong>current and all previous</strong> keys and values. The <code>K</code> and <code>V</code> tensors computed in this step will be used again immediately in the next step, which is why caching them speeds up inference.</li>
+<li><strong>Fast</strong>: speeds up attention computation.</li>
+<li><strong>Memory-efficient</strong>: reduces GPU memory usage.</li>
+<li><strong>Exact</strong>: preserves the exact attention result instead of using an approximation.</li>
+<li><strong>IO-aware</strong>: improves performance by reducing data movement between GPU memory levels.</li>
 </ul>
+<h3 class="heading" id="why-regular-attention-is-expensive">
+  Why Regular Attention Is Expensive
+  <a class="anchor" href="#why-regular-attention-is-expensive">#</a>
+</h3>
+<p>In a naive attention implementation, the matrices <code>Q</code>, <code>K</code>, and <code>V</code> are stored in high-bandwidth memory (HBM). Intermediate results are also repeatedly written to and read back from HBM:</p>
+<ol>
+<li>Load <code>Q</code> and <code>K</code> from HBM into SRAM.</li>
+<li>Compute <code>S = QK^T</code>.</li>
+<li>Write <code>S</code> back to HBM.</li>
+<li>Load <code>S</code> into SRAM.</li>
+<li>Compute <code>P = softmax(S)</code>.</li>
+<li>Write <code>P</code> back to HBM.</li>
+<li>Load <code>P</code> and <code>V</code> from HBM into SRAM.</li>
+<li>Compute <code>O = PV</code>.</li>
+<li>Write <code>O</code> back to HBM.</li>
+</ol>
+<p>The problem is that these reads and writes are expensive. Attention is often limited not just by computation, but by memory IO.</p>
+<p>Also, the attention score matrix grows with sequence length as <code>N^2</code>, which makes the memory cost increasingly expensive for long contexts.</p>
+<h3 class="heading" id="how-flashattention-helps">
+  How FlashAttention Helps
+  <a class="anchor" href="#how-flashattention-helps">#</a>
+</h3>
+<p>Earlier attention optimizations often focused on reducing computation. FlashAttention instead focuses on <strong>reducing memory IO</strong>. Its main goal is to <strong>avoid materializing the full attention matrix in HBM</strong>.</p>
+<p>It does this in two main ways:</p>
+<ol>
+<li><strong>Tiling and kernel fusion</strong>: compute attention block by block and keep more intermediate results in fast on-chip memory, which reduces HBM traffic.</li>
+<li><strong>Recomputation during backward pass</strong>: in training, recompute some intermediate values instead of storing all of them, which saves memory.</li>
+</ol>
+<p>As a result, FlashAttention improves both speed and memory efficiency, especially for long sequences.</p>
+<h3 class="heading" id="tiling-the-softmax">
+  Tiling the Softmax
+  <a class="anchor" href="#tiling-the-softmax">#</a>
+</h3>
+<p>The key difficulty is that softmax is a reduction over the whole row, so it does not look easy to compute block by block at first.</p>
+<p>[I will write the math one day&hellip; I hate typing in latex]</p>
+<p>This is the core idea behind tiled softmax in FlashAttention: each block keeps track of a running maximum and a running normalization term, and these can be merged across blocks exactly. That is why FlashAttention can compute attention in tiles while still producing the exact softmax result.</p>
 <div class="footnotes" role="doc-endnotes">
 <hr>
 <ol>
 <li id="fn:1">
-<p>LLM 推理优化之 KV Cache. SayHelloCode, Zhihu. <a href="https://zhuanlan.zhihu.com/p/673923443">https://zhuanlan.zhihu.com/p/673923443</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness. arXiv, May 27, 2022. <a href="https://arxiv.org/abs/2205.14135">https://arxiv.org/abs/2205.14135</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 </ol>
 </div>
@@ -370,8 +311,8 @@ $$</p>
             <div class="single-pagination-container-prev">
                 <div class="single-pagination-text">←</div>
                 <div class="single-pagination-text">
-                    <a href="/llm/inference_5_flashattention/">
-                        FlashAttention
+                    <a href="/llm/transformer/">
+                        Transformer
                     </a>
                 </div>
             </div>
@@ -382,8 +323,8 @@ $$</p>
             
             <div class="single-pagination-container-next">
                 <div class="single-pagination-text">
-                    <a href="/llm/inference_2_prefill_decode/">
-                        LLM Inference: Prefill and Decode
+                    <a href="/llm/inference_1_kv_cache/">
+                        LLM Inference: KV Cache
                     </a>
                 </div>
                 <div class="single-pagination-text">→</div>
