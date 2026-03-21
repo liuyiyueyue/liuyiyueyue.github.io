@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en-us"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    ML Fundementals | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/ml_fundamentals/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/ml_fundamentals/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="ML Fundementals">
+  <meta property="og:description" content="This post is a compact set of notes on the math and statistics foundations behind machine learning and deep learning, which I collected over the past few years.
+Table of Contents # Basic Terms Training Workflow Inference Workflow Basic ML Algorithms Chain Rule, Backpropagation, and Forward/Backward Passes Evaluation Metrics Overfitting and Regularization Bias, Variance, and Cross-Validation Loss and Optimization Activation Functions Normalization Probability and Statistics for Machine Learning Basic Terms # Machine learning usually starts with a model, a loss function, gradients, and an optimizer.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2022-05-15T00:00:00+00:00">
+    <meta property="article:modified_time" content="2022-05-15T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Machine-Learning">
+    <meta property="article:tag" content="Math">
+    <meta property="article:tag" content="Statistics">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/ml_fundamentals/">ML Fundementals</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">ML Fundementals</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2022-05-15T00:00:00&#43;00:00">May 15, 2022</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <p>This post is a compact set of notes on the math and statistics foundations behind machine learning and deep learning, which I collected over the past few years.</p>
+<h3 class="heading" id="table-of-contents">
+  Table of Contents
+  <a class="anchor" href="#table-of-contents">#</a>
+</h3>
+<ul>
+<li><a href="/llm/ml_fundamentals/#basic-terms">Basic Terms</a></li>
+<li><a href="/llm/ml_fundamentals/#training-workflow">Training Workflow</a></li>
+<li><a href="/llm/ml_fundamentals/#inference-workflow">Inference Workflow</a></li>
+<li><a href="/llm/ml_fundamentals/#basic-ml-algorithms">Basic ML Algorithms</a></li>
+<li><a href="/llm/ml_fundamentals/#chain-rule-backpropagation-and-forwardbackward-passes">Chain Rule, Backpropagation, and Forward/Backward Passes</a></li>
+<li><a href="/llm/ml_fundamentals/#evaluation-metrics">Evaluation Metrics</a></li>
+<li><a href="/llm/ml_fundamentals/#overfitting-and-regularization">Overfitting and Regularization</a></li>
+<li><a href="/llm/ml_fundamentals/#bias-variance-and-cross-validation">Bias, Variance, and Cross-Validation</a></li>
+<li><a href="/llm/ml_fundamentals/#loss-and-optimization">Loss and Optimization</a></li>
+<li><a href="/llm/ml_fundamentals/#activation-functions">Activation Functions</a></li>
+<li><a href="/llm/ml_fundamentals/#normalization">Normalization</a></li>
+<li><a href="/llm/ml_fundamentals/#probability-and-statistics-for-machine-learning">Probability and Statistics for Machine Learning</a></li>
+</ul>
+<h3 class="heading" id="basic-terms">
+  Basic Terms
+  <a class="anchor" href="#basic-terms">#</a>
+</h3>
+<p>Machine learning usually starts with a model, a loss function, gradients, and an optimizer.</p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Term</th>
+                <th>Meaning</th>
+                <th>Math</th>
+                <th>PyTorch Keyword</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Model</strong></td>
+                <td>Function mapping $x \to \hat{y}$</td>
+                <td>$f_\theta(x)$</td>
+                <td><code>nn.Module</code></td>
+            </tr>
+            <tr>
+                <td><strong>Parameters</strong></td>
+                <td>What the model learns</td>
+                <td>$\theta = {w, b}$</td>
+                <td><code>model.parameters()</code></td>
+            </tr>
+            <tr>
+                <td><strong>Loss function</strong></td>
+                <td>Error measure</td>
+                <td>$L(y, \hat{y}) = \frac{1}{N}\sum_i (\hat{y}_i - y_i)^2$</td>
+                <td><code>nn.MSELoss</code>, <code>nn.CrossEntropyLoss</code></td>
+            </tr>
+            <tr>
+                <td><strong>Gradient</strong></td>
+                <td>Derivative of the loss with respect to parameters</td>
+                <td>$\nabla_\theta L$</td>
+                <td><code>loss.backward()</code></td>
+            </tr>
+            <tr>
+                <td><strong>Optimizer</strong></td>
+                <td>Updates parameters</td>
+                <td>$\theta \leftarrow \theta - \eta\nabla_\theta L$</td>
+                <td><code>torch.optim.SGD</code></td>
+            </tr>
+        </tbody>
+    </table>
+</div><h3 class="heading" id="training-workflow">
+  Training Workflow
+  <a class="anchor" href="#training-workflow">#</a>
+</h3>
+<p>Forward -&gt; Backward -&gt; Optimizer: A typical training iteration contains a forward pass to generate <em>losses</em> from inputs and labels, a backward pass to compute <em>gradients</em> for parameters, and an optimizer step to <em>update parameters</em> using those gradients.</p>
+<ol>
+<li>Forward pass:
+<ul>
+<li>Compute predictions $\hat{y}=f_\theta(x)$</li>
+<li>Compute loss: compare $\hat{y}$ with the true $y$.</li>
+</ul>
+</li>
+<li>Backward pass:
+<ul>
+<li>Compute gradients $\nabla_\theta L$.</li>
+<li>The backward pass appears only during training, not during inference.</li>
+</ul>
+</li>
+<li>Optimizer step:
+<ul>
+<li>update weights.</li>
+</ul>
+</li>
+<li>Repeat the above over many epochs.</li>
+</ol>
+<p>Typical dataset split:</p>
+<ul>
+<li>training set: 70-80%</li>
+<li>validation set: 10-15%</li>
+<li>test set: 10-15%</li>
+</ul>
+<h3 class="heading" id="inference-workflow">
+  Inference Workflow
+  <a class="anchor" href="#inference-workflow">#</a>
+</h3>
+<p>A typical inference iteration looks like this:</p>
+<ol>
+<li>Load the <strong>trained model</strong> and switch it to evaluation mode.</li>
+<li>Preprocess the <strong>input data</strong> using the same transformations used during training.</li>
+<li>Run the <strong>forward pass</strong> to compute predictions.</li>
+<li>Postprocess the <strong>model output</strong> into the final label, score, or generated result.</li>
+<li>Return the result without updating weights or gradients (no backward pass).</li>
+</ol>
+<h3 class="heading" id="basic-ml-algorithms">
+  Basic ML Algorithms
+  <a class="anchor" href="#basic-ml-algorithms">#</a>
+</h3>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Algorithm</th>
+                <th>Type / Task</th>
+                <th>Core Idea</th>
+                <th>Key Equation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Linear Regression</strong></td>
+                <td>Supervised regression</td>
+                <td>Fit a linear function by minimizing MSE</td>
+                <td>$\hat{y} = \mathbf{w}^{\top}\mathbf{x} + b$</td>
+            </tr>
+            <tr>
+                <td><strong>Logistic Regression</strong></td>
+                <td>Supervised classification</td>
+                <td>Map logits to probability with a sigmoid and optimize cross-entropy</td>
+                <td>$p = \sigma(\mathbf{w}^{\top}\mathbf{x} + b)$</td>
+            </tr>
+            <tr>
+                <td><strong>Naive Bayes</strong></td>
+                <td>Supervised classification</td>
+                <td>Bayes rule with conditional independence assumptions</td>
+                <td>$\hat{c} = \arg\max_{c \in \mathcal{C}} \log P(c) + \sum_j \log P(x_j \mid c)$</td>
+            </tr>
+            <tr>
+                <td><strong>K-Nearest Neighbors</strong></td>
+                <td>Supervised classification / regression</td>
+                <td>Predict from nearby examples</td>
+                <td>$d(\mathbf{x}, \mathbf{x}&rsquo;) = \sqrt{\sum_j (x_j - x&rsquo;_j)^2}$</td>
+            </tr>
+            <tr>
+                <td><strong>K-Means</strong></td>
+                <td>Unsupervised clustering</td>
+                <td>Alternate between assignment and centroid update</td>
+                <td>$\min \sum_{i=1}^{N}\sum_{k=1}^{K} r_{ik}|\mathbf{x}_i - \mu_k|^2$</td>
+            </tr>
+            <tr>
+                <td><strong>Decision Tree</strong></td>
+                <td>Supervised classification / regression</td>
+                <td>Greedy splits that reduce impurity</td>
+                <td>$H(S) = -\sum_c p_c \log_2 p_c$ or $G(S)=1-\sum_c p_c^2$</td>
+            </tr>
+            <tr>
+                <td><strong>Random Forest</strong></td>
+                <td>Ensemble classification / regression</td>
+                <td>Aggregate many trees trained on resampled data</td>
+                <td>$\hat{y} = \mathrm{mode}{f_t(\mathbf{x})}$ or $\hat{y} = \frac{1}{T}\sum_t f_t(\mathbf{x})$</td>
+            </tr>
+            <tr>
+                <td><strong>XGBoost</strong></td>
+                <td>Gradient-boosted trees</td>
+                <td>Add trees stage by stage to fit residuals</td>
+                <td>additive boosting objective</td>
+            </tr>
+        </tbody>
+    </table>
+</div><h3 class="heading" id="chain-rule-backpropagation-and-forwardbackward-passes">
+  Chain Rule, Backpropagation, and Forward/Backward Passes
+  <a class="anchor" href="#chain-rule-backpropagation-and-forwardbackward-passes">#</a>
+</h3>
+<p><strong>Chain rule</strong></p>
+<ul>
+<li>The mathematical core of deep learning is the <strong>chain rule</strong>, which finds the derivative of a <em>composite function</em>.</li>
+<li>For a 1D composite function:
+<ul>
+<li>Given $y=f(g(x)) = f(u), u=g(x)$, then $\frac{dy}{dx} = \frac{du}{dy}\cdot\frac{dx}{du}$</li>
+<li>Example: given $y = \sin(3x)$, then $\frac{dy}{dx} = \frac{d}{du}\sin(u) \cdot \frac{d}{dx}3x = \cos(u) \cdot 3 = 3\cos(3x)$</li>
+</ul>
+</li>
+<li>For a 2D composite function:
+<ul>
+<li>Given $z=f(x,y)$, where $x=g(t), y=h(t)$, then $\frac{dz}{dt} = \frac{\partial f}{\partial x}\cdot\frac{dx}{dt} + \frac{\partial f}{\partial y}\cdot\frac{dy}{dt}$</li>
+<li>Example: given $z=x^2y+3y, x=t^2, y=\sin(t)$, then $\frac{dz}{dt} = \frac{\partial}{\partial x}(x^2y+3y) \cdot \frac{d}{dt}t^2 + \frac{\partial}{\partial y}(x^2y+3y) \cdot \frac{d}{dt}\sin(t) = 2xy \cdot 2t + (x^2 + 3)\cdot \cos(t)$</li>
+</ul>
+</li>
+<li>Now, for <strong>multivariable</strong> functions, the same idea becomes the <strong>Jacobian chain rule</strong>:
+<ul>
+<li>Given $\mathbf{y}=f(\mathbf{u}), \mathbf{u}=g(\mathbf{x})$, that is, $\mathbf{y}=f(g(\mathbf{x}))$, the derivative with respect to $\mathbf{x}$ is given by the Jacobian chain rule: $J_{f\circ g}=J_f\cdot J_g$, where $J_f = \frac{\partial u}{\partial y}$ and $J_f = \frac{\partial u}{\partial x}$</li>
+<li>Jacobian matrix: $J_f =\begin{bmatrix}\frac{\partial y_1}{\partial x_1} &amp; \frac{\partial y_1}{\partial x_2} &amp; \cdots &amp; \frac{\partial y_1}{\partial x_n} \\frac{\partial y_2}{\partial x_1} &amp; \frac{\partial y_2}{\partial x_2} &amp; \cdots &amp; \frac{\partial y_2}{\partial x_n} \\vdots &amp; \vdots &amp; \ddots &amp; \vdots \\frac{\partial y_m}{\partial x_1} &amp; \frac{\partial y_m}{\partial x_2} &amp; \cdots &amp; \frac{\partial y_m}{\partial x_n}\end{bmatrix}$</li>
+</ul>
+</li>
+</ul>
+<p><strong>Forward and Backward Passes</strong></p>
+<ol>
+<li>You can think of the forward pass as: &ldquo;Compute outputs layer by layer.&rdquo;</li>
+<li>You can think of the backward pass, or backpropagation, as: &ldquo;Propagate the loss backward using the chain rule.&rdquo;</li>
+</ol>
+<p><strong>Backpropagation</strong></p>
+<p>It uses the chain rule to calculate the gradient of the loss function</p>
+<p>mathematically speaking</p>
+<ol>
+<li>It uses the chain rule to calculate the gradient: $\frac{\partial \mathcal{L}}{\partial w} =
+\frac{\partial \mathcal{L}}{\partial a_L}
+\cdot
+\frac{\partial a_L}{\partial a_{L-1}}
+\cdot
+\dots
+\cdot
+\frac{\partial a_1}{\partial w}$</li>
+<li>It reuses intermediate results to compute gradients efficiently, in a dynamic-programming style.</li>
+<li>Those gradients are then used to update weights through gradient descent: $w \leftarrow w - \eta \frac{\partial \mathcal{L}}{\partial w}$</li>
+</ol>
+<p>I recommend reading this Chinese PDF: <a href="/llm/ml_fundamentals/backprop.pdf">backprop.pdf</a></p>
+<h3 class="heading" id="evaluation-metrics">
+  Evaluation Metrics
+  <a class="anchor" href="#evaluation-metrics">#</a>
+</h3>
+<p>Different tasks require different metrics:</p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Typical Tasks</th>
+                <th>Key Metric(s)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Regression</strong></td>
+                <td>Forecasting, numeric prediction</td>
+                <td>MAE, MSE, RMSE, $R^2$</td>
+            </tr>
+            <tr>
+                <td><strong>Binary Classification</strong></td>
+                <td>Spam detection, fraud detection</td>
+                <td>Accuracy, F1, ROC-AUC, Log-Loss</td>
+            </tr>
+            <tr>
+                <td><strong>Multiclass Classification</strong></td>
+                <td>Image classification</td>
+                <td>Macro-F1, Micro-F1, Cross-Entropy</td>
+            </tr>
+            <tr>
+                <td><strong>Imbalanced Data</strong></td>
+                <td>Rare disease, anomaly detection</td>
+                <td>PR-AUC, Recall, $F_\beta$</td>
+            </tr>
+            <tr>
+                <td><strong>Ranking / Recommendation</strong></td>
+                <td>Search, recommendation systems</td>
+                <td>nDCG, Recall@k, MAP</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p><strong>Statistical Foundations</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Concept</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Expectation (Mean)</strong></td>
+                <td>$E[X] = \sum x_i p(x_i)$ or $\int x p(x) dx$. Many metrics, such as MAE and MSE, are expectations of loss functions over the data distribution.</td>
+            </tr>
+            <tr>
+                <td><strong>Variance</strong></td>
+                <td>$Var[X] = E[(X - E[X])^2]$. MSE includes variance and squared bias components.</td>
+            </tr>
+            <tr>
+                <td><strong>Bias-Variance Decomposition</strong></td>
+                <td>$E[(y - \hat{y})^2] = \text{Bias}^2 + \text{Variance} + \text{Noise}$. This explains the tradeoff in model complexity.</td>
+            </tr>
+            <tr>
+                <td><strong>Likelihood &amp; Cross-Entropy</strong></td>
+                <td>Cross-entropy is the negative log-likelihood; minimizing it is equivalent to maximizing likelihood.</td>
+            </tr>
+            <tr>
+                <td><strong>Ranking Metrics &amp; Information Theory</strong></td>
+                <td>nDCG is derived from information gain; the log base 2 term simulates diminishing user attention.</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p><strong>Regression Metrics</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>Formula</th>
+                <th>Meaning</th>
+                <th>Range</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Mean Squared Error (MSE)</strong></td>
+                <td>$\text{MSE} = \frac{1}{n}\sum_{i=1}^n (y_i - \hat{y}_i)^2$</td>
+                <td>Penalizes large errors more heavily; sensitive to outliers</td>
+                <td>$[0, \infty)$</td>
+            </tr>
+            <tr>
+                <td><strong>Mean Absolute Error (MAE)</strong></td>
+                <td>$\text{MAE} = \frac{1}{n}\sum_{i=1}^n |y_i - \hat{y}_i|$</td>
+                <td>Average absolute error; easier to interpret</td>
+                <td>$[0, \infty)$</td>
+            </tr>
+            <tr>
+                <td><strong>Root Mean Squared Error (RMSE)</strong></td>
+                <td>$\text{RMSE} = \sqrt{\text{MSE}}$</td>
+                <td>Same unit as the target</td>
+                <td>$[0, \infty)$</td>
+            </tr>
+            <tr>
+                <td><strong>Coefficient of Determination ($R^2$)</strong></td>
+                <td>$R^2 = 1 - \frac{\sum (y_i - \hat{y}_i)^2}{\sum (y_i - \bar{y})^2}$</td>
+                <td>Fraction of variance explained by the model</td>
+                <td>$(-\infty, 1]$</td>
+            </tr>
+            <tr>
+                <td><strong>Adjusted $R^2$</strong></td>
+                <td>$1 - (1 - R^2)\frac{n-1}{n-p-1}$</td>
+                <td>Penalizes adding too many variables</td>
+                <td>$(-\infty, 1]$</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p><strong>Classification Metrics</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>Formula</th>
+                <th>Meaning</th>
+                <th>Range</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Accuracy</strong></td>
+                <td>$\frac{TP + TN}{TP + TN + FP + FN}$</td>
+                <td>Fraction of all predictions that are correct</td>
+                <td>$[0, 1]$</td>
+            </tr>
+            <tr>
+                <td><strong>Precision</strong></td>
+                <td>$\frac{TP}{TP + FP}$</td>
+                <td>Of predicted positives, how many are correct</td>
+                <td>$[0, 1]$</td>
+            </tr>
+            <tr>
+                <td><strong>Recall</strong></td>
+                <td>$\frac{TP}{TP + FN}$</td>
+                <td>Of true positives, how many are found</td>
+                <td>$[0, 1]$</td>
+            </tr>
+            <tr>
+                <td><strong>F1-score</strong></td>
+                <td>$2 \cdot \frac{\text{Precision}\cdot\text{Recall}}{\text{Precision} + \text{Recall}}$</td>
+                <td>Harmonic mean of precision and recall</td>
+                <td>$[0, 1]$</td>
+            </tr>
+            <tr>
+                <td><strong>Specificity</strong></td>
+                <td>$\frac{TN}{TN + FP}$</td>
+                <td>True negative rate</td>
+                <td>$[0, 1]$</td>
+            </tr>
+            <tr>
+                <td><strong>Balanced Accuracy</strong></td>
+                <td>$\frac{1}{2}(\text{TPR} + \text{TNR})$</td>
+                <td>Useful for imbalanced classes</td>
+                <td>$[0, 1]$</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p><strong>Probabilistic Classification Metrics</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>Formula</th>
+                <th>Meaning</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Cross-Entropy (Log Loss)</strong></td>
+                <td>$-\frac{1}{n} \sum_i [ y_i \log \hat{p}_i + (1-y_i)\log(1-\hat{p}_i) ]$</td>
+                <td>Measures how close predicted probabilities are to labels</td>
+            </tr>
+            <tr>
+                <td><strong>AUC-ROC (Area Under the ROC Curve)</strong></td>
+                <td>$\int_0^1 \text{TPR}(\text{FPR}), d(\text{FPR})$</td>
+                <td>Probability a random positive is ranked above a random negative</td>
+            </tr>
+            <tr>
+                <td><strong>Average Precision (AP)</strong></td>
+                <td>$\text{AP} = \sum_n (R_n - R_{n-1}) P_n$</td>
+                <td>Area under the precision-recall curve</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p><strong>Ranking &amp; Recommendation Metrics</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>Formula</th>
+                <th>Meaning</th>
+                <th>Range</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Recall@k</strong></td>
+                <td>$\text{Recall@k} = \frac{#\text{ relevant items in top k}}{\text{total relevant items}}$</td>
+                <td>Fraction of relevant items retrieved in top-k</td>
+                <td>$[0, 1]$</td>
+            </tr>
+            <tr>
+                <td><strong>Precision@k</strong></td>
+                <td>$\frac{#\text{ relevant items in top k}}{k}$</td>
+                <td>Fraction of top-k items that are relevant</td>
+                <td>$[0, 1]$</td>
+            </tr>
+            <tr>
+                <td><strong>nDCG@k (Normalized Discounted Cumulative Gain)</strong></td>
+                <td>$\text{nDCG@k} = \frac{\text{DCG@k}}{\text{IDCG@k}}$ where $\text{DCG@k} = \sum_{i=1}^{k}\frac{2^{rel_i}-1}{\log_2(i+1)}$</td>
+                <td>Rewards putting relevant items near the top</td>
+                <td>$[0, 1]$</td>
+            </tr>
+        </tbody>
+    </table>
+</div><h3 class="heading" id="overfitting-and-regularization">
+  Overfitting and Regularization
+  <a class="anchor" href="#overfitting-and-regularization">#</a>
+</h3>
+<p><strong>Overfitting</strong></p>
+<p>Overfitting means the model matches the data too closely and treats normal fluctuations, noise, and outliers in the training set as actual features of the data. As a result, the model generalizes poorly to new data. In practice, it performs very well on the training set but very poorly on the validation or test set.
+Common ways to address overfitting include:</p>
+<ol>
+<li>reducing the number of features appropriately;</li>
+<li>adding a <strong>regularization</strong> term.</li>
+</ol>
+<p><strong>Regularization</strong></p>
+<p>Regularization adds a penalty to discourage overly complex models.</p>
+<p>For L2 regularization:</p>
+<p>$$
+L_{\text{total}} = L_{\text{data}} + \lambda |w|_2^2
+$$</p>
+<p>This is also called <strong>Ridge</strong> regularization.</p>
+<p>For L1 regularization:</p>
+<p>$$
+L_{\text{total}} = L_{\text{data}} + \lambda |w|_1
+$$</p>
+<p>This is also called <strong>Lasso</strong> regularization.</p>
+<p>Useful intuition:</p>
+<ul>
+<li>Both L1 and L2 help reduce overfitting.</li>
+<li>L1 tends to produce <strong>sparse</strong> solutions, so it can be useful for feature selection.</li>
+<li>L2 is smoother and easier to optimize with gradient-based methods.</li>
+</ul>
+<h3 class="heading" id="bias-variance-and-cross-validation">
+  Bias, Variance, and Cross-Validation
+  <a class="anchor" href="#bias-variance-and-cross-validation">#</a>
+</h3>
+<p><strong>Bias and variance</strong> describe two different failure modes of generalization.</p>
+<ul>
+<li><strong>High bias</strong> is often caused by oversimplification; usually means underfitting.</li>
+<li><strong>High variance</strong> is often caused by sensitivity to small fluctuations; usually means overfitting.</li>
+</ul>
+<p>In general, simpler models have higher bias and lower variance, while more complex models have lower bias and higher variance. This also corresponds to underfitting and overfitting.</p>
+<p>Their tradeoff is often summarized as:</p>
+<p>$$
+E[(y - f(x))^2] = \text{Bias}^2 + \text{Variance} + \text{Irreducible Noise}
+$$</p>
+<p><strong>Cross-validation</strong> gives a more stable estimate of generalization performance than a single train/validation split. Instead of using only one train/validation split, we <strong>rotate</strong> which subset is held out for validation to get a more stable estimate.</p>
+<p>Common variants:</p>
+<ul>
+<li><strong>k-fold cross-validation</strong></li>
+<li><strong>stratified k-fold</strong> for classification</li>
+<li><strong>leave-one-out</strong></li>
+</ul>
+<h3 class="heading" id="loss-and-optimization">
+  Loss and Optimization
+  <a class="anchor" href="#loss-and-optimization">#</a>
+</h3>
+<p>All optimizers aim to minimize a loss function by adjusting parameters:</p>
+<p>$$
+\theta \leftarrow \theta - \eta \nabla_\theta L(\theta)
+$$</p>
+<p>where:</p>
+<ul>
+<li>$\theta$ is the parameter vector, such as weights and biases</li>
+<li>$L(\theta)$ is the loss function, such as mean squared error or cross-entropy</li>
+<li>$\nabla_\theta L(\theta)$ is the gradient (i.e. derivative of the loss function)</li>
+<li>$\eta$ is the learning rate</li>
+</ul>
+<p><strong>Gradient-Based Methods</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Algorithm</th>
+                <th>Update Rule</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Gradient Descent</strong></td>
+                <td>$\theta \leftarrow \theta - \alpha \nabla L(\theta)$</td>
+                <td>Uses the full dataset per step</td>
+            </tr>
+            <tr>
+                <td><strong>SGD</strong></td>
+                <td>$\theta \leftarrow \theta - \alpha \nabla L_i(\theta)$</td>
+                <td>Uses one sample or a very small batch</td>
+            </tr>
+            <tr>
+                <td><strong>Mini-batch GD</strong></td>
+                <td>$\theta \leftarrow \theta - \alpha \frac{1}{m}\sum_{i=1}^{m}\nabla L_i(\theta)$</td>
+                <td>Standard choice in modern deep learning</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p><strong>Momentum-Based Methods</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Algorithm</th>
+                <th>Update Rule</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Momentum</strong></td>
+                <td>$v \leftarrow \beta v + (1-\beta)\nabla L(\theta)$, $\theta \leftarrow \theta - \alpha v$</td>
+                <td>Smooths noisy gradients and accelerates training</td>
+            </tr>
+            <tr>
+                <td><strong>NAG</strong></td>
+                <td>$v \leftarrow \beta v + (1-\beta)\nabla L(\theta - \alpha\beta v)$, $\theta \leftarrow \theta - \alpha v$</td>
+                <td>Looks ahead before updating</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p><strong>Adaptive Learning Rate Methods</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Algorithm</th>
+                <th>Update Rule</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Adagrad</strong></td>
+                <td>$\theta \leftarrow \theta - \frac{\alpha}{\sqrt{G + \varepsilon}} \nabla L(\theta)$</td>
+                <td>Adapts learning rate per parameter</td>
+            </tr>
+            <tr>
+                <td><strong>RMSProp</strong></td>
+                <td>$v_t = \beta v_{t-1} + (1 - \beta)g_t^2$</td>
+                <td>Stabilizes training by normalizing gradient magnitude</td>
+            </tr>
+            <tr>
+                <td><strong>Adam</strong></td>
+                <td>$m_t = \beta_1 m_{t-1} + (1-\beta_1)g_t$, $v_t = \beta_2 v_{t-1} + (1-\beta_2)g_t^2$</td>
+                <td>Combines momentum and adaptive scaling</td>
+            </tr>
+            <tr>
+                <td><strong>AdamW</strong></td>
+                <td>$\theta \leftarrow \theta - \alpha\left(\frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \varepsilon} + \lambda \theta\right)$</td>
+                <td>Adam with decoupled weight decay</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p><strong>Second-Order Methods</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Algorithm</th>
+                <th>Update Rule</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Newton&rsquo;s Method</strong></td>
+                <td>$\theta \leftarrow \theta - H^{-1}\nabla L(\theta)$</td>
+                <td>Uses the Hessian; powerful but expensive</td>
+            </tr>
+        </tbody>
+    </table>
+</div><h3 class="heading" id="activation-functions">
+  Activation Functions
+  <a class="anchor" href="#activation-functions">#</a>
+</h3>
+<p>Activation functions add nonlinearity, which allows neural networks to represent complex patterns.</p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Function</th>
+                <th>Formula</th>
+                <th>Range</th>
+                <th>Typical Use</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Softmax</strong></td>
+                <td>$\text{softmax}(z_i) = \frac{e^{z_i}}{\sum_j e^{z_j}}$</td>
+                <td>$(0, 1)$, sums to 1</td>
+                <td>Output layer for multiclass classification</td>
+            </tr>
+            <tr>
+                <td><strong>Sigmoid</strong></td>
+                <td>$\sigma(x) = \frac{1}{1 + e^{-x}}$</td>
+                <td>$(0, 1)$</td>
+                <td>Binary classification output</td>
+            </tr>
+            <tr>
+                <td><strong>Tanh</strong></td>
+                <td>$\tanh(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}$</td>
+                <td>$(-1, 1)$</td>
+                <td>Hidden layers in older networks</td>
+            </tr>
+            <tr>
+                <td><strong>ReLU</strong></td>
+                <td>$\max(0, x)$</td>
+                <td>$[0, \infty)$</td>
+                <td>Standard hidden activation in deep nets</td>
+            </tr>
+            <tr>
+                <td><strong>Leaky ReLU</strong></td>
+                <td>$x$ if $x &gt; 0$, else $0.01x$</td>
+                <td>$(-\infty, \infty)$</td>
+                <td>Helps avoid dead ReLUs</td>
+            </tr>
+            <tr>
+                <td><strong>GELU</strong></td>
+                <td>$x\Phi(x)$</td>
+                <td>$(-\infty, \infty)$</td>
+                <td>Common in transformer models</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 1100; --h: 1556;">
+            <img loading="lazy" alt="activation_functions_2.webp" src="/llm/ml_fundamentals/activation_functions_2.webp" width="1100" height="1556">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
+<p>References</p>
+<ul>
+<li><a href="https://medium.com/@gauravnair/the-spark-your-neural-network-needs-understanding-the-significance-of-activation-functions-6b82d5f27fbf">https://medium.com/@gauravnair/the-spark-your-neural-network-needs-understanding-the-significance-of-activation-functions-6b82d5f27fbf</a></li>
+</ul>
+<h3 class="heading" id="normalization">
+  Normalization
+  <a class="anchor" href="#normalization">#</a>
+</h3>
+<p>Normalization rescales features or activations so they stay in a reasonable numerical range during training.</p>
+<p>Common methods:</p>
+<ul>
+<li><strong>Min-Max normalization</strong>: $x&rsquo; = \frac{x - \min(x)}{\max(x) - \min(x)}$</li>
+<li><strong>Z-score normalization / standardization</strong>: $x&rsquo; = \frac{x - \mu}{\sigma}$</li>
+<li><strong>Batch normalization</strong>: normalize activations across the batch dimension</li>
+<li><strong>Layer normalization</strong>: normalize activations across the feature dimension</li>
+</ul>
+<p>Normalization is not the same thing as regularization:, but they complement each other:</p>
+<ul>
+<li>Normalization stabilizes and accelerates optimization by keeping activations in a consistent range.</li>
+<li>Regularization, such as L2 weight decay or dropout, reduces overfitting by penalizing model complexity.</li>
+</ul>
+<p>What happens without normalization?</p>
+<ul>
+<li>Features with large numerical ranges dominate the loss and produce highly skewed gradients during gradient descent.</li>
+<li>Training becomes slower, and models may fail to converge.</li>
+</ul>
+<p>Note</p>
+<ul>
+<li>If normalization is used during training, the same normalization must also be applied during inference.</li>
+</ul>
+<h3 class="heading" id="probability-and-statistics-for-machine-learning">
+  Probability and Statistics for Machine Learning
+  <a class="anchor" href="#probability-and-statistics-for-machine-learning">#</a>
+</h3>
+<p><strong>Probability Foundations</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Concept</th>
+                <th>Description</th>
+                <th>Math</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Random Variable</td>
+                <td>Represents uncertainty</td>
+                <td>$X \sim P(x)$</td>
+            </tr>
+            <tr>
+                <td>Probability Distribution</td>
+                <td>Probability assigned to outcomes</td>
+                <td>$P(X=x)$</td>
+            </tr>
+            <tr>
+                <td>Joint Probability</td>
+                <td>Probability of two events together</td>
+                <td>$P(X, Y)$</td>
+            </tr>
+            <tr>
+                <td>Conditional Probability</td>
+                <td>Probability of one event given another</td>
+                <td>$P(A \mid B) = \frac{P(A, B)}{P(B)}$</td>
+            </tr>
+            <tr>
+                <td>Bayes&rsquo; Theorem</td>
+                <td>Core identity in Bayesian inference</td>
+                <td>$P(A \mid B) = \frac{P(B \mid A)P(A)}{P(B)}$</td>
+            </tr>
+            <tr>
+                <td>Independence</td>
+                <td>Events do not affect each other</td>
+                <td>$P(A, B) = P(A)P(B)$</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p><strong>Statistics Foundations</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Measure</th>
+                <th>Description</th>
+                <th>Math</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Mean</td>
+                <td>Central tendency</td>
+                <td>$\mu = \frac{1}{n}\sum_{i=1}^{n} x_i$</td>
+            </tr>
+            <tr>
+                <td>Variance</td>
+                <td>Spread around the mean</td>
+                <td>$\sigma^2 = \frac{1}{n}\sum_{i=1}^{n}(x_i - \mu)^2$</td>
+            </tr>
+            <tr>
+                <td>Standard Deviation</td>
+                <td>Square root of variance</td>
+                <td>$\sigma = \sqrt{\sigma^2}$</td>
+            </tr>
+            <tr>
+                <td>Covariance</td>
+                <td>How two variables vary together</td>
+                <td>$\text{Cov}(X,Y)=E[(X-\mu_X)(Y-\mu_Y)]$</td>
+            </tr>
+            <tr>
+                <td>Correlation</td>
+                <td>Normalized covariance</td>
+                <td>$\rho_{XY}=\frac{\text{Cov}(X,Y)}{\sigma_X \sigma_Y}$</td>
+            </tr>
+            <tr>
+                <td>Expected Value</td>
+                <td>Probability-weighted average</td>
+                <td>$E[X]=\sum x_i P(x_i)$ or $\int x f(x),dx$</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p><strong>Common Distributions</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Distribution</th>
+                <th>Typical Usage</th>
+                <th>Formula</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Bernoulli</td>
+                <td>Binary outcome</td>
+                <td>$P(X=1)=p,; P(X=0)=1-p$</td>
+            </tr>
+            <tr>
+                <td>Binomial</td>
+                <td>Number of successes in $n$ trials</td>
+                <td>$P(k;n,p)=\binom{n}{k}p^k(1-p)^{n-k}$</td>
+            </tr>
+            <tr>
+                <td>Gaussian</td>
+                <td>Continuous noise and natural variation</td>
+                <td>$\mathcal{N}(\mu, \sigma^2)$</td>
+            </tr>
+            <tr>
+                <td>Uniform</td>
+                <td>Random sampling</td>
+                <td>constant density on an interval</td>
+            </tr>
+            <tr>
+                <td>Poisson</td>
+                <td>Count data</td>
+                <td>$P(k;\lambda)=\frac{e^{-\lambda}\lambda^k}{k!}$</td>
+            </tr>
+            <tr>
+                <td>Exponential</td>
+                <td>Waiting times</td>
+                <td>$f(x;\lambda)=\lambda e^{-\lambda x}$</td>
+            </tr>
+            <tr>
+                <td>Categorical</td>
+                <td>Multiclass labels</td>
+                <td>$P(X=i)=p_i$</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p><strong>Inference and Estimation</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Concept</th>
+                <th>Purpose</th>
+                <th>Math</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Likelihood</td>
+                <td>Probability of observed data under parameters</td>
+                <td>$L(\theta \mid x)=P(x \mid \theta)$</td>
+            </tr>
+            <tr>
+                <td>MLE</td>
+                <td>Choose parameters that maximize likelihood</td>
+                <td>$\hat{\theta}=\arg\max_{\theta} L(\theta \mid x)$</td>
+            </tr>
+            <tr>
+                <td>MAP</td>
+                <td>Add prior information to estimation</td>
+                <td>$\hat{\theta}{MAP}=\arg\max\theta P(x \mid \theta) P(\theta)$</td>
+            </tr>
+            <tr>
+                <td>Confidence Interval</td>
+                <td>Plausible range of parameter values</td>
+                <td>$\bar{x} \pm z_{\alpha/2}\frac{\sigma}{\sqrt{n}}$</td>
+            </tr>
+            <tr>
+                <td>Hypothesis Testing</td>
+                <td>Statistical decision-making</td>
+                <td>p-value, t-test, $\chi^2$-test</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+            <div class="single-pagination-container-next">
+                <div class="single-pagination-text">
+                    <a href="/llm/transformer/">
+                        Transformer
+                    </a>
+                </div>
+                <div class="single-pagination-text">→</div>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+  <link rel="stylesheet" 
+  href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  
+<script defer 
+  src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+
+<script defer
+  src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body);"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    renderMathInElement(document.body, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false }
+      ]
+    });
+  });
+</script>
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+
