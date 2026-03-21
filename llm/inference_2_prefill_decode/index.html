@@ -42,7 +42,7 @@
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="LLM Inference: Prefill and Decode">
   <meta property="og:description" content="What Are Prefill and Decode? # In LLM inference, prefill and decode are two distinct phases of text generation:
-Prefill phase is the first forward pass through the model, where the entire prompt (all user input tokens) is processed. It builds the initial KV cache. Decode phase produces one new token at a time (or a few tokens in parallel if speculative/parallel decoding is used). At each step, it uses the KV from the prefill, only calculates the attention on the newest token, and extend the KV cache. (The backward pass only appears in training, not inference…!)">
+Prefill phase is the first forward pass through the model, where the entire prompt (all user input tokens) is processed. It builds the initial KV cache. Decode phase produces one new token at a time (or a few tokens in parallel if speculative/parallel decoding is used). At each step, it uses the KV from the prefill, only calculates the attention on the newest token, and extend the KV cache.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -244,15 +244,6 @@ Prefill phase is the first forward pass through the model, where the entire p
 <li>Prefill phase is the first forward pass through the model, where the <strong>entire prompt</strong> (all user input tokens) is processed. It builds the <strong>initial KV cache</strong>.</li>
 <li>Decode phase produces <strong>one new token at a time</strong> (or a few tokens in parallel if speculative/parallel decoding is used). At each step, it uses the KV from the prefill, only calculates the attention on the newest token, and extend the KV cache.</li>
 </ul>
-<p>(The backward pass only appears in training, not inference&hellip;!)</p>
-<h3 class="heading" id="prefill-and-decode-have-different-performance-characteristics">
-  Prefill and Decode Have Different Performance Characteristics
-  <a class="anchor" href="#prefill-and-decode-have-different-performance-characteristics">#</a>
-</h3>
-<ul>
-<li>Prefill processes the entire prompt in parallel, so the GPU spends most of its time on large matrix multiplications. This makes it <strong>compute-bound</strong>.</li>
-<li>Decode generates one token at a time, so each step does relatively little compute but repeatedly reads model weights and KV cache from memory. This makes it <strong>memory-bound</strong>.</li>
-</ul>
 <p>
 
 
@@ -279,6 +270,50 @@ Prefill phase is the first forward pass through the model, where the entire p
     
 </figure>
 </p>
+<p>(The backward pass only appears in training, not inference&hellip;!)</p>
+<h3 class="heading" id="prefill-and-decode-have-different-performance-characteristics">
+  Prefill and Decode Have Different Performance Characteristics
+  <a class="anchor" href="#prefill-and-decode-have-different-performance-characteristics">#</a>
+</h3>
+<ul>
+<li>Prefill processes the entire prompt in parallel, so the GPU spends most of its time on large matrix multiplications. This makes it <strong>compute-bound</strong>.</li>
+<li>Decode generates one token at a time, so each step does relatively little compute but repeatedly reads model weights and KV cache from memory. This makes it <strong>memory-bound</strong>.</li>
+</ul>
+<p>The diagrams below illustrate the different bottlenecks of prefill and decode. <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 1075; --h: 671;">
+            <img loading="lazy" alt="Attention roofline" src="/llm/inference_2_prefill_decode/attention-roofline.png" width="1075" height="671">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>Introducing FlashInfer: A Library and Kernel Generator for LLM Serving. FlashInfer. <a href="https://flashinfer.ai/2024/02/02/introduce-flashinfer.html">https://flashinfer.ai/2024/02/02/introduce-flashinfer.html</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
 
     </div>
   </article>
