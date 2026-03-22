@@ -245,6 +245,7 @@ The key mechanism is attention, which aggregates information from a sequence by 
 <li>The <strong>encoder</strong> is built from repeated blocks of multi-head self-attention, residual connections, feed-forward layers, and layer normalization.</li>
 <li>The <strong>decoder</strong> is built from masked multi-head self-attention, encoder-decoder attention, feed-forward layers, residual connections, and layer normalization.</li>
 </ul>
+<p>Besides the encoder and decoder, the Transformer also includes embedding layers, positional encodings, and an output projection followed by a softmax layer.</p>
 <p>
 
 
@@ -276,21 +277,21 @@ The key mechanism is attention, which aggregates information from a sequence by 
   Transformer vs. RNN
   <a class="anchor" href="#transformer-vs-rnn">#</a>
 </h2>
-<p>Transformer and RNN both aim to model sequence data, and both use nonlinear layers such as MLPs to transform representations into richer semantic spaces. The main difference is how they pass sequence information.</p>
+<p>Transformer and RNN both aim to model sequence data, and both use nonlinear layers such as MLPs to transform representations into richer semantic spaces. The main difference is <strong>how they pass sequence information</strong> (如何传递序列信息).</p>
 <p>In an <strong>RNN</strong>, information is propagated recurrently:</p>
 <ul>
 <li>the hidden state at time step <code>t</code> is passed to time step <code>t + 1</code></li>
 <li>each step depends on previous steps in order</li>
 <li>computation is naturally sequential</li>
 </ul>
-<p>This design makes it difficult to parallelize training across tokens. It also makes learning long-range dependencies harder, because information has to travel through many recurrent steps.</p>
+<p>This design makes it difficult to <strong>parallelize training</strong> across tokens (并行计算能力). It also makes learning <strong>long-range dependencies</strong> harder (全局信息交互), because information has to travel through many recurrent steps.</p>
 <p>In a <strong>Transformer</strong>, sequence information is propagated through attention:</p>
 <ul>
 <li>each token can directly attend to all relevant tokens in the sequence</li>
 <li>the model does not need to move information one step at a time</li>
 <li>training is much more parallelizable</li>
 </ul>
-<p>So the difference is not that one understands sequences and the other does not. Both do. The difference is <strong>how sequence information is transmitted</strong> (如何传递序列信息):</p>
+<p>In summary, the difference is not that one understands sequences and the other does not. Both do. The difference is how sequence information is transmitted:</p>
 <ul>
 <li><strong>RNN</strong>: passes information forward through recurrent hidden states</li>
 <li><strong>Transformer</strong>: aggregates information globally through attention</li>
@@ -387,6 +388,16 @@ $$
 </ul>
 <p><strong>Layer normalization</strong> computes statistics within each individual token representation. It does not depend on other examples in the batch, which makes it more stable for variable-length sequence modeling.</p>
 <p>This is why Transformers typically use <strong>layer normalization instead of batch normalization</strong>. For language tasks, each token representation should be normalized independently, without relying on the composition of the current mini-batch.</p>
+<h2 class="heading" id="positional-encoding">
+  Positional Encoding
+  <a class="anchor" href="#positional-encoding">#</a>
+</h2>
+<p>Positional encoding provides the model with information about the positions of words in a sequence. Since the Transformer&rsquo;s self-attention mechanism does not naturally account for the order of elements in the sequence, positional encoding solves this by adding position information to each element&rsquo;s representation. In the original Transformer paper, positional encodings are defined using alternating sine and cosine functions.</p>
+<h2 class="heading" id="ffn">
+  FFN
+  <a class="anchor" href="#ffn">#</a>
+</h2>
+<p>Feed-forward network (FFN) provides the model with nonlinear processing capacity. It operates independently on each position of the input, helping increase the model&rsquo;s complexity and expressive power.</p>
 
     </div>
   </article>
