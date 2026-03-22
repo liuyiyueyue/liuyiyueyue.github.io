@@ -52,9 +52,9 @@
     </item>
     <item>
       <title>Distributed Training: PyTorch DP vs DDP</title>
-      <link>https://liuyiyueyue.github.io/llm/distributed_trainining_2_ddp/</link>
+      <link>https://liuyiyueyue.github.io/llm/distributed_training_2_ddp/</link>
       <pubDate>Sun, 07 Dec 2025 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyueyue.github.io/llm/distributed_trainining_2_ddp/</guid>
+      <guid>https://liuyiyueyue.github.io/llm/distributed_training_2_ddp/</guid>
       <description>&lt;h2 class=&#34;heading&#34; id=&#34;nndataparallel-dp&#34;&gt;&#xA;  nn.DataParallel (DP)&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#nndataparallel-dp&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h2&gt;&#xA;&lt;p&gt;DP is a single-node, multi-GPU parallelization method (单机多卡).&lt;/p&gt;&#xA;&lt;h4 class=&#34;heading&#34; id=&#34;how-it-works&#34;&gt;&#xA;  How It Works&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#how-it-works&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h4&gt;&#xA;&lt;p&gt;PyTorch&amp;rsquo;s &lt;code&gt;DataParallel&lt;/code&gt;, or &lt;code&gt;DP&lt;/code&gt;, uses a parameter-server architecture and runs in a single process. During training, one GPU acts as the &lt;strong&gt;server&lt;/strong&gt; and the remaining GPUs act as &lt;strong&gt;workers&lt;/strong&gt;. Each GPU keeps a replica of the model for computation. The input data is first split across GPUs, each worker computes on its own shard, and the gradients are then gathered on the server GPU. The server updates the model parameters and synchronizes the updated model back to the other GPUs.&lt;/p&gt;</description>
     </item>
     <item>
