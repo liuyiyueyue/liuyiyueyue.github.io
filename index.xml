@@ -51,6 +51,13 @@
       <description>&lt;p&gt;This post grew out of a very concrete problem in my own team.&lt;/p&gt;&#xA;&lt;p&gt;Over time, code reviews started to feel slower and heavier than they should have.&#xA;Changes were functionally ready, but sat in review queues for days or even weeks.&#xA;Each revision restarted the waiting cycle, and senior engineers increasingly&#xA;became the critical path.&lt;/p&gt;&#xA;&lt;p&gt;While the context was specific, the patterns were not. Similar complaints show up&#xA;in many engineering teams once codebases and organizations reach a certain size.&#xA;This post starts from that local pain point and distills several practices that&#xA;generalize well beyond a single team.&lt;/p&gt;</description>
     </item>
     <item>
+      <title>Distributed Training: Model Parallelism</title>
+      <link>https://liuyiyueyue.github.io/llm/distributed_training_4_model_parallelism/</link>
+      <pubDate>Wed, 17 Dec 2025 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/distributed_training_4_model_parallelism/</guid>
+      <description>&lt;h3 class=&#34;heading&#34; id=&#34;why-model-parallelism&#34;&gt;&#xA;  Why Model Parallelism?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#why-model-parallelism&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;Data parallelism works well when the full model can still fit on each GPU. But once a model becomes too large, simply replicating it across devices is no longer practical.&lt;/p&gt;&#xA;&lt;p&gt;Model parallelism solves this by partitioning the model itself across multiple GPUs. Instead of every rank storing all weights, each rank stores and computes only part of the model. The tradeoff is that memory usage goes down, but communication and scheduling complexity go up.&lt;/p&gt;</description>
+    </item>
+    <item>
       <title>Distributed Training: ZeRO and FSDP</title>
       <link>https://liuyiyueyue.github.io/llm/distributed_training_3_zero_fsdp/</link>
       <pubDate>Mon, 15 Dec 2025 00:00:00 +0000</pubDate>

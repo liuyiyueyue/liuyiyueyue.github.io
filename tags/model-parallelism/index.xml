@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Model-Parallelism on Yiyue Liu&#39;s Blog</title>
+    <link>https://liuyiyueyue.github.io/tags/model-parallelism/</link>
+    <description>Recent content in Model-Parallelism on Yiyue Liu&#39;s Blog</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 17 Dec 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://liuyiyueyue.github.io/tags/model-parallelism/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Distributed Training: Model Parallelism</title>
+      <link>https://liuyiyueyue.github.io/llm/distributed_training_4_model_parallelism/</link>
+      <pubDate>Wed, 17 Dec 2025 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/distributed_training_4_model_parallelism/</guid>
+      <description>&lt;h3 class=&#34;heading&#34; id=&#34;why-model-parallelism&#34;&gt;&#xA;  Why Model Parallelism?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#why-model-parallelism&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;Data parallelism works well when the full model can still fit on each GPU. But once a model becomes too large, simply replicating it across devices is no longer practical.&lt;/p&gt;&#xA;&lt;p&gt;Model parallelism solves this by partitioning the model itself across multiple GPUs. Instead of every rank storing all weights, each rank stores and computes only part of the model. The tradeoff is that memory usage goes down, but communication and scheduling complexity go up.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

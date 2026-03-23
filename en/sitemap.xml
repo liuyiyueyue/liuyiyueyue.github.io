@@ -111,10 +111,16 @@
     <loc>https://liuyiyueyue.github.io/tags/software-engineering/</loc>
     <lastmod>2025-12-25T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/distributed_training_3_zero_fsdp/</loc>
-    <lastmod>2025-12-15T00:00:00+00:00</lastmod>
+    <loc>https://liuyiyueyue.github.io/llm/distributed_training_4_model_parallelism/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/distributed-training/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/model-parallelism/</loc>
+    <lastmod>2025-12-17T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/distributed_training_3_zero_fsdp/</loc>
     <lastmod>2025-12-15T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/fsdp/</loc>
