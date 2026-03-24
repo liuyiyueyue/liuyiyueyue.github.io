@@ -41,7 +41,7 @@
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/inference_3_disaggregated_inference/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="LLM Inference: Disaggregated Inference">
-  <meta property="og:description" content="What Is Disaggregated Inference (DI)? # In LLM inference, the prefill and decode stages have different compute, memory, and bandwidth requirements. Prefill is typically compute-intensive, while decode is memory-bandwidth-intensive. Having both prefill and decode on the same node lead to interference. A prefill stage on a long prompt occupies the GPU and delays the decode stage for other requests. Hence, separating prefill and decode onto separate processes or hosts can improve performance. 1">
+  <meta property="og:description" content="What Is Disaggregated Inference (DI)? # In LLM inference, the prefill and decode stages have different compute, memory, and bandwidth requirements. Prefill is typically compute-intensive, while decode is memory-bandwidth-intensive. Having both prefill and decode on the same node lead to interference. A prefill stage on a long prompt occupies the GPU and delays the decode stage for other requests. Hence, separating prefill and decode onto separate processes or hosts can improve performance. 1 2">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -238,7 +238,7 @@
   What Is Disaggregated Inference (DI)?
   <a class="anchor" href="#what-is-disaggregated-inference-di">#</a>
 </h3>
-<p>In LLM inference, the prefill and decode stages have different compute, memory, and bandwidth requirements. Prefill is typically compute-intensive, while decode is memory-bandwidth-intensive. Having both prefill and decode on the same node lead to interference. A prefill stage on a long prompt occupies the GPU and delays the decode stage for other requests. Hence, separating prefill and decode onto separate processes or hosts can improve performance. <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
+<p>In LLM inference, the prefill and decode stages have different compute, memory, and bandwidth requirements. Prefill is typically compute-intensive, while decode is memory-bandwidth-intensive. Having both prefill and decode on the same node lead to interference. A prefill stage on a long prompt occupies the GPU and delays the decode stage for other requests. Hence, separating prefill and decode onto separate processes or hosts can improve performance. <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup></p>
 <h3 class="heading" id="architecture">
   Architecture
   <a class="anchor" href="#architecture">#</a>
@@ -248,7 +248,11 @@
 <hr>
 <ol>
 <li id="fn:1">
-<p>vLLM Project. &ldquo;Disaggregated Prefill V1&rdquo;. GitHub Pull Request #10502. <a href="https://github.com/vllm-project/vllm/pull/10502">https://github.com/vllm-project/vllm/pull/10502</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>DistServe: Disaggregating Prefill and Decoding for Goodput-optimized
+Large Language Model Serving. June 6, 2024. <a href="https://arxiv.org/pdf/2401.09670">https://arxiv.org/pdf/2401.09670</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p>vLLM Project. &ldquo;Disaggregated Prefill V1&rdquo;. GitHub Pull Request #10502. <a href="https://github.com/vllm-project/vllm/pull/10502">https://github.com/vllm-project/vllm/pull/10502</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 </ol>
 </div>

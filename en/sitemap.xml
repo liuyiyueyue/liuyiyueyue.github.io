@@ -59,13 +59,19 @@
     <loc>https://liuyiyueyue.github.io/tags/training/</loc>
     <lastmod>2026-03-13T00:00:00+00:00</lastmod>
   </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/inference/</loc>
+    <lastmod>2026-02-26T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/inference_4_vllm_sglang/</loc>
+    <lastmod>2026-02-26T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/optimization/</loc>
+    <lastmod>2026-02-26T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>https://liuyiyueyue.github.io/llm/cpu_gpu_optimizations_4_torch/</loc>
     <lastmod>2026-02-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/cuda/</loc>
-    <lastmod>2026-02-19T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/optimization/</loc>
     <lastmod>2026-02-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/pytorch/</loc>
@@ -137,9 +143,6 @@
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/parallelism/</loc>
     <lastmod>2025-12-01T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/inference/</loc>
-    <lastmod>2023-12-15T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/inference_3_disaggregated_inference/</loc>
     <lastmod>2023-12-15T00:00:00+00:00</lastmod>

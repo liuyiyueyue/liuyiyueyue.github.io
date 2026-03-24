@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en-us"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    LLM Inference: vLLM and SGLang | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/inference_4_vllm_sglang/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/inference_4_vllm_sglang/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="LLM Inference: vLLM and SGLang">
+  <meta property="og:description" content="Paged Attention (vLLM) # Inference servers handle live traffic rather than a static batch job, so requests can have very different token lengths. This creates a challenge for KV cache allocation. A naive approach is to reserve a fixed-size buffer for the maximum token length for every request. Since each request has a different input length, much of that allocated memory remains unused.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2026-02-26T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-02-26T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Inference">
+    <meta property="article:tag" content="Optimization">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/inference_4_vllm_sglang/">LLM Inference: vLLM and SGLang</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">LLM Inference: vLLM and SGLang</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2026-02-26T00:00:00&#43;00:00">February 26, 2026</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <h3 class="heading" id="paged-attention-vllm">
+  Paged Attention (vLLM)
+  <a class="anchor" href="#paged-attention-vllm">#</a>
+</h3>
+<p>Inference servers handle live traffic rather than a static batch job, so requests can have very different token lengths. This creates a challenge for KV cache allocation. A naive approach is to reserve a fixed-size buffer for the maximum token length for every request. Since each request has a different input length, much of that allocated memory remains unused.</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 939; --h: 229;">
+            <img loading="lazy" alt="Three types of memory wastes" src="/llm/inference_4_vllm_sglang/images/pagedattention.png" width="939" height="229">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
+<p>PagedAttention is a memory management system for KV cache designed to solve this problem <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>. Instead of allocating one large contiguous buffer, it divides the KV cache into fixed-size blocks (&ldquo;pages&rdquo;). Each request&rsquo;s KV cache is then represented as a linked list of blocks. This reduces fragmentation and makes allocation more flexible and efficient.</p>
+<p>This is analogous to OS virtual memory:</p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>OS concept</th>
+                <th>vLLM equivalent</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Virtual page</td>
+                <td>Logical KV block</td>
+            </tr>
+            <tr>
+                <td>Physical page</td>
+                <td>Physical KV cache block in GPU memory</td>
+            </tr>
+            <tr>
+                <td>Page table</td>
+                <td>Block table mapping logical to physical blocks</td>
+            </tr>
+            <tr>
+                <td>Memory allocator</td>
+                <td>KV cache manager / block allocator</td>
+            </tr>
+        </tbody>
+    </table>
+</div><h3 class="heading" id="continuous-batching">
+  Continuous Batching
+  <a class="anchor" href="#continuous-batching">#</a>
+</h3>
+<p>Continuous batching is a special case of dynamic batching and one of the main reasons vLLM outperforms older serving engines. It can add new requests to an active batch while removing finished ones at the same time. With PagedAttention, each request&rsquo;s KV cache is managed independently, so adding or removing requests does not disrupt the memory layout <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>.</p>
+<figure><img src="/llm/inference_4_vllm_sglang/images/continuous_batching.png"
+    alt="Continuous batching"><figcaption>
+      <p>Each sequence generates one token (blue) from the prompt tokens (yellow). After several iterations, the completed sequences each have different sizes because each emits its end-of-sequence token (red) at a different iteration. Once a sequence emits an end-of-sequence token, a new sequence is inserted in its place.</p>
+    </figcaption>
+</figure>
+
+<h3 class="heading" id="speculative-decoding">
+  Speculative Decoding
+  <a class="anchor" href="#speculative-decoding">#</a>
+</h3>
+<p>(这章写的不走心啊！)</p>
+<p>In normal decoding, each new token requires a full forward pass through the large LLM. This is expensive, especially for long generations. Speculative decoding uses a small, fast draft model to propose several tokens ahead, and then the large target model verifies them in parallel <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup> <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup>.</p>
+<h3 class="heading" id="vllm-vs-sglang">
+  vLLM v.s. SGLang
+  <a class="anchor" href="#vllm-vs-sglang">#</a>
+</h3>
+<p>vLLM maximizes per-request efficiency with PagedAttention (memory paging for KV cache), while SGLang maximizes cross-request reuse via prefix sharing (radix tree KV cache).
+In practice: SGLang wins on prefix-heavy workloads (chat/RAG), while vLLM is more general-purpose and production-ready; both are otherwise converging in performance.</p>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>Efficient Memory Management for Large Language Model Serving with PagedAttention. arXiv, September 12, 2023. <a href="https://arxiv.org/abs/2309.06180">https://arxiv.org/abs/2309.06180</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p>How continuous batching enables 23x throughput in LLM inference while reducing p50 latency. June 22, 2023. <a href="https://www.anyscale.com/blog/continuous-batching-llm-inference">https://www.anyscale.com/blog/continuous-batching-llm-inference</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:3">
+<p>Fast Inference from Transformers via Speculative Decoding. arXiv, November 30, 2022. <a href="https://arxiv.org/abs/2211.17192">https://arxiv.org/abs/2211.17192</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:4">
+<p>Accelerating Large Language Model Decoding with Speculative Sampling. arXiv, February 2, 2023. <a href="https://arxiv.org/abs/2302.01318">https://arxiv.org/abs/2302.01318</a>&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/llm/cpu_gpu_optimizations_4_torch/">
+                        [4/4] CPU-GPU Optimization: PyTorch
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+            <div class="single-pagination-container-next">
+                <div class="single-pagination-text">
+                    <a href="/llm/jax_1/">
+                        JAX (Part 1): Thinking in Pure Functions
+                    </a>
+                </div>
+                <div class="single-pagination-text">→</div>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+
