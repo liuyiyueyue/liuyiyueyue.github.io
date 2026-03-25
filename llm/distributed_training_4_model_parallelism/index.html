@@ -272,7 +272,7 @@ Model parallelism solves this by partitioning the model itself across multiple G
 </ol>
 <p><strong>GPipe</strong></p>
 <p>The amount of time each GPU spends working is closely tied to the batch size it processes. To reduce this waiting time, GPipe, proposed by Google, presents a simple idea to further split a batch into multiple smaller sub-batches, called <strong>micro-batches</strong> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>.</p>
-<figure><img src="./images/gpipe_figure2_pipeline_parallelism.png"
+<figure><img src="/llm/distributed_training_4_model_parallelism/images/gpipe_figure2_pipeline_parallelism.png"
     alt="Figure 2 from the GPipe paper: sequential execution, naive model parallelism, and pipeline parallelism with micro-batches."><figcaption>
       <p>Figure 2 from the GPipe paper: sequential execution, naive model parallelism, and pipeline parallelism with micro-batches.</p>
     </figcaption>
@@ -300,7 +300,7 @@ Model parallelism solves this by partitioning the model itself across multiple G
 <p>Two papers both discuss sequence parallelism but with different goals and methods.</p>
 <p><strong>Megatron-LM</strong></p>
 <p>The first paper is Megatron-LM’s third paper, “Reducing Activation Recomputation in Large Transformer Models” <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>. The motivation behind Megatron-LM’s sequence parallelism was to <em>distribute the memory that tensor parallelism could not shard anymore</em>.</p>
-<figure><img src="./images/sequence_parallel_figure5.png"
+<figure><img src="/llm/distributed_training_4_model_parallelism/images/sequence_parallel_figure5.png"
     alt="Figure 5 from the Megatron-LM paper: Transformer layer with tensor and sequence parallelism. g and ḡ are conjugate. g is all-gather in the forward pass and reduce-scatter in the backward pass. ḡ is reduce-scatter in the forward pass and all-gather in the backward pass."><figcaption>
       <p>Figure 5 from the Megatron-LM paper: Transformer layer with tensor and sequence parallelism. g and ḡ are conjugate. g is all-gather in the forward pass and reduce-scatter in the backward pass. ḡ is reduce-scatter in the forward pass and all-gather in the backward pass.</p>
     </figcaption>
