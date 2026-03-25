@@ -301,8 +301,8 @@ Model parallelism solves this by partitioning the model itself across multiple G
 <p><strong>Megatron-LM</strong></p>
 <p>The first paper is Megatron-LM’s third paper, “Reducing Activation Recomputation in Large Transformer Models” <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>. The motivation behind Megatron-LM’s sequence parallelism was to <em>distribute the memory that tensor parallelism could not shard anymore</em>.</p>
 <figure><img src="/llm/distributed_training_4_model_parallelism/images/sequence_parallel_figure5.png"
-    alt="Figure 5 from the Megatron-LM paper: Transformer layer with tensor and sequence parallelism. g and ḡ are conjugate. g is all-gather in the forward pass and reduce-scatter in the backward pass. ḡ is reduce-scatter in the forward pass and all-gather in the backward pass."><figcaption>
-      <p>Figure 5 from the Megatron-LM paper: Transformer layer with tensor and sequence parallelism. g and ḡ are conjugate. g is all-gather in the forward pass and reduce-scatter in the backward pass. ḡ is reduce-scatter in the forward pass and all-gather in the backward pass.</p>
+    alt="Figure 5 from the Megatron-LM paper."><figcaption>
+      <p>Figure 5 from the Megatron-LM paper.</p>
     </figcaption>
 </figure>
 
