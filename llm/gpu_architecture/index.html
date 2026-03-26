@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en-us"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    GPU Architecture | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/gpu_architecture/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/gpu_architecture/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="GPU Architecture">
+  <meta property="og:description" content="Grace-Blackwell as a Superchip # Recent NVIDIA systems stop treating the CPU and GPU as two loosely connected devices over PCIe. The Grace-Blackwell design instead packages one Grace CPU with two Blackwell GPU dies into a tightly coupled module, connected by NVLink-C2C. The point is not just faster I/O. It is to make CPU memory and GPU memory part of a coherent programming model with much lower communication overhead than a conventional host-device setup.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2026-03-24T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-03-24T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Gpu">
+    <meta property="article:tag" content="Architecture">
+    <meta property="article:tag" content="Cuda">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/gpu_architecture/">GPU Architecture</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">GPU Architecture</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2026-03-24T00:00:00&#43;00:00">March 24, 2026</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <h3 class="heading" id="grace-blackwell-as-a-superchip">
+  Grace-Blackwell as a Superchip
+  <a class="anchor" href="#grace-blackwell-as-a-superchip">#</a>
+</h3>
+<p>Recent NVIDIA systems stop treating the CPU and GPU as two loosely connected devices over PCIe. The Grace-Blackwell design instead packages one <strong>Grace CPU</strong> with two <strong>Blackwell GPU dies</strong> into a tightly coupled module, connected by <strong>NVLink-C2C</strong>. The point is not just faster I/O. It is to make CPU memory and GPU memory part of a coherent programming model with much lower communication overhead than a conventional host-device setup.</p>
+<p>The first version of this idea was <strong>Grace Hopper (GH200)</strong>: one Grace CPU plus one Hopper GPU. The next step is <strong>GB200</strong>, which combines one Grace CPU with two Blackwell GPU dies on one module. In practice, the CPU sits in the middle of the package, with the two GPU dies around it, and the whole module exposes a shared memory space.</p>
+<figure><img src="/llm/gpu_architecture/images/figure-2-1.png"
+    alt="Grace-Blackwell superchip module: one Grace CPU centered between two Blackwell GPU dies on a single package."><figcaption>
+      <p>Grace-Blackwell superchip module: one Grace CPU centered between two Blackwell GPU dies on a single package.</p>
+    </figcaption>
+</figure>
+
+<h3 class="heading" id="unified-but-not-uniform-memory">
+  Unified but Not Uniform Memory
+  <a class="anchor" href="#unified-but-not-uniform-memory">#</a>
+</h3>
+<p>The most important architectural idea is <strong>cache-coherent unified memory</strong>. Grace contributes roughly <strong>480 GB of LPDDR5X</strong>, while each Blackwell GPU provides roughly <strong>192 GB of HBM3e</strong> physically attached to the GPU package. Software can treat the CPU and GPU memory as one address space, and hardware coherence removes much of the old explicit-copy model.</p>
+<p>But unified memory does <strong>not</strong> mean uniform performance.</p>
+<ul>
+<li><strong>HBM3e</strong> is still the fastest memory tier for GPU compute.</li>
+<li><strong>LPDDR5X</strong> is larger, but farther away from the GPU cores.</li>
+<li>GPU access to CPU memory over <strong>NVLink-C2C</strong> is much faster than going out to SSD, but still slower than hitting local HBM.</li>
+</ul>
+<p>So the real benefit is not that CPU memory replaces HBM. The benefit is that it extends the effective memory pool for very large models. If the model and runtime state fit in the combined CPU+GPU memory footprint, the system can continue executing without immediately spilling to storage.</p>
+<h3 class="heading" id="why-grace-exists">
+  Why Grace Exists
+  <a class="anchor" href="#why-grace-exists">#</a>
+</h3>
+<p>Grace is not just a host processor bolted onto GPUs. Its role is to keep the accelerator fed without becoming the bottleneck.</p>
+<p>In older PCIe-attached systems, the CPU often acts as a slow control plane for a much faster GPU data plane. Grace changes that balance. It is designed so data movement, control, and memory capacity scale with the GPU complex, which matters for LLM training and inference where input pipelines, parameter movement, checkpointing, and orchestration can otherwise starve the GPUs.</p>
+<h3 class="heading" id="blackwell-as-a-dual-die-gpu">
+  Blackwell as a Dual-Die GPU
+  <a class="anchor" href="#blackwell-as-a-dual-die-gpu">#</a>
+</h3>
+<p>Blackwell also changes the internal GPU packaging model. Instead of building one enormous monolithic die, NVIDIA splits the GPU into <strong>two GPU dies</strong> connected by an on-package <strong>NV-HBI</strong> link with roughly <strong>10 TB/s</strong> of die-to-die bandwidth.</p>
+<p>This is a classic chiplet-style tradeoff:</p>
+<ul>
+<li>smaller dies are easier to manufacture at high yield</li>
+<li>the package can scale beyond monolithic reticle limits</li>
+<li>the interconnect must be fast enough that software can still treat the result as one GPU</li>
+</ul>
+<p>That last point is critical. The CUDA stack presents the pair of dies as a <strong>single logical GPU</strong>, not as two independent devices. That abstraction only works because the die-to-die bandwidth is high enough to make the split mostly invisible at the programming model level.</p>
+<h3 class="heading" id="memory-capacity-and-cache">
+  Memory Capacity and Cache
+  <a class="anchor" href="#memory-capacity-and-cache">#</a>
+</h3>
+<p>For the Blackwell B200, the nominal HBM3e capacity is <strong>192 GB</strong>, but the usable capacity is closer to <strong>180 GB</strong> after ECC and reserved overhead. That distinction matters for system planning: practitioners should size models and batch configurations against the usable memory, not the marketing number.</p>
+<p>Blackwell also provides a large <strong>L2 cache</strong>: roughly <strong>126 MB total</strong>, or <strong>63 MB per die</strong>. That large shared cache is important because modern GPU performance is dominated not just by arithmetic throughput, but by whether data can be reused before going back to HBM.</p>
+<h3 class="heading" id="tensor-cores-and-the-transformer-engine">
+  Tensor Cores and the Transformer Engine
+  <a class="anchor" href="#tensor-cores-and-the-transformer-engine">#</a>
+</h3>
+<p>The reason NVIDIA GPUs dominate transformer workloads is not just raw FLOPs. It is the combination of:</p>
+<ul>
+<li><strong>Tensor Cores</strong> for high-throughput matrix multiply</li>
+<li>support for low-precision formats such as <strong>FP8</strong> and <strong>4-bit</strong></li>
+<li>the <strong>Transformer Engine (TE)</strong> for mixed-precision execution</li>
+</ul>
+<p>The Transformer Engine automates a key optimization: use higher precision where numerical stability matters, and lower precision where bandwidth and throughput dominate. In practice, users typically enable mixed precision at the framework level, while the hardware and runtime choose efficient precision paths for each layer.</p>
+<p>This is exactly aligned with transformer workloads, where matrix multiply dominates runtime and where carefully managed low precision can preserve model quality while significantly increasing throughput.</p>
+<h3 class="heading" id="sms-warps-and-the-execution-model">
+  SMs, Warps, and the Execution Model
+  <a class="anchor" href="#sms-warps-and-the-execution-model">#</a>
+</h3>
+<p>At execution time, the GPU is organized around many <strong>streaming multiprocessors (SMs)</strong>. Each SM contains arithmetic units, Tensor Cores, load/store units, and fast local storage. Threads execute in groups of <strong>32</strong> called <strong>warps</strong>, following the <strong>SIMT</strong> model: one instruction stream applied across many threads in lockstep.</p>
+<p>A useful mental model is:</p>
+<ul>
+<li>registers: private to each thread</li>
+<li>shared memory: local to a thread block on an SM</li>
+<li>L1 cache: local to an SM</li>
+<li>L2 cache: shared across the whole GPU</li>
+<li>HBM: large off-chip device memory</li>
+</ul>
+<p>This hierarchy explains a lot of CUDA performance behavior. Good kernels maximize data reuse in registers, shared memory, and caches. Bad kernels repeatedly go out to HBM and waste the GPU&rsquo;s arithmetic throughput waiting on memory.</p>
+<figure><img src="/llm/gpu_architecture/images/figure-2-5.png"
+    alt="GPU hardware hierarchy and the CUDA execution model: SMs execute warps of 32 threads over a layered memory hierarchy."><figcaption>
+      <p>GPU hardware hierarchy and the CUDA execution model: SMs execute warps of 32 threads over a layered memory hierarchy.</p>
+    </figcaption>
+</figure>
+
+<h3 class="heading" id="summary">
+  Summary
+  <a class="anchor" href="#summary">#</a>
+</h3>
+<p>The Grace-Blackwell generation is not just a faster GPU. It is a packaging and memory-system redesign:</p>
+<ul>
+<li><strong>Grace + Blackwell</strong> reduces the CPU-GPU boundary</li>
+<li><strong>dual-die Blackwell</strong> extends GPU scale beyond monolithic limits</li>
+<li><strong>NVLink-C2C</strong> and <strong>NV-HBI</strong> make the package behave like a coherent compute unit</li>
+<li><strong>HBM + LPDDR5X</strong> gives a larger effective memory pool, but with clear performance tiers</li>
+<li><strong>Tensor Cores + Transformer Engine</strong> map directly onto transformer math</li>
+</ul>
+<p>For LLM systems, that means the unit of design is no longer just &ldquo;a GPU.&rdquo; It is increasingly the <strong>superchip</strong>: a tightly integrated compute, memory, and interconnect package.</p>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/llm/jax_1/">
+                        JAX (Part 1): Thinking in Pure Functions
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+            <div class="single-pagination-container-next">
+                <div class="single-pagination-text">
+                    <a href="/llm/gpu_networking_datacenter/">
+                        GPU Networking and Datacenter Architecture
+                    </a>
+                </div>
+                <div class="single-pagination-text">→</div>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+

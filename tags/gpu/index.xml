@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Gpu on Yiyue Liu&#39;s Blog</title>
+    <link>https://liuyiyueyue.github.io/tags/gpu/</link>
+    <description>Recent content in Gpu on Yiyue Liu&#39;s Blog</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 25 Mar 2026 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://liuyiyueyue.github.io/tags/gpu/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>GPU Networking and Datacenter Architecture</title>
+      <link>https://liuyiyueyue.github.io/llm/gpu_networking_datacenter/</link>
+      <pubDate>Wed, 25 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/gpu_networking_datacenter/</guid>
+      <description>&lt;h3 class=&#34;heading&#34; id=&#34;from-one-gpu-to-one-rack&#34;&gt;&#xA;  From One GPU to One Rack&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#from-one-gpu-to-one-rack&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;Once a model no longer fits on one GPU, system performance becomes a networking problem as much as a compute problem. NVIDIA&amp;rsquo;s Grace-Blackwell systems push this idea to the rack level with &lt;strong&gt;NVL72&lt;/strong&gt;, a design that packages &lt;strong&gt;72 Blackwell GPUs&lt;/strong&gt; and &lt;strong&gt;36 Grace CPUs&lt;/strong&gt; into one tightly connected system.&lt;/p&gt;&#xA;&lt;p&gt;The key engineering goal is simple: keep as much communication as possible on the fastest fabric, and only leave that fabric when scale requires it. &lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>GPU Architecture</title>
+      <link>https://liuyiyueyue.github.io/llm/gpu_architecture/</link>
+      <pubDate>Tue, 24 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/gpu_architecture/</guid>
+      <description>&lt;h3 class=&#34;heading&#34; id=&#34;grace-blackwell-as-a-superchip&#34;&gt;&#xA;  Grace-Blackwell as a Superchip&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#grace-blackwell-as-a-superchip&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;Recent NVIDIA systems stop treating the CPU and GPU as two loosely connected devices over PCIe. The Grace-Blackwell design instead packages one &lt;strong&gt;Grace CPU&lt;/strong&gt; with two &lt;strong&gt;Blackwell GPU dies&lt;/strong&gt; into a tightly coupled module, connected by &lt;strong&gt;NVLink-C2C&lt;/strong&gt;. The point is not just faster I/O. It is to make CPU memory and GPU memory part of a coherent programming model with much lower communication overhead than a conventional host-device setup.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

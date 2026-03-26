@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en-us"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    GPU Networking and Datacenter Architecture | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/gpu_networking_datacenter/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/gpu_networking_datacenter/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="GPU Networking and Datacenter Architecture">
+  <meta property="og:description" content="From One GPU to One Rack # Once a model no longer fits on one GPU, system performance becomes a networking problem as much as a compute problem. NVIDIA’s Grace-Blackwell systems push this idea to the rack level with NVL72, a design that packages 72 Blackwell GPUs and 36 Grace CPUs into one tightly connected system.
+The key engineering goal is simple: keep as much communication as possible on the fastest fabric, and only leave that fabric when scale requires it. 1">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2026-03-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-03-25T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Gpu">
+    <meta property="article:tag" content="Networking">
+    <meta property="article:tag" content="Datacenter">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/gpu_networking_datacenter/">GPU Networking and Datacenter Architecture</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">GPU Networking and Datacenter Architecture</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2026-03-25T00:00:00&#43;00:00">March 25, 2026</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <h3 class="heading" id="from-one-gpu-to-one-rack">
+  From One GPU to One Rack
+  <a class="anchor" href="#from-one-gpu-to-one-rack">#</a>
+</h3>
+<p>Once a model no longer fits on one GPU, system performance becomes a networking problem as much as a compute problem. NVIDIA&rsquo;s Grace-Blackwell systems push this idea to the rack level with <strong>NVL72</strong>, a design that packages <strong>72 Blackwell GPUs</strong> and <strong>36 Grace CPUs</strong> into one tightly connected system.</p>
+<p>The key engineering goal is simple: keep as much communication as possible on the fastest fabric, and only leave that fabric when scale requires it. <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
+<h3 class="heading" id="nvl72-topology">
+  NVL72 Topology
+  <a class="anchor" href="#nvl72-topology">#</a>
+</h3>
+<p>An <strong>NVL72</strong> rack is built from <strong>18 compute nodes</strong>. Each node contains two GB200/GB300 superchips, for a total of:</p>
+<ul>
+<li>4 Blackwell GPUs</li>
+<li>2 Grace CPUs</li>
+</ul>
+<p>Across the full rack, those GPUs are tied together by NVLink and NVSwitch, creating a high-bandwidth, low-latency network inside the rack.</p>
+<p>This matters because large-model training and inference are dominated by communication patterns such as:</p>
+<ul>
+<li>tensor-parallel all-reduce</li>
+<li>expert-parallel all-to-all</li>
+<li>KV-cache movement</li>
+<li>parameter, gradient, and activation exchange</li>
+</ul>
+<p>If those operations stay on the NVLink fabric, they are dramatically cheaper than sending traffic over a traditional cluster network.</p>
+<h3 class="heading" id="nvlink-and-nvswitch">
+  NVLink and NVSwitch
+  <a class="anchor" href="#nvlink-and-nvswitch">#</a>
+</h3>
+<p><code>NVLink</code> and <code>NVSwitch</code> solve two different problems. <strong>NVLink</strong> is the high-speed point-to-point interconnect that carries traffic between GPUs, or between CPU and GPU in designs such as <code>NVLink-C2C</code>. <strong>NVSwitch</strong> is the switching chip built on top of those NVLink connections, allowing many GPUs to communicate through a shared fabric instead of requiring direct wiring between every pair. In short, NVLink is the link, while NVSwitch is the network.</p>
+<p>Each Blackwell GPU exposes 18 NVLink 5 ports. Those ports are not used as direct point-to-point cables between every GPU pair. Instead, GPUs connect into NVSwitch chips, which act like a specialized switch fabric for NVLink traffic.</p>
+<p>The result is effectively a rack-scale nonblocking GPU interconnect:</p>
+<ul>
+<li>any GPU can reach any other GPU through the switch fabric</li>
+<li>bandwidth is much more uniform than ad hoc PCIe trees</li>
+<li>the rack behaves more like one large accelerator than like 72 isolated devices</li>
+</ul>
+<p>This is why people sometimes say these systems &ldquo;treat many GPUs as one.&rdquo; That is not literally true from a software abstraction standpoint, but for many collective operations the communication fabric is fast and regular enough that the rack can be programmed as a very tightly coupled parallel machine.</p>
+<h3 class="heading" id="multi-gpu-programming-model">
+  Multi-GPU Programming Model
+  <a class="anchor" href="#multi-gpu-programming-model">#</a>
+</h3>
+<p>Inside the rack, one GPU can directly access another GPU&rsquo;s memory over NVLink using peer-to-peer mechanisms and PGAS-style programming models.</p>
+<p>Across nodes, the model changes. Communication is typically built on <strong>RDMA</strong>, which allows direct memory access over the network without CPU copies. NVIDIA extends this with <strong>GPUDirect RDMA</strong>, which lets a NIC register GPU memory and perform DMA directly to and from that GPU memory.</p>
+<p>That removes two common bottlenecks:</p>
+<ul>
+<li>no staging through host DRAM</li>
+<li>much less CPU involvement in the data path</li>
+</ul>
+<p>Upper-layer libraries such as <strong>NVSHMEM</strong> build one-sided communication and remote atomic semantics on top of these RDMA transports.</p>
+<p>The practical consequence is straightforward: if an algorithm can be structured to keep most of its traffic inside one NVL72 rack, it should. Inter-rack communication is still necessary at scale, but it is materially slower and should be treated as the expensive tier.</p>
+<h3 class="heading" id="in-network-aggregation-and-sharp">
+  In-Network Aggregation and SHARP
+  <a class="anchor" href="#in-network-aggregation-and-sharp">#</a>
+</h3>
+<p><strong>SHARP</strong> is NVIDIA&rsquo;s mechanism for doing some collective reduction work inside the network fabric rather than on the endpoints. Conceptually, instead of every GPU or host participating fully in a reduction tree, the switch fabric performs part of the aggregation on the data while it is in flight.</p>
+<p>For collectives such as all-reduce, this can reduce:</p>
+<ul>
+<li>endpoint work</li>
+<li>network congestion</li>
+<li>end-to-end latency</li>
+</ul>
+<p>So the right mental model is: <strong>SHARP moves part of the collective algorithm into the network itself</strong>.</p>
+<h3 class="heading" id="beyond-the-rack-nics-and-dpus">
+  Beyond the Rack: NICs and DPUs
+  <a class="anchor" href="#beyond-the-rack-nics-and-dpus">#</a>
+</h3>
+<p>NVLink solves intra-rack GPU communication. It does not solve communication to:</p>
+<ul>
+<li>other NVL72 racks</li>
+<li>shared storage</li>
+<li>external services</li>
+</ul>
+<p>That tier is handled by high-speed <strong>InfiniBand</strong> or <strong>Ethernet</strong> NICs, often paired with <strong>BlueField DPUs</strong>. A <strong>DPU</strong> is effectively a programmable network/storage offload processor. In these systems it handles line-rate packet processing, RDMA, and <strong>NVMe over Fabrics</strong> operations so the host CPUs do not spend cycles on packet handling, protocol processing, and interrupt overhead.</p>
+<p>This changes the node architecture in an important way. The Grace CPU is not forced to sit in the middle of every storage or network transfer. The DPU and NIC can move data much closer to the actual data path, and <strong>GPUDirect RDMA</strong> can connect that path directly to GPU memory.</p>
+<h3 class="heading" id="storage-and-data-movement">
+  Storage and Data Movement
+  <a class="anchor" href="#storage-and-data-movement">#</a>
+</h3>
+<p>At cluster scale, storage traffic also becomes a systems bottleneck. Training jobs need to ingest checkpoints, datasets, and optimizer state at very high rates. The combination of:</p>
+<ul>
+<li><strong>NICs</strong> for external connectivity</li>
+<li><strong>DPUs</strong> for protocol offload</li>
+<li><strong>GPUDirect RDMA</strong> for direct GPU-memory access</li>
+</ul>
+<p>reduces copies and CPU overhead in that path.</p>
+<p>The architectural pattern is consistent across the stack:</p>
+<ul>
+<li>use <strong>NVLink/NVSwitch</strong> for the fastest local communication</li>
+<li>use <strong>RDMA fabrics</strong> for cross-rack and storage traffic</li>
+<li>use <strong>DPUs</strong> to offload infrastructure work from the CPU</li>
+</ul>
+<h3 class="heading" id="power-and-cooling-are-first-class-constraints">
+  Power and Cooling Are First-Class Constraints
+  <a class="anchor" href="#power-and-cooling-are-first-class-constraints">#</a>
+</h3>
+<p>A fully populated <strong>NVL72</strong> rack can consume roughly <strong>130 kW</strong>:</p>
+<ul>
+<li>about <strong>110 kW</strong> from the 18 compute nodes</li>
+<li>about <strong>20 kW</strong> from NVSwitch trays, network gear, and cooling overhead</li>
+</ul>
+<p>At that density, cooling is no longer a peripheral detail. It is a hard architectural constraint.</p>
+<p>Traditional air cooling does not scale well to this power envelope, so NVL72 uses <strong>liquid cooling</strong>. Cold plates are attached directly to the superchips and NVSwitch components, and coolant loops carry heat out of the rack. This is not optional plumbing. Without aggressive thermal design, the rack could not sustain its target compute density.</p>
+<h3 class="heading" id="summary">
+  Summary
+  <a class="anchor" href="#summary">#</a>
+</h3>
+<p>The main lesson is that modern AI infrastructure is hierarchical:</p>
+<ul>
+<li>inside a package: <strong>NVLink-C2C</strong> and coherent memory</li>
+<li>inside a rack: <strong>NVLink + NVSwitch</strong></li>
+<li>across racks: <strong>InfiniBand/Ethernet + RDMA</strong></li>
+<li>for offload: <strong>NICs + DPUs</strong></li>
+</ul>
+<p>The best software architecture follows the same hierarchy. Keep communication local when possible, treat inter-rack traffic as expensive, and design around the fact that power delivery and cooling are now core parts of system design, not just facility details.</p>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>NVIDIA Technical Blog. &ldquo;NVIDIA GB200 NVL72 Delivers Trillion-Parameter LLM Training and Real-Time Inference.&rdquo; <a href="https://developer.nvidia.com/blog/nvidia-gb200-nvl72-delivers-trillion-parameter-llm-training-and-real-time-inference/">https://developer.nvidia.com/blog/nvidia-gb200-nvl72-delivers-trillion-parameter-llm-training-and-real-time-inference/</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/llm/gpu_architecture/">
+                        GPU Architecture
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+

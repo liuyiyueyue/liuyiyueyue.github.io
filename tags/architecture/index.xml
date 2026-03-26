@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Architecture on Yiyue Liu&#39;s Blog</title>
+    <link>https://liuyiyueyue.github.io/tags/architecture/</link>
+    <description>Recent content in Architecture on Yiyue Liu&#39;s Blog</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 24 Mar 2026 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://liuyiyueyue.github.io/tags/architecture/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>GPU Architecture</title>
+      <link>https://liuyiyueyue.github.io/llm/gpu_architecture/</link>
+      <pubDate>Tue, 24 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/gpu_architecture/</guid>
+      <description>&lt;h3 class=&#34;heading&#34; id=&#34;grace-blackwell-as-a-superchip&#34;&gt;&#xA;  Grace-Blackwell as a Superchip&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#grace-blackwell-as-a-superchip&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;Recent NVIDIA systems stop treating the CPU and GPU as two loosely connected devices over PCIe. The Grace-Blackwell design instead packages one &lt;strong&gt;Grace CPU&lt;/strong&gt; with two &lt;strong&gt;Blackwell GPU dies&lt;/strong&gt; into a tightly coupled module, connected by &lt;strong&gt;NVLink-C2C&lt;/strong&gt;. The point is not just faster I/O. It is to make CPU memory and GPU memory part of a coherent programming model with much lower communication overhead than a conventional host-device setup.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

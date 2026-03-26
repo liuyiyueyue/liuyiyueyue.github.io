@@ -6,8 +6,50 @@
     <description>Recent content in Tags on Yiyue Liu&#39;s Blog</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 13 Mar 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 25 Mar 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://liuyiyueyue.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Datacenter</title>
+      <link>https://liuyiyueyue.github.io/tags/datacenter/</link>
+      <pubDate>Wed, 25 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/tags/datacenter/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Gpu</title>
+      <link>https://liuyiyueyue.github.io/tags/gpu/</link>
+      <pubDate>Wed, 25 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/tags/gpu/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Llm</title>
+      <link>https://liuyiyueyue.github.io/tags/llm/</link>
+      <pubDate>Wed, 25 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/tags/llm/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Networking</title>
+      <link>https://liuyiyueyue.github.io/tags/networking/</link>
+      <pubDate>Wed, 25 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/tags/networking/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Architecture</title>
+      <link>https://liuyiyueyue.github.io/tags/architecture/</link>
+      <pubDate>Tue, 24 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/tags/architecture/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Cuda</title>
+      <link>https://liuyiyueyue.github.io/tags/cuda/</link>
+      <pubDate>Tue, 24 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/tags/cuda/</guid>
+      <description></description>
+    </item>
     <item>
       <title>Compiler</title>
       <link>https://liuyiyueyue.github.io/tags/compiler/</link>
@@ -20,13 +62,6 @@
       <link>https://liuyiyueyue.github.io/tags/jax/</link>
       <pubDate>Fri, 13 Mar 2026 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/tags/jax/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Llm</title>
-      <link>https://liuyiyueyue.github.io/tags/llm/</link>
-      <pubDate>Fri, 13 Mar 2026 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyueyue.github.io/tags/llm/</guid>
       <description></description>
     </item>
     <item>
@@ -55,13 +90,6 @@
       <link>https://liuyiyueyue.github.io/tags/optimization/</link>
       <pubDate>Thu, 26 Feb 2026 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/tags/optimization/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Cuda</title>
-      <link>https://liuyiyueyue.github.io/tags/cuda/</link>
-      <pubDate>Thu, 19 Feb 2026 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyueyue.github.io/tags/cuda/</guid>
       <description></description>
     </item>
     <item>
