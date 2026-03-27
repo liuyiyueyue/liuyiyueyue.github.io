@@ -351,11 +351,36 @@ $$</p>
 </div>
 <p><code>2</code> accounts for K and V.</p>
 <p>For LLaMA-2 13B in FP16, <code>num_layers = 40</code>, <code>num_kv_heads = 40</code>, <code>head_dim = 128</code>, and each FP16 value takes 2 bytes. With a sequence length of 2048 tokens, the KV cache size is <code>40 * 2048 * 40 * 128 * 2 * 2 = 1.5625 GiB</code>. If the sequence length increases to 16k tokens, the KV cache grows to <code>40 * 16,000 * 40 * 128 * 2 * 2 = 12.2 GiB</code>. In other words, KV cache size scales linearly with sequence length, which is why long-context inference becomes memory-intensive.</p>
+<h3 class="heading" id="memory-management-for-kv-cache">
+  Memory Management for KV Cache
+  <a class="anchor" href="#memory-management-for-kv-cache">#</a>
+</h3>
+<p>In production, the challenge is not the KV cache of a single short request, but long contexts and many concurrent requests. The main problems are:</p>
+<ul>
+<li><strong>Internal fragmentation</strong>: reserving a large contiguous KV region per request wastes HBM when actual sequence lengths differ.</li>
+<li><strong>Unknown output length</strong>: generation length is not known in advance, so over-allocation wastes memory while under-allocation risks OOM or expensive reallocation.</li>
+<li><strong>Concurrency pressure</strong>: multiple requests retain KV cache at the same time, directly limiting batch size and throughput.</li>
+<li><strong>Prefix duplication</strong>: requests with the same system prompt or prompt prefix often store identical KV states repeatedly.</li>
+</ul>
+<p>Common memory-management approaches address these issues from different angles:</p>
+<ul>
+<li><strong><a href="/llm/inference_4_vllm_sglang/#paged-attention-vllm">PagedAttention (vLLM)</a></strong>: split KV cache into fixed-size blocks and maintain a block table that maps logical blocks to physical blocks. This removes the need for large contiguous allocations, sharply reduces fragmentation, and enables prefix sharing via copy-on-write.</li>
+<li><strong><a href="/llm/inference_4_vllm_sglang/#vllm-vs-sglang">Prefix caching / RadixAttention (SGLang)</a></strong>: organize KV blocks in a radix tree so requests with the same prefix reuse cached nodes. This is especially effective for multi-turn chat, RAG, and workloads with repeated system prompts.</li>
+<li><strong>Chunked prefill</strong>: break long prefills into smaller chunks so prefill does not monopolize the GPU and decode requests can be interleaved, improving utilization and tail latency.</li>
+<li><strong>KV offloading</strong>: move cold KV blocks from GPU HBM to CPU memory or SSD. This increases effective context capacity at the cost of transfer overhead, so it is better suited to less latency-sensitive workloads.</li>
+</ul>
+<p>Model architecture also affects KV-cache memory pressure. <strong>MQA</strong> (multi-query attention) reduces cache size by sharing one K/V head across all query heads <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>, while <strong>GQA</strong> (grouped-query attention) shares K/V heads within groups and is a common compromise between quality and memory efficiency <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>. For very long streams, <strong>sliding-window attention</strong> keeps only a small sink region plus the most recent tokens, making cache growth effectively bounded.</p>
 <div class="footnotes" role="doc-endnotes">
 <hr>
 <ol>
 <li id="fn:1">
 <p>LLM 推理优化之 KV Cache. SayHelloCode, Zhihu. <a href="https://zhuanlan.zhihu.com/p/673923443">https://zhuanlan.zhihu.com/p/673923443</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p>Noam Shazeer. Fast Transformer Decoding: One Write-Head is All You Need. arXiv, November 6, 2019. <a href="https://arxiv.org/abs/1911.02150">https://arxiv.org/abs/1911.02150</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:3">
+<p>Joshua Ainslie, James Lee-Thorp, Michiel de Jong, Yury Zemlyanskiy, Federico Lebron, and Sumit Sanghai. GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints. arXiv, May 23, 2023. <a href="https://arxiv.org/abs/2305.13245">https://arxiv.org/abs/2305.13245</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 </ol>
 </div>
