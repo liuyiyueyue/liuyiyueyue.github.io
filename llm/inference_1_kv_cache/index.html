@@ -356,21 +356,21 @@ If there are 32 simultaneous requests, each with a sequence length of 2048 token
   Memory Management for KV Cache
   <a class="anchor" href="#memory-management-for-kv-cache">#</a>
 </h3>
-<p>In production, the challenge is not the KV cache of a single short request, but long contexts and many concurrent requests. The main problems are:</p>
-<ul>
-<li><strong>Internal fragmentation</strong>: reserving a large contiguous KV region per request wastes HBM when actual sequence lengths differ.</li>
-<li><strong>Unknown output length</strong>: generation length is not known in advance, so over-allocation wastes memory while under-allocation risks OOM or expensive reallocation.</li>
-<li><strong>Concurrency pressure</strong>: multiple requests retain KV cache at the same time, directly limiting batch size and throughput.</li>
-<li><strong>Prefix duplication</strong>: requests with the same system prompt or prompt prefix often store identical KV states repeatedly.</li>
-</ul>
-<p>Common memory-management approaches address these issues from different angles:</p>
+<p>In production, the challenge is not the KV cache of a single short request, but long contexts and many concurrent requests leading to large KV caches and occupying memory.</p>
+<p>Common system level approaches to address these issues are:</p>
 <ul>
 <li><strong><a href="/llm/inference_4_vllm_sglang/#paged-attention-vllm">PagedAttention (vLLM)</a></strong>: split KV cache into fixed-size blocks and maintain a block table that maps logical blocks to physical blocks. This removes the need for large contiguous allocations, sharply reduces fragmentation, and enables prefix sharing via copy-on-write.</li>
 <li><strong><a href="/llm/inference_4_vllm_sglang/#vllm-vs-sglang">Prefix caching / RadixAttention (SGLang)</a></strong>: organize KV blocks in a radix tree so requests with the same prefix reuse cached nodes. This is especially effective for multi-turn chat, RAG, and workloads with repeated system prompts.</li>
 <li><strong>Chunked prefill</strong>: break long prefills into smaller chunks so prefill does not monopolize the GPU and decode requests can be interleaved, improving utilization and tail latency.</li>
 <li><strong>KV offloading</strong>: move cold KV blocks from GPU HBM to CPU memory or SSD. This increases effective context capacity at the cost of transfer overhead, so it is better suited to less latency-sensitive workloads.</li>
 </ul>
-<p>Model architecture also affects KV-cache memory pressure. <strong>MQA</strong> (multi-query attention) reduces cache size by sharing one K/V head across all query heads <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>, while <strong>GQA</strong> (grouped-query attention) shares K/V heads within groups and is a common compromise between quality and memory efficiency <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>. For very long streams, <strong>sliding-window attention</strong> keeps only a small sink region plus the most recent tokens, making cache growth effectively bounded.</p>
+<p>Model architecture also affects KV-cache memory pressure.</p>
+<ul>
+<li><strong>MQA</strong> (multi-query attention) reduces cache size by sharing one K/V head across all query heads, reducing the KV cache to about 1/n_heads of the original size. <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>.</li>
+<li><strong>GQA</strong> (grouped-query attention) shares K/V heads within groups and is a common compromise between quality and memory efficiency <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>. Llama-2-70B uses GQA, where 8 KV heads are shared by 64 query heads, so its KV cache is 8 times smaller than standard MHA.</li>
+<li>For very long streams, <strong>sliding-window attention</strong> keeps only a small sink region plus the most recent tokens, making cache growth effectively bounded.</li>
+</ul>
+<p>At the numerical level, KV cache can be <strong>quantized</strong>. For example, KV can be reduced from FP16 to INT8 or even INT4, which directly cuts memory usage to one-half or one-quarter. The difficulty is that attention is relatively sensitive to KV precision, so overly aggressive quantization can hurt output quality.</p>
 <div class="footnotes" role="doc-endnotes">
 <hr>
 <ol>
