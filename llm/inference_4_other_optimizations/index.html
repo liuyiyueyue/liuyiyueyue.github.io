@@ -32,15 +32,15 @@
 
 <title>
     
-    LLM Inference: vLLM and SGLang | Yiyue Liu&#39;s Blog
+    LLM Inference: Other Opimization Techniques | Yiyue Liu&#39;s Blog
     
 </title>
 
-<link rel="canonical" href="https://liuyiyueyue.github.io/llm/inference_4_vllm_sglang/"/>
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/inference_4_other_optimizations/"/>
 
-<meta property="og:url" content="https://liuyiyueyue.github.io/llm/inference_4_vllm_sglang/">
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/inference_4_other_optimizations/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="LLM Inference: vLLM and SGLang">
+  <meta property="og:title" content="LLM Inference: Other Opimization Techniques">
   <meta property="og:description" content="vLLM v.s. SGLang # vLLM maximizes per-request efficiency with PagedAttention (memory paging for KV cache), while SGLang maximizes cross-request reuse via prefix sharing (radix tree KV cache). In practice: SGLang wins on prefix-heavy workloads (chat/RAG), while vLLM is more general-purpose and production-ready; both are otherwise converging in performance.
 Paged Attention (vLLM) # Inference servers handle live traffic rather than a static batch job, so requests can have very different token lengths. This creates a challenge for KV cache allocation. A naive approach is to reserve a fixed-size buffer for the maximum token length for every request. Since each request has a different input length, much of that allocated memory remains unused.">
   <meta property="og:locale" content="en_us">
@@ -213,14 +213,14 @@ Paged Attention (vLLM) # Inference servers handle live traffic rather than a sta
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/inference_4_vllm_sglang/">LLM Inference: vLLM and SGLang</a></div>
+        <a href="/llm/inference_4_other_optimizations/">LLM Inference: Other Opimization Techniques</a></div>
 
 
 <div >
   <article>
     <header class="single-intro-container">
         
-        <h1 class="single-title">LLM Inference: vLLM and SGLang</h1>
+        <h1 class="single-title">LLM Inference: Other Opimization Techniques</h1>
         
         <div class="single-subsummary">
           
@@ -264,7 +264,7 @@ In practice: SGLang wins on prefix-heavy workloads (chat/RAG), while vLLM is mor
     
       
         <div class="img-container" style="--w: 939; --h: 229;">
-            <img loading="lazy" alt="Three types of memory wastes" src="/llm/inference_4_vllm_sglang/images/pagedattention.png" width="939" height="229">
+            <img loading="lazy" alt="Three types of memory wastes" src="/llm/inference_4_other_optimizations/images/pagedattention.png" width="939" height="229">
         </div>
       
     
@@ -306,8 +306,9 @@ In practice: SGLang wins on prefix-heavy workloads (chat/RAG), while vLLM is mor
   Continuous Batching
   <a class="anchor" href="#continuous-batching">#</a>
 </h3>
-<p>Continuous batching is a special case of dynamic batching and one of the main reasons vLLM outperforms older serving engines. It can add new requests to an active batch while removing finished ones at the same time. With PagedAttention, each request&rsquo;s KV cache is managed independently, so adding or removing requests does not disrupt the memory layout <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>.</p>
-<figure><img src="/llm/inference_4_vllm_sglang/images/continuous_batching.png"
+<p>Traditional static batching has to wait until all requests in a batch finish before processing the next batch, which causes earlier-finished requests to sit idle.
+Continuous batching is a special case of dynamic batching and one of the main reasons vLLM outperforms older serving engines. It can <em>add new requests to an active batch</em> while removing finished ones at the same time. With PagedAttention, each request&rsquo;s KV cache is managed independently, so adding or removing requests does not disrupt the memory layout <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>.</p>
+<figure><img src="/llm/inference_4_other_optimizations/images/continuous_batching.png"
     alt="Continuous batching"><figcaption>
       <p>Each sequence generates one token (blue) from the prompt tokens (yellow). After several iterations, the completed sequences each have different sizes because each emits its end-of-sequence token (red) at a different iteration. Once a sequence emits an end-of-sequence token, a new sequence is inserted in its place.</p>
     </figcaption>

@@ -9,10 +9,10 @@
     <lastBuildDate>Thu, 26 Feb 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://liuyiyueyue.github.io/tags/inference/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>LLM Inference: vLLM and SGLang</title>
-      <link>https://liuyiyueyue.github.io/llm/inference_4_vllm_sglang/</link>
+      <title>LLM Inference: Other Opimization Techniques</title>
+      <link>https://liuyiyueyue.github.io/llm/inference_4_other_optimizations/</link>
       <pubDate>Thu, 26 Feb 2026 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyueyue.github.io/llm/inference_4_vllm_sglang/</guid>
+      <guid>https://liuyiyueyue.github.io/llm/inference_4_other_optimizations/</guid>
       <description>&lt;h3 class=&#34;heading&#34; id=&#34;vllm-vs-sglang&#34;&gt;&#xA;  vLLM v.s. SGLang&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#vllm-vs-sglang&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;vLLM maximizes per-request efficiency with PagedAttention (memory paging for KV cache), while SGLang maximizes cross-request reuse via prefix sharing (radix tree KV cache).&#xA;In practice: SGLang wins on prefix-heavy workloads (chat/RAG), while vLLM is more general-purpose and production-ready; both are otherwise converging in performance.&lt;/p&gt;&#xA;&lt;h3 class=&#34;heading&#34; id=&#34;paged-attention-vllm&#34;&gt;&#xA;  Paged Attention (vLLM)&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#paged-attention-vllm&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;Inference servers handle live traffic rather than a static batch job, so requests can have very different token lengths. This creates a challenge for KV cache allocation. A naive approach is to reserve a fixed-size buffer for the maximum token length for every request. Since each request has a different input length, much of that allocated memory remains unused.&lt;/p&gt;</description>
     </item>
     <item>
