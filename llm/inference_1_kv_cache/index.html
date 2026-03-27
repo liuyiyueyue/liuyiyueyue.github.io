@@ -350,7 +350,7 @@ $$</p>
   <button class="copy-code-button">copy</button>
 </div>
 <p><code>2</code> accounts for K and V.</p>
-<p>The KV cache grows linearly with sequence length, which is why long-context inference becomes memory-intensive.</p>
+<p>For LLaMA-2 13B in FP16, <code>num_layers = 40</code>, <code>num_kv_heads = 40</code>, <code>head_dim = 128</code>, and each FP16 value takes 2 bytes. With a sequence length of 2048 tokens, the KV cache size is <code>40 * 2048 * 40 * 128 * 2 * 2 = 1.5625 GiB</code>. If the sequence length increases to 16k tokens, the KV cache grows to <code>40 * 16,000 * 40 * 128 * 2 * 2 = 12.2 GiB</code>. In other words, KV cache size scales linearly with sequence length, which is why long-context inference becomes memory-intensive.</p>
 <div class="footnotes" role="doc-endnotes">
 <hr>
 <ol>
