@@ -327,6 +327,32 @@ The key mechanism is attention, which aggregates information from a sequence by 
   <a class="anchor" href="#multi-head-attention">#</a>
 </h3>
 <p><strong>Multi-head attention</strong> means using several attention heads in parallel. Each head can learn a different type of relation, such as syntax, local dependency, or long-range dependency. This is loosely similar to how different CNN channels can capture different patterns.</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 1908; --h: 902;">
+            <img loading="lazy" alt="Scaled Dot-Product Attention. Multi-Head Attention" src="/llm/attention_1_transformer/scaled_dot-product_attention_and_MHA.png" width="1908" height="902">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
 <h3 class="heading" id="scaled-dot-product-attention">
   Scaled Dot-Product Attention
   <a class="anchor" href="#scaled-dot-product-attention">#</a>
@@ -340,15 +366,97 @@ $$
 $$
 
 
-<p>Here,</p>
+<p>Parameters:</p>
 <ul>
-<li>$Q$ is the query matrix, $K$ is the key matrix, and $V$ is the value matrix.</li>
-<li>The term $QK^\top$ is the inner product (cosine) and measures <strong>similarity</strong> between tokens.</li>
-<li>$\sqrt{d_k}$ rescales the scores for numerical stability.</li>
-<li>$\frac{QK^\top}{\sqrt{d_k}}$ is called the <strong>attention weight matrix</strong>.</li>
-<li><code>softmax</code> turns the scores into attention weights used to combine the values.</li>
+<li>$Q$ is the query matrix of $n$ * $d_k$, $K$ is the key matrix of $d_k$ * $m$, and $V$ is the value matrix. In self-attention, $m$ = $n$.</li>
+<li>$d_k$ is the number of column of $Q$ and $K$, representing sequence length.</li>
 </ul>
-<p>So we calculated the attetion using two matrix multiplications. This makes parallel execution easy.</p>
+<p>Breaking down the equation:</p>
+<ul>
+<li>The term $QK^\top$ is the inner product (cosine) and measures <strong>similarity</strong> between tokens. The shape of $QK^\top$ is $n$ * $m$.</li>
+<li>$\sqrt{d_k}$ rescales the scores for numerical stability.</li>
+<li>$\frac{QK^\top}{\sqrt{d_k}}$ is called the <strong>attention weight matrix</strong> or <strong>score matrix</strong>.</li>
+<li>$softmax$ turns the scores into attention weights used to combine the values.</li>
+</ul>
+<p>So we calculated the attetion using two matrix multiplications. This makes parallel execution easy. The images below illustrates these two matrix multiplications <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>:</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 640; --h: 240;">
+            <img loading="lazy" alt="Compute attention scores" src="/llm/attention_1_transformer/scaled-dot-product-attention-step-1.png" width="640" height="240">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 640; --h: 206;">
+            <img loading="lazy" alt="Apply causal mask" src="/llm/attention_1_transformer/scaled-dot-product-attention-step-2.png" width="640" height="206">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 640; --h: 292;">
+            <img loading="lazy" alt="Multiply by values" src="/llm/attention_1_transformer/scaled-dot-product-attention-step-3.png" width="640" height="292">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
 <p>
 
 
@@ -403,6 +511,14 @@ $$
   <a class="anchor" href="#complete-code">#</a>
 </h2>
 <p><a href="https://github.com/RethinkFun/DeepLearning/blob/master/chapter15/transformer.py">RethinkFun/DeepLearning <code>chapter15/transformer.py</code></a></p>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>Transformer模型详解（图解最完整版）. 初识CV, Zhihu. <a href="https://zhuanlan.zhihu.com/p/338817680">https://zhuanlan.zhihu.com/p/338817680</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
 
     </div>
   </article>
