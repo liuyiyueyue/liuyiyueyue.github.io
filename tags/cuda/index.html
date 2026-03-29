@@ -691,8 +691,8 @@
 
     <div>
         <p class="line-title">
-            <a href="/llm/cpu_gpu_optimizations_3_cuda_stream/">
-                [3/4] CPU-GPU Optimization: CUDA Stream and Async Memcpy
+            <a href="/llm/cpu_gpu_optimizations_3_async_memcpy/">
+                [3/4] CPU-GPU Optimization: Async Memcpy
             </a>
         </p>
 
@@ -760,37 +760,9 @@
             
                 
             
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
         
         
-        <p class="line-summary">In this blog, we will discuss techniques to squeeze the memcpy &amp;ldquo;bubbles&amp;rdquo; with kernel executions. We first discuss CUDA streams which allows operations to run concurrently. Then we discuss asynchronous memcpys to overlap data transfers with kernels....</p>
+        <p class="line-summary">In this blog, we will discuss techniques to squeeze the memcpy &amp;ldquo;bubbles&amp;rdquo; with kernel executions. This post focuses on how streams help overlap data movement with compute via cudaMemcpyAsync. For a basic introduction to CUDA streams themselves, see the Stream section in the CUDA overview....</p>
         
     </div>
 </div>
@@ -984,6 +956,183 @@
         
         
         <p class="line-summary">This is the second blog of the &amp;ldquo;CPU-GPU Optimization&amp;rdquo; series. Using the foundations built from the previous blog, we will discuss 4 types of memory allocation and transfer methods in CUDA. Then we will showcase a performance analysis with flamegraph profiles....</p>
+        
+    </div>
+</div>
+
+    
+
+    
+
+    
+    <div class="post-line">
+
+    
+
+    
+        <p class="line-date">27 Nov 2025 </p>
+    
+
+    <div>
+        <p class="line-title">
+            <a href="/llm/cuda/">
+                CUDA Basics
+            </a>
+        </p>
+
+        
+        
+        
+        
+        
+        
+        
+            
+        
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+        
+        
+        <p class="line-summary"> What is CUDA? CUDA, short for Compute Unified Device Architecture, is NVIDIA’s programming model for heterogeneous computing on CPUs and GPUs. In CUDA, the CPU acts as the host that launches work, while the GPU acts as the device that executes many threads in parallel....</p>
         
     </div>
 </div>

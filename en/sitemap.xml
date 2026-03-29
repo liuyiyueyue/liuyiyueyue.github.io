@@ -98,7 +98,7 @@
     <loc>https://liuyiyueyue.github.io/tags/pytorch/</loc>
     <lastmod>2026-02-19T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/cpu_gpu_optimizations_3_cuda_stream/</loc>
+    <loc>https://liuyiyueyue.github.io/llm/cpu_gpu_optimizations_3_async_memcpy/</loc>
     <lastmod>2026-02-06T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/async/</loc>
@@ -164,6 +164,9 @@
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/parallelism/</loc>
     <lastmod>2025-12-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/cuda/</loc>
+    <lastmod>2025-11-27T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/inference_3_disaggregated_inference/</loc>
     <lastmod>2023-12-15T00:00:00+00:00</lastmod>

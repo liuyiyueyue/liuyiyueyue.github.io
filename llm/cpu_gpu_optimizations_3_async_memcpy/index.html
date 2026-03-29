@@ -32,18 +32,17 @@
 
 <title>
     
-    [3/4] CPU-GPU Optimization: CUDA Stream and Async Memcpy | Yiyue Liu&#39;s Blog
+    [3/4] CPU-GPU Optimization: Async Memcpy | Yiyue Liu&#39;s Blog
     
 </title>
 
-<link rel="canonical" href="https://liuyiyueyue.github.io/llm/cpu_gpu_optimizations_3_cuda_stream/"/>
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/cpu_gpu_optimizations_3_async_memcpy/"/>
 
-<meta property="og:url" content="https://liuyiyueyue.github.io/llm/cpu_gpu_optimizations_3_cuda_stream/">
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/cpu_gpu_optimizations_3_async_memcpy/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="[3/4] CPU-GPU Optimization: CUDA Stream and Async Memcpy">
-  <meta property="og:description" content="In this blog, we will discuss techniques to squeeze the memcpy “bubbles” with kernel executions. We first discuss CUDA streams which allows operations to run concurrently. Then we discuss asynchronous memcpys to overlap data transfers with kernels.
-CUDA Streams # What is a CUDA Stream? # A CUDA stream is a sequence of GPU commands that execute in order.
-Operations in the same stream run sequentially. Operations in different streams run concurrently, if hardware allows. Think of each stream as a queue of GPU work:">
+  <meta property="og:title" content="[3/4] CPU-GPU Optimization: Async Memcpy">
+  <meta property="og:description" content="In this blog, we will discuss techniques to squeeze the memcpy “bubbles” with kernel executions. This post focuses on how streams help overlap data movement with compute via cudaMemcpyAsync. For a basic introduction to CUDA streams themselves, see the Stream section in the CUDA overview.
+Async Memcpy # In this section, we introduce cudaMemcpyAsync, the non-blocking, asynchronous counterpart to cudaMemcpy described in previous blog (See Pinned Memory &#43; Memcpy). Unlike cudaMemcpy, cudaMemcpyAsync returns immediately; the transfer is enqueued into a specified CUDA stream. This makes it possible to overlap memcpy with kernel execution or with other memcpy operations (when the hardware and stream setup allow it).">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -215,14 +214,14 @@ Operations in the same stream run sequentially. Operations in different streams 
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/cpu_gpu_optimizations_3_cuda_stream/">[3/4] CPU-GPU Optimization: CUDA Stream and Async Memcpy</a></div>
+        <a href="/llm/cpu_gpu_optimizations_3_async_memcpy/">[3/4] CPU-GPU Optimization: Async Memcpy</a></div>
 
 
 <div >
   <article>
     <header class="single-intro-container">
         
-        <h1 class="single-title">[3/4] CPU-GPU Optimization: CUDA Stream and Async Memcpy</h1>
+        <h1 class="single-title">[3/4] CPU-GPU Optimization: Async Memcpy</h1>
         
         <div class="single-subsummary">
           
@@ -238,74 +237,7 @@ Operations in the same stream run sequentially. Operations in different streams 
     
     <div class="single-content">
       <p>In this blog, we will discuss techniques to squeeze the memcpy &ldquo;bubbles&rdquo; with kernel executions.
-We first discuss CUDA streams which allows operations to run concurrently.
-Then we discuss asynchronous memcpys to overlap data transfers with kernels.</p>
-<h2 class="heading" id="cuda-streams">
-  CUDA Streams
-  <a class="anchor" href="#cuda-streams">#</a>
-</h2>
-<h4 class="heading" id="what-is-a-cuda-stream">
-  What is a CUDA Stream?
-  <a class="anchor" href="#what-is-a-cuda-stream">#</a>
-</h4>
-<ul>
-<li>
-<p>A CUDA stream is a sequence of GPU commands that execute in order.</p>
-<ul>
-<li>Operations in the same stream run sequentially.</li>
-<li>Operations in different streams run concurrently, if hardware allows.</li>
-</ul>
-</li>
-<li>
-<p>Think of each stream as a queue of GPU work:</p>
-<p>Stream 0: kernel1 → kernel2 → memcpy → kernel3</p>
-<p>Stream 1: kernelA → kernelB → memcpy</p>
-</li>
-<li>
-<p>Default stream (<code>cudaStreamDefault</code>) is synchronizing (everything waits for it).</p>
-</li>
-<li>
-<p>Explicit streams (<code>cudaStreamCreate</code>) allow true concurrency.</p>
-</li>
-</ul>
-<h4 class="heading" id="why-use-streams">
-  Why Use Streams?
-  <a class="anchor" href="#why-use-streams">#</a>
-</h4>
-<ul>
-<li>Run independent kernels concurrently</li>
-<li>Overlap kernel execution</li>
-<li>Overlap H2D/D2H memcpy with kernels</li>
-<li>Pipeline mini-batches</li>
-</ul>
-<h4 class="heading" id="sample-usage-of-streams">
-  Sample Usage of Streams
-  <a class="anchor" href="#sample-usage-of-streams">#</a>
-</h4>
-<div class="code-block">
-  <pre tabindex="0"><code class="language-cuda" data-lang="cuda">cudaStream_t s1, s2;
-cudaStreamCreate(&amp;s1);
-cudaStreamCreate(&amp;s2);
-
-// Kernels in s1 can run concurrently with kernels in s2.
-myKernel&lt;&lt;&lt;grid, block, 0, s1&gt;&gt;&gt;(...);
-myKernel&lt;&lt;&lt;grid, block, 0, s2&gt;&gt;&gt;(...);
-
-cudaStreamDestroy(s1);
-cudaStreamDestroy(s2);</code></pre>
-  <button class="copy-code-button">copy</button>
-</div>
-<h4 class="heading" id="stream-synchronization">
-  Stream Synchronization
-  <a class="anchor" href="#stream-synchronization">#</a>
-</h4>
-<ul>
-<li>Synchronize a stream: <code>cudaStreamSynchronize(s1);</code> blocks the CPU until all
-previously issued GPU executions in <code>s1</code> has completed.</li>
-<li>Synchronize an event: <code>cudaEventSynchronize(ev);</code> blocks the CPU until the
-specified CUDA event <code>ev</code> has been recorded.</li>
-<li>This is how PyTorch, cuBLAS, FlashAttention, etc. build sophisticated pipelines.</li>
-</ul>
+This post focuses on how streams help overlap data movement with compute via <code>cudaMemcpyAsync</code>. For a basic introduction to CUDA streams themselves, see the <a href="/llm/cuda/#stream">Stream section</a> in the CUDA overview.</p>
 <h2 class="heading" id="async-memcpy">
   Async Memcpy
   <a class="anchor" href="#async-memcpy">#</a>
@@ -382,13 +314,13 @@ GPU:                     |───Kernel───|───Kernel───|─�
   <button class="copy-code-button">copy</button>
 </div>
 <p>Below are Nsight profile examples:</p>
-<figure><img src="/llm/cpu_gpu_optimizations_3_cuda_stream/images/single_stream_report.png"
+<figure><img src="/llm/cpu_gpu_optimizations_3_async_memcpy/images/single_stream_report.png"
     alt="Figure 1: Nsight Systems profile with a single CUDA stream. Source code: single_stream.txt."><figcaption>
       <p>Figure 1: Nsight Systems profile with a single CUDA stream. Source code: <a href="./code/single_stream.txt">single_stream.txt</a>.</p>
     </figcaption>
 </figure>
 
-<figure><img src="/llm/cpu_gpu_optimizations_3_cuda_stream/images/multi_stream_report.png"
+<figure><img src="/llm/cpu_gpu_optimizations_3_async_memcpy/images/multi_stream_report.png"
     alt="Figure 2: Nsight Systems profile with multiple CUDA streams. Source code: multi_stream.txt."><figcaption>
       <p>Figure 2: Nsight Systems profile with multiple CUDA streams. Source code: <a href="./code/multi_stream.txt">multi_stream.txt</a>.</p>
     </figcaption>

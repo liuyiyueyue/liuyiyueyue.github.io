@@ -792,8 +792,8 @@
 
     <div>
         <p class="line-title">
-            <a href="/llm/cpu_gpu_optimizations_3_cuda_stream/">
-                [3/4] CPU-GPU Optimization: CUDA Stream and Async Memcpy
+            <a href="/llm/cpu_gpu_optimizations_3_async_memcpy/">
+                [3/4] CPU-GPU Optimization: Async Memcpy
             </a>
         </p>
 
@@ -861,37 +861,9 @@
             
                 
             
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
         
         
-        <p class="line-summary">In this blog, we will discuss techniques to squeeze the memcpy &amp;ldquo;bubbles&amp;rdquo; with kernel executions. We first discuss CUDA streams which allows operations to run concurrently. Then we discuss asynchronous memcpys to overlap data transfers with kernels....</p>
+        <p class="line-summary">In this blog, we will discuss techniques to squeeze the memcpy &amp;ldquo;bubbles&amp;rdquo; with kernel executions. This post focuses on how streams help overlap data movement with compute via cudaMemcpyAsync. For a basic introduction to CUDA streams themselves, see the Stream section in the CUDA overview....</p>
         
     </div>
 </div>
