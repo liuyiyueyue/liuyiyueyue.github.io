@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en-us"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    GPU Memory Usage | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/gpu_memory_usage/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/gpu_memory_usage/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="GPU Memory Usage">
+  <meta property="og:description" content="Training # During neural network training, the main components of GPU memory usage usually fall into four categories: model parameters, intermediate activations produced during the forward pass, gradients computed during backpropagation, and optimizer states.
+When training large models, it is common to use the AdamW optimizer together with mixed-precision training to accelerate computation. Based on this setup, we can analyze memory consumption as follows.
+In one training iteration, each trainable model parameter corresponds to one gradient, and two optimizer states in AdamW: the first-order moment and the second-order moment.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2026-03-28T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-03-28T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Gpu">
+    <meta property="article:tag" content="Training">
+    <meta property="article:tag" content="Optimization">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/gpu_memory_usage/">GPU Memory Usage</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">GPU Memory Usage</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2026-03-28T00:00:00&#43;00:00">March 28, 2026</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <h3 class="heading" id="training">
+  Training
+  <a class="anchor" href="#training">#</a>
+</h3>
+<p>During neural network training, the main components of GPU memory usage usually fall into four categories: <strong>model parameters</strong>, intermediate <strong>activations</strong> produced during the forward pass, <strong>gradients</strong> computed during backpropagation, and <strong>optimizer states</strong>.</p>
+<p>When training large models, it is common to use the AdamW optimizer together with mixed-precision training to accelerate computation. Based on this setup, we can analyze memory consumption as follows.</p>
+<p>In one training iteration, each trainable model parameter corresponds to one gradient, and two optimizer states in AdamW: the first-order moment and the second-order moment.</p>
+<p>Let the total number of model parameters be $\Phi$. Then the number of gradient elements is $\Phi$, and the number of AdamW optimizer-state elements is $2\Phi$. Each element of type <code>float16</code> occupies 2 bytes, and each element of type <code>float32</code> occupies 4 bytes.</p>
+<p>In mixed-precision training, <code>float16</code> model parameters are used for the forward pass and backward pass. <code>float16</code> gradients are produced during backpropagation. During the optimizer update, <code>float32</code> optimizer states, <code>float32</code> gradients, and <code>float32</code> model parameters are used to update the parameters.</p>
+<p>Therefore, for each trainable parameter, the memory cost is:</p>
+<p>$$
+(2+4) + (2+4) + (4+4) = 20 \text{ bytes}
+$$</p>
+<p>where:</p>
+<ul>
+<li>$(2+4)$ corresponds to the weights: <code>float16</code> weight + <code>float32</code> weight,</li>
+<li>$(2+4)$ corresponds to the gradient: <code>float16</code> gradient + <code>float32</code> gradient,</li>
+<li>$(4+4)$ corresponds to the two AdamW optimizer states, both stored in <code>float32</code>.</li>
+</ul>
+<p>So, when training a large model with $\Phi$ parameters using AdamW and mixed-precision training, the total GPU memory occupied by model parameters, gradients, and optimizer states is $20\Phi \text{ bytes}$.</p>
+<h3 class="heading" id="inference">
+  Inference
+  <a class="anchor" href="#inference">#</a>
+</h3>
+<p>During neural network inference, there are no optimizer states or gradients, and there is no need to save intermediate activations. Without gradients, optimizer states, and intermediate activations, GPU memory usage during inference is much smaller than during training.</p>
+<p>During inference, the main component of GPU memory usage is usually the model parameters. If <code>float16</code> is used for inference, the GPU memory occupied by the model parameters is approximately $2\Phi$ bytes.</p>
+<p>If KV cache is used to accelerate inference, the KV cache also occupies GPU memory. See <a href="/llm/inference_1_kv_cache/#how-big-is-the-kv-cache">How Big Is the KV Cache?</a>. In addition, the input data also needs to be placed on the GPU, and there are some intermediate results as well. However, these intermediate results are released as soon as possible during inference, so this part of the memory usage is small and can be ignored.</p>
+<h3 class="heading" id="static-and-dynamic-memory">
+  Static and Dynamic Memory
+  <a class="anchor" href="#static-and-dynamic-memory">#</a>
+</h3>
+<p>We refer to the memory used by model parameters as <strong>static memory</strong>, meaning its lifetime is effectively unbounded and it must always occupy HBM. The optimizer states, model parameters, and usually gradients are static memory, since they must persist across training steps rather than being freed immediately after one operator finishes.</p>
+<p>We refer to <strong>activation</strong> memory as <strong>dynamic memory</strong>, meaning its lifetime is short and its memory can be reused. Activations have dynamic memory since they are created during forward pass and released or recomputed after backward.</p>
+<figure><img src="/llm/distributed_training_3_zero_fsdp/images/static_dynamic_memory.jpg"
+    alt="Static memory vs. dynamic memory in training."><figcaption>
+      <p>Static memory vs. dynamic memory in training.</p>
+    </figcaption>
+</figure>
+
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/llm/gpu_networking_datacenter/">
+                        GPU Networking and Datacenter Architecture
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+  <link rel="stylesheet" 
+  href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  
+<script defer 
+  src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+
+<script defer
+  src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body);"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    renderMathInElement(document.body, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false }
+      ]
+    });
+  });
+</script>
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+
