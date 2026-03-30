@@ -116,7 +116,7 @@
     <item>
       <title>CUDA Basics</title>
       <link>https://liuyiyueyue.github.io/llm/cuda_basics/</link>
-      <pubDate>Thu, 27 Nov 2025 00:00:00 +0000</pubDate>
+      <pubDate>Sat, 25 Oct 2025 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/llm/cuda_basics/</guid>
       <description>&lt;h3 class=&#34;heading&#34; id=&#34;what-is-cuda&#34;&gt;&#xA;  What is CUDA?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#what-is-cuda&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;CUDA, short for Compute Unified Device Architecture, is NVIDIA’s programming model for heterogeneous computing on CPUs and GPUs. In CUDA, the CPU acts as the host that launches work, while the GPU acts as the device that executes many &lt;strong&gt;threads&lt;/strong&gt; in parallel. The core idea is to divide a large computation into many small pieces so the GPU can process them concurrently.&lt;/p&gt;</description>
     </item>
