@@ -564,19 +564,85 @@ $$
         </tbody>
     </table>
 </div><p>This is only a rough estimate. It is close for 405B, but it underestimates the 8B and 70B models because the formula ignores embeddings, output-layer choices, grouped-query attention details, and exact MLP dimensions.</p>
-<h3 class="heading" id="flops-and-memory">
-  FLOPs and Memory
-  <a class="anchor" href="#flops-and-memory">#</a>
+<h3 class="heading" id="flops">
+  FLOPs
+  <a class="anchor" href="#flops">#</a>
 </h3>
-<p>If you want to analyze Transformer performance numerically, the first question is usually &ldquo;how much compute and memory does one layer need?&rdquo;</p>
-<p>For a general matrix multiplication, two nested loops iterates over rows and columns.</p>
-<p><code>(M x N) * (N x K) ~= 2MNK</code> FLOPs</p>
-<p>This leads to the standard roofline view:</p>
-<ul>
-<li>large GEMMs such as QKV projection and FFN are usually <strong>compute-bound</strong></li>
-<li>decode-time attention is often <strong>memory-bound</strong> because batch size is small and the kernel keeps reading weights and KV cache</li>
-<li>softmax, layer norm, and other elementwise ops are also often <strong>memory-bound</strong></li>
-</ul>
+<blockquote>
+<p>FLOPs (计算量), or floating-point operations, measure computational cost.</p>
+</blockquote>
+<blockquote>
+<p>For $A \in \mathbb{R}^{m \times n}$ and $B \in \mathbb{R}^{n \times p}$, the matrix multiplication $AB$ costs $2mnp$ FLOPs.</p>
+</blockquote>
+<p>In one training iteration, let the input token shape be $[b, s]$, where $b$ is the batch size and $s$ is the sequence length. After embedding, the hidden states are $x \in \mathbb{R}^{b \times s \times h}$, where $h$ is the hidden size.</p>
+<p>For a <strong>self-attention</strong> block,</p>
+<p>$$
+Q = xW_Q,\quad K = xW_K,\quad V = xW_V
+$$</p>
+<p>$$
+x_{\text{out}} = \operatorname{softmax}\left(\frac{QK^T}{\sqrt{h}}\right)V W_o + x
+$$</p>
+<ol>
+<li>
+<p>Computing $Q$, $K$, and $V$: $x \in \mathbb{R}^{b \times s \times h}$, $W_Q \in \mathbb{R}^{h \times h}$, $W_K \in \mathbb{R}^{h \times h}$, and $W_V \in \mathbb{R}^{h \times h}$, so $Q \in \mathbb{R}^{b \times s \times h}$, $K \in \mathbb{R}^{b \times s \times h}$, and $V \in \mathbb{R}^{b \times s \times h}$. The FLOPs are:
+$$
+3 \cdot 2bsh^2 = 6bsh^2
+$$</p>
+</li>
+<li>
+<p>Computing $QK^T$: $Q \in \mathbb{R}^{b \times n_{\mathrm{head}} \times s \times d_{\mathrm{head}}}$ and $K^T \in \mathbb{R}^{b \times n_{\mathrm{head}} \times d_{\mathrm{head}} \times s}$, so $QK^T \in \mathbb{R}^{b \times n_{\mathrm{head}} \times s \times s}$. So the FLOPs are:
+$$
+2bs^2h
+$$</p>
+</li>
+<li>
+<p>Computing $\text{score} \cdot V$:
+$\text{score} \in \mathbb{R}^{b \times n_{\mathrm{head}} \times s \times s}$ and $V \in \mathbb{R}^{b \times n_{\mathrm{head}} \times s \times d_{\mathrm{head}}}$, so $\text{score} \cdot V \in \mathbb{R}^{b \times n_{\mathrm{head}} \times s \times d_{\mathrm{head}}}$. So the FLOPs are:
+$$
+2bs^2h
+$$</p>
+</li>
+<li>
+<p>The output projection after attention:
+$x_{\text{attn}} \in \mathbb{R}^{b \times s \times h}$ and $W_o \in \mathbb{R}^{h \times h}$, so $x_{\text{attn}}W_o \in \mathbb{R}^{b \times s \times h}$. So the FLOPs are:
+$$
+2bsh^2
+$$</p>
+</li>
+</ol>
+<p>For the <strong>MLP</strong> block,</p>
+<p>$$
+x = f_{\text{gelu}}(x_{\text{out}}W_1)W_2 + x_{\text{out}}
+$$</p>
+<ol>
+<li>First linear layer:
+$x_{\text{out}} \in \mathbb{R}^{b \times s \times h}$ and $W_1 \in \mathbb{R}^{h \times 4h}$, so $x_{\text{out}}W_1 \in \mathbb{R}^{b \times s \times 4h}$. So the FLOPs are:
+$$
+8bsh^2
+$$</li>
+<li>Second linear layer:
+$f_{\text{gelu}}(x_{\text{out}}W_1) \in \mathbb{R}^{b \times s \times 4h}$ and $W_2 \in \mathbb{R}^{4h \times h}$, so $f_{\text{gelu}}(x_{\text{out}}W_1)W_2 \in \mathbb{R}^{b \times s \times h}$. So the FLOPs are:
+$$
+8bsh^2
+$$</li>
+</ol>
+<p>Adding them together, the FLOPs needed by <strong>one Transformer layer</strong> are approximately</p>
+<p>$$
+24bsh^2 + 4bs^2h
+$$</p>
+<p>At the very end of the Transformer architecture, there is the <strong>final linear layer (logits)</strong> that maps hidden states to vocabulary scores.
+Given $h_{\text{out}} \in \mathbb{R}^{b \times s \times h} \quad$ and $W_{\text{vocab}} \in \mathbb{R}^{h \times V}$, we have $h_{\text{out}}W_{\text{vocab}} \in \mathbb{R}^{b \times s \times V}$. So the FLOPs are:</p>
+<p>$$
+2bshV
+$$</p>
+<p>Therefore, for a Transformer with $l$ layers and input shape $[b, s]$, the FLOPs of <strong>one training iteration</strong> are approximately</p>
+<p>$$
+l(24bsh^2 + 4bs^2h) + 2bshV
+$$</p>
+<h2 class="heading" id="parameter-count-and-flops">
+  Parameter Count and FLOPs
+  <a class="anchor" href="#parameter-count-and-flops">#</a>
+</h2>
 <h2 class="heading" id="layer-norm-vs-batch-norm">
   Layer Norm vs. Batch Norm
   <a class="anchor" href="#layer-norm-vs-batch-norm">#</a>
