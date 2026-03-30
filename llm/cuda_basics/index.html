@@ -36,9 +36,9 @@
     
 </title>
 
-<link rel="canonical" href="https://liuyiyueyue.github.io/llm/cuda/"/>
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/cuda_basics/"/>
 
-<meta property="og:url" content="https://liuyiyueyue.github.io/llm/cuda/">
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/cuda_basics/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="CUDA Basics">
   <meta property="og:description" content="What is CUDA? # CUDA, short for Compute Unified Device Architecture, is NVIDIA’s programming model for heterogeneous computing on CPUs and GPUs. In CUDA, the CPU acts as the host that launches work, while the GPU acts as the device that executes many threads in parallel. The core idea is to divide a large computation into many small pieces so the GPU can process them concurrently.">
@@ -211,7 +211,7 @@
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/cuda/">CUDA Basics</a></div>
+        <a href="/llm/cuda_basics/">CUDA Basics</a></div>
 
 
 <div >
@@ -266,7 +266,7 @@
 </span></span><span style="display:flex;"><span>└── Load/store + other functional units</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
-<figure><img src="/llm/cuda/images/blackwell_ultra_sm_architecture.png"
+<figure><img src="/llm/cuda_basics/images/blackwell_ultra_sm_architecture.png"
     alt="Blackwell Ultra SM architecture. [^1]"><figcaption>
       <p>Blackwell Ultra SM architecture. [^1]</p>
     </figcaption>
@@ -278,7 +278,7 @@
   <a class="anchor" href="#threads-warps-blocks-and-grids">#</a>
 </h3>
 <p>CUDA organizes computation in a grid → block → warp → thread hierarchy:</p>
-<figure><img src="/llm/cuda/images/cuda_program_model.png"
+<figure><img src="/llm/cuda_basics/images/cuda_program_model.png"
     alt="GPU hardware hierarchy and the CUDA execution model: SMs execute warps of 32 threads over a layered memory hierarchy."><figcaption>
       <p>GPU hardware hierarchy and the CUDA execution model: SMs execute warps of 32 threads over a layered memory hierarchy.</p>
     </figcaption>
@@ -399,7 +399,7 @@
 </span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
-<figure><img src="/llm/cuda/images/vec_add_kernel.png"
+<figure><img src="/llm/cuda_basics/images/vec_add_kernel.png"
     alt="Threading in vecAddKernel() kernel."><figcaption>
       <p>Threading in vecAddKernel() kernel.</p>
     </figcaption>
@@ -555,8 +555,8 @@ cudaStreamDestroy(s2);</code></pre>
             
             <div class="single-pagination-container-next">
                 <div class="single-pagination-text">
-                    <a href="/llm/distributed_training_1_parallelism/">
-                        Distributed Training: Parallelism Strategies
+                    <a href="/llm/cuda_performance_optimizations/">
+                        CUDA Performance Optimizations
                     </a>
                 </div>
                 <div class="single-pagination-text">→</div>

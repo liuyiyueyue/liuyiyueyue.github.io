@@ -107,10 +107,17 @@
       <description>&lt;h3 class=&#34;heading&#34; id=&#34;why-parallelism&#34;&gt;&#xA;  Why Parallelism?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#why-parallelism&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;As training datasets grow, training takes longer.&lt;/p&gt;&#xA;&lt;p&gt;At the same time, models are getting larger, and some no longer fit on a single device without running out of memory.&lt;/p&gt;&#xA;&lt;p&gt;Distributed training addresses these scaling limits by partitioning computation across multiple devices or nodes, and trade communication overhead for lower memory usage.&lt;/p&gt;&#xA;&lt;p&gt;This is usually done through sharding or parallelism strategies, which mainly fall into two categories: &lt;strong&gt;data parallelism&lt;/strong&gt;, which partitions data, and &lt;strong&gt;model parallelism&lt;/strong&gt;, which partitions the model.&lt;/p&gt;</description>
     </item>
     <item>
+      <title>CUDA Performance Optimizations</title>
+      <link>https://liuyiyueyue.github.io/llm/cuda_performance_optimizations/</link>
+      <pubDate>Fri, 28 Nov 2025 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/cuda_performance_optimizations/</guid>
+      <description>&lt;p&gt;Start from a matrix mutiplcation and cover many optimization skills&lt;/p&gt;</description>
+    </item>
+    <item>
       <title>CUDA Basics</title>
-      <link>https://liuyiyueyue.github.io/llm/cuda/</link>
+      <link>https://liuyiyueyue.github.io/llm/cuda_basics/</link>
       <pubDate>Thu, 27 Nov 2025 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyueyue.github.io/llm/cuda/</guid>
+      <guid>https://liuyiyueyue.github.io/llm/cuda_basics/</guid>
       <description>&lt;h3 class=&#34;heading&#34; id=&#34;what-is-cuda&#34;&gt;&#xA;  What is CUDA?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#what-is-cuda&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;CUDA, short for Compute Unified Device Architecture, is NVIDIA’s programming model for heterogeneous computing on CPUs and GPUs. In CUDA, the CPU acts as the host that launches work, while the GPU acts as the device that executes many &lt;strong&gt;threads&lt;/strong&gt; in parallel. The core idea is to divide a large computation into many small pieces so the GPU can process them concurrently.&lt;/p&gt;</description>
     </item>
     <item>
