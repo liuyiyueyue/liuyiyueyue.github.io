@@ -309,12 +309,13 @@ Table of Contents # Basic Terms Training Workflow Inference Workflow Basic ML Al
   Training Workflow
   <a class="anchor" href="#training-workflow">#</a>
 </h3>
-<p>Forward -&gt; Backward -&gt; Optimizer: A typical training iteration contains a forward pass to generate <em>losses</em> from inputs and labels, a backward pass to compute <em>gradients</em> for parameters, and an optimizer step to <em>update parameters</em> using those gradients.</p>
+<p><strong>Forward -&gt; Backward -&gt; Optimizer</strong>: A typical training iteration contains a forward pass to generate <strong>losses</strong> from inputs and labels, a backward pass to compute <strong>gradients</strong> for parameters, and an optimizer step to <strong>update parameters</strong> using those gradients.</p>
 <ol>
 <li>Forward pass:
 <ul>
 <li>Compute predictions $\hat{y}=f_\theta(x)$</li>
 <li>Compute loss: compare $\hat{y}$ with the true $y$.</li>
+<li>Activations are computed as intermediate results inside the forward pass.</li>
 </ul>
 </li>
 <li>Backward pass:
@@ -939,7 +940,7 @@ $$</p>
   Activation Functions
   <a class="anchor" href="#activation-functions">#</a>
 </h3>
-<p>Activation functions add nonlinearity, which allows neural networks to represent complex patterns.</p>
+<p>Activation functions add nonlinearity, which allows neural networks to represent complex patterns. Activations are computed in the forward pass and stored for use in the backward pass during training. They are intermediate results between input and final output.</p>
 
 <div class="table-outer">
     <table>
