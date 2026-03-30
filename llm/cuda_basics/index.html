@@ -323,24 +323,32 @@
         </tbody>
     </table>
 </div><p><strong>Indexing</strong></p>
-<p>In a typical 1D kernel, each thread computes its <strong>global index</strong> with:</p>
+<p>In a typical 1D kernel, a thread&rsquo;s global index equals <code>block index * threads per block + thread index</code> within the block. So in CUDA C, each thread computes its <strong>global index</strong> with:</p>
 <div class="code-block">
   <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">int</span> global_index = blockIdx.x * blockDim.x + threadIdx.x;</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
-<p>In other words:</p>
-<div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>global index = block index * threads per block + thread index within the block</span></span></code></pre></div>
-  <button class="copy-code-button">copy</button>
-</div>
-<p>For example, if <code>blockDim.x = 256</code>, <code>blockIdx.x = 3</code>, and <code>threadIdx.x = 10</code>, then the thread&rsquo;s global index is <code>3 * 256 + 10 = 778</code>.</p>
+<p>For example, if <code>blockDim.x = 2</code>, <code>blockIdx.x = 256</code>, and <code>threadIdx.x = 3</code>, then the thread&rsquo;s global index is <code>2 * 256 + 3 = 515</code> <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>.</p>
+<figure><img src="/llm/cuda_basics/images/even-easier-intro-to-cuda-indexing.png"
+    alt="1D CUDA indexing across blocks and threads."><figcaption>
+      <p>1D CUDA indexing across blocks and threads.</p>
+    </figcaption>
+</figure>
+
+<p>For 2D data, CUDA uses <code>blockIdx.{x,y}</code> and <code>threadIdx.{x,y}</code> to locate a thread within both the grid and its block. The figure below shows how block coordinates and thread coordinates combine to map each thread to a unique 2D position.</p>
+<figure><img src="/llm/cuda_basics/images/grid-block-thread-indexing.png"
+    alt="Grid, block, and thread indexing in 2D."><figcaption>
+      <p>Grid, block, and thread indexing in 2D.</p>
+    </figcaption>
+</figure>
+
 <p><strong>Number of Blocks and Threads Needed</strong></p>
 <p>The choice of <strong><code>numBlocks</code> and <code>threadsPerBlock</code></strong> depends on both the total amount of work <code>N</code> and the GPU&rsquo;s hardware limits. A common pattern is:</p>
 <div class="code-block">
   <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">int</span> numBlocks = (N + threadsPerBlock - 1) / threadsPerBlock;</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
-<p>Choosing <code>threadsPerBlock</code> is more hardware-sensitive. In practice, it is usually guided by warp size, the maximum threads per block, the number of SMs, occupancy, and the kernel&rsquo;s memory access pattern. For example, on Blackwell Ultra, the warp size is still 32 threads, the maximum block size is 1024 threads, and the full GPU can contain up to 160 SMs depending on SKU.<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> In real kernels, developers often start with a multiple of 32 such as 128, 256, or 512 threads per block, then tune from there.</p>
+<p>Choosing <code>threadsPerBlock</code> is more hardware-sensitive. In practice, it is usually guided by warp size, the maximum threads per block, the number of SMs, occupancy, and the kernel&rsquo;s memory access pattern. For example, on Blackwell Ultra, the warp size is still 32 threads, the maximum block size is 1024 threads, and the full GPU can contain up to 160 SMs depending on SKU.<sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> In real kernels, developers often start with a multiple of 32 such as 128, 256, or 512 threads per block, then tune from there.</p>
 <h3 class="heading" id="function-qualifiers">
   Function Qualifiers
   <a class="anchor" href="#function-qualifiers">#</a>
@@ -554,7 +562,10 @@ cudaStreamDestroy(s2);</code></pre>
 <hr>
 <ol>
 <li id="fn:1">
-<p><a href="https://developer.nvidia.com/blog/inside-nvidia-blackwell-ultra-the-chip-powering-the-ai-factory-era/">https://developer.nvidia.com/blog/inside-nvidia-blackwell-ultra-the-chip-powering-the-ai-factory-era/</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p><a href="https://developer.nvidia.com/blog/even-easier-introduction-cuda/">https://developer.nvidia.com/blog/even-easier-introduction-cuda/</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p><a href="https://developer.nvidia.com/blog/inside-nvidia-blackwell-ultra-the-chip-powering-the-ai-factory-era/">https://developer.nvidia.com/blog/inside-nvidia-blackwell-ultra-the-chip-powering-the-ai-factory-era/</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 </ol>
 </div>
