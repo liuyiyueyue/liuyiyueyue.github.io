@@ -41,7 +41,7 @@
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/cpu_gpu_optimizations_3_async_memcpy/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="[3/4] CPU-GPU Optimization: Async Memcpy">
-  <meta property="og:description" content="In this blog, we will discuss techniques to squeeze the memcpy “bubbles” with kernel executions. This post focuses on how streams help overlap data movement with compute via cudaMemcpyAsync. For a basic introduction to CUDA streams themselves, see the Stream section in the CUDA overview.
+  <meta property="og:description" content="In this blog, we will discuss techniques to squeeze the memcpy “bubbles” with kernel executions. This post focuses on how streams help overlap data movement with compute via cudaMemcpyAsync. For a basic introduction to CUDA streams themselves, see the CUDA Stream section.
 Async Memcpy # In this section, we introduce cudaMemcpyAsync, the non-blocking, asynchronous counterpart to cudaMemcpy described in previous blog (See Pinned Memory &#43; Memcpy). Unlike cudaMemcpy, cudaMemcpyAsync returns immediately; the transfer is enqueued into a specified CUDA stream. This makes it possible to overlap memcpy with kernel execution or with other memcpy operations (when the hardware and stream setup allow it).">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
@@ -237,7 +237,7 @@ Async Memcpy # In this section, we introduce cudaMemcpyAsync, the non-blocking, 
     
     <div class="single-content">
       <p>In this blog, we will discuss techniques to squeeze the memcpy &ldquo;bubbles&rdquo; with kernel executions.
-This post focuses on how streams help overlap data movement with compute via <code>cudaMemcpyAsync</code>. For a basic introduction to CUDA streams themselves, see the <a href="/llm/cuda/#stream">Stream section</a> in the CUDA overview.</p>
+This post focuses on how streams help overlap data movement with compute via <code>cudaMemcpyAsync</code>. For a basic introduction to CUDA streams themselves, see the <a href="/llm/cuda/#stream">CUDA Stream section</a>.</p>
 <h2 class="heading" id="async-memcpy">
   Async Memcpy
   <a class="anchor" href="#async-memcpy">#</a>

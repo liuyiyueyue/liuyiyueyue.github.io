@@ -295,26 +295,6 @@
 </ul>
 <p>The Transformer Engine automates a key optimization: use higher precision where numerical stability matters, and lower precision where bandwidth and throughput dominate. In practice, users typically enable mixed precision at the framework level, while the hardware and runtime choose efficient precision paths for each layer.</p>
 <p>This is exactly aligned with transformer workloads, where matrix multiply dominates runtime and where carefully managed low precision can preserve model quality while significantly increasing throughput.</p>
-<h3 class="heading" id="sms-warps-and-the-execution-model">
-  SMs, Warps, and the Execution Model
-  <a class="anchor" href="#sms-warps-and-the-execution-model">#</a>
-</h3>
-<p>At execution time, the GPU is organized around many <strong>streaming multiprocessors (SMs)</strong>. Each SM contains arithmetic units, Tensor Cores, load/store units, and fast local storage. Threads execute in groups of <strong>32</strong> called <strong>warps</strong>, following the <strong>SIMT</strong> model: one instruction stream applied across many threads in lockstep.</p>
-<p>A useful mental model is:</p>
-<ul>
-<li>registers: private to each thread</li>
-<li>shared memory: local to a thread block on an SM</li>
-<li>L1 cache: local to an SM</li>
-<li>L2 cache: shared across the whole GPU</li>
-<li>HBM: large off-chip device memory</li>
-</ul>
-<p>This hierarchy explains a lot of CUDA performance behavior. Good kernels maximize data reuse in registers, shared memory, and caches. Bad kernels repeatedly go out to HBM and waste the GPU&rsquo;s arithmetic throughput waiting on memory.</p>
-<figure><img src="/llm/gpu_architecture/images/figure-2-5.png"
-    alt="GPU hardware hierarchy and the CUDA execution model: SMs execute warps of 32 threads over a layered memory hierarchy."><figcaption>
-      <p>GPU hardware hierarchy and the CUDA execution model: SMs execute warps of 32 threads over a layered memory hierarchy.</p>
-    </figcaption>
-</figure>
-
 <h3 class="heading" id="summary">
   Summary
   <a class="anchor" href="#summary">#</a>
