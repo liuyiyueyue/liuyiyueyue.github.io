@@ -38,9 +38,9 @@
     </item>
     <item>
       <title>FlashAttention</title>
-      <link>https://liuyiyueyue.github.io/llm/attention_2_flashattention/</link>
+      <link>https://liuyiyueyue.github.io/llm/attention_3_flashattention/</link>
       <pubDate>Sun, 10 Dec 2023 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyueyue.github.io/llm/attention_2_flashattention/</guid>
+      <guid>https://liuyiyueyue.github.io/llm/attention_3_flashattention/</guid>
       <description>&lt;h3 class=&#34;heading&#34; id=&#34;what-is-flashattention&#34;&gt;&#xA;  What Is FlashAttention?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#what-is-flashattention&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;FlashAttention is a fast, memory-efficient, exact attention algorithm designed with IO awareness. &lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&lt;strong&gt;Fast&lt;/strong&gt;: speeds up attention computation.&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;Memory-efficient&lt;/strong&gt;: reduces GPU memory usage.&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;Exact&lt;/strong&gt;: preserves the exact attention result instead of using an approximation.&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;IO-aware&lt;/strong&gt;: improves performance by reducing data movement between GPU memory levels.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;h3 class=&#34;heading&#34; id=&#34;why-regular-attention-is-expensive&#34;&gt;&#xA;  Why Regular Attention Is Expensive&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#why-regular-attention-is-expensive&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;In a naive attention implementation, the matrices &lt;code&gt;Q&lt;/code&gt;, &lt;code&gt;K&lt;/code&gt;, and &lt;code&gt;V&lt;/code&gt; are stored in high-bandwidth memory (HBM). Intermediate results are also repeatedly written to and read back from HBM:&lt;/p&gt;</description>
     </item>
   </channel>
