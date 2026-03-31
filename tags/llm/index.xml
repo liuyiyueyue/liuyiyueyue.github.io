@@ -9,11 +9,11 @@
     <lastBuildDate>Sat, 28 Mar 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://liuyiyueyue.github.io/tags/llm/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>GPU Memory Usage</title>
+      <title>Memory Usage</title>
       <link>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</link>
       <pubDate>Sat, 28 Mar 2026 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</guid>
-      <description>&lt;h3 class=&#34;heading&#34; id=&#34;training&#34;&gt;&#xA;  Training&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#training&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;During neural network training, the main components of GPU memory usage usually fall into four categories: &lt;strong&gt;model parameters&lt;/strong&gt;, intermediate &lt;strong&gt;activations&lt;/strong&gt; produced during the forward pass, &lt;strong&gt;gradients&lt;/strong&gt; computed during backpropagation, and &lt;strong&gt;optimizer states&lt;/strong&gt;.&lt;/p&gt;&#xA;&lt;p&gt;When training large models, it is common to use the AdamW optimizer together with mixed-precision training to accelerate computation. Based on this setup, we can analyze memory consumption as follows.&lt;/p&gt;&#xA;&lt;p&gt;In one training iteration, each trainable model parameter corresponds to one gradient, and two optimizer states in AdamW: the first-order moment and the second-order moment.&lt;/p&gt;</description>
+      <description>&lt;p&gt;This post gives a compact breakdown of where GPU memory goes during training and inference. For the Transformer-specific discussion of how parameter memory and activation memory scale with model size, batch size, and sequence length, see a previous blog at &lt;a href=&#34;https://liuyiyueyue.github.io/llm/attention_2_transformer_compute_memory/#memory-usage&#34;&gt;Transformer: Parameter Count, FLOPs, Memory Usage, and Training Time&lt;/a&gt;.&lt;/p&gt;&#xA;&lt;h3 class=&#34;heading&#34; id=&#34;static-and-dynamic-memory&#34;&gt;&#xA;  Static and Dynamic Memory&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#static-and-dynamic-memory&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;We refer to the memory used by model parameters as &lt;strong&gt;static memory&lt;/strong&gt;, meaning its lifetime is effectively unbounded and it must always occupy HBM. The optimizer states, model parameters, and usually gradients are static memory, since they must persist across training steps rather than being freed immediately after one operator finishes.&lt;/p&gt;</description>
     </item>
     <item>
       <title>GPU Networking and Datacenter Architecture</title>

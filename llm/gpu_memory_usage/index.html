@@ -32,7 +32,7 @@
 
 <title>
     
-    GPU Memory Usage | Yiyue Liu&#39;s Blog
+    Memory Usage | Yiyue Liu&#39;s Blog
     
 </title>
 
@@ -40,10 +40,9 @@
 
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/gpu_memory_usage/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="GPU Memory Usage">
-  <meta property="og:description" content="Training # During neural network training, the main components of GPU memory usage usually fall into four categories: model parameters, intermediate activations produced during the forward pass, gradients computed during backpropagation, and optimizer states.
-When training large models, it is common to use the AdamW optimizer together with mixed-precision training to accelerate computation. Based on this setup, we can analyze memory consumption as follows.
-In one training iteration, each trainable model parameter corresponds to one gradient, and two optimizer states in AdamW: the first-order moment and the second-order moment.">
+  <meta property="og:title" content="Memory Usage">
+  <meta property="og:description" content="This post gives a compact breakdown of where GPU memory goes during training and inference. For the Transformer-specific discussion of how parameter memory and activation memory scale with model size, batch size, and sequence length, see a previous blog at Transformer: Parameter Count, FLOPs, Memory Usage, and Training Time.
+Static and Dynamic Memory # We refer to the memory used by model parameters as static memory, meaning its lifetime is effectively unbounded and it must always occupy HBM. The optimizer states, model parameters, and usually gradients are static memory, since they must persist across training steps rather than being freed immediately after one operator finishes.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -215,14 +214,14 @@ In one training iteration, each trainable model parameter corresponds to one gra
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/gpu_memory_usage/">GPU Memory Usage</a></div>
+        <a href="/llm/gpu_memory_usage/">Memory Usage</a></div>
 
 
 <div >
   <article>
     <header class="single-intro-container">
         
-        <h1 class="single-title">GPU Memory Usage</h1>
+        <h1 class="single-title">Memory Usage</h1>
         
         <div class="single-subsummary">
           
@@ -237,7 +236,20 @@ In one training iteration, each trainable model parameter corresponds to one gra
     </header>
     
     <div class="single-content">
-      <h3 class="heading" id="training">
+      <p>This post gives a compact breakdown of where GPU memory goes during training and inference. For the Transformer-specific discussion of how parameter memory and activation memory scale with model size, batch size, and sequence length, see a previous blog at <a href="/llm/attention_2_transformer_compute_memory/#memory-usage">Transformer: Parameter Count, FLOPs, Memory Usage, and Training Time</a>.</p>
+<h3 class="heading" id="static-and-dynamic-memory">
+  Static and Dynamic Memory
+  <a class="anchor" href="#static-and-dynamic-memory">#</a>
+</h3>
+<p>We refer to the memory used by model parameters as <strong>static memory</strong>, meaning its lifetime is effectively unbounded and it must always occupy HBM. The optimizer states, model parameters, and usually gradients are static memory, since they must persist across training steps rather than being freed immediately after one operator finishes.</p>
+<p>We refer to <strong>activation</strong> memory as <strong>dynamic memory</strong>, meaning its lifetime is short and its memory can be reused. Activations have dynamic memory since they are created during forward pass and released or recomputed after backward.</p>
+<figure><img src="/llm/distributed_training_3_zero_fsdp/images/static_dynamic_memory.jpg"
+    alt="Static memory vs. dynamic memory in training."><figcaption>
+      <p>Static memory vs. dynamic memory in training.</p>
+    </figcaption>
+</figure>
+
+<h3 class="heading" id="training">
   Training
   <a class="anchor" href="#training">#</a>
 </h3>
@@ -264,18 +276,6 @@ $$</p>
 <p>During neural network inference, there are no optimizer states or gradients, and there is no need to save intermediate activations. Without gradients, optimizer states, and intermediate activations, GPU memory usage during inference is much smaller than during training.</p>
 <p>During inference, the main component of GPU memory usage is usually the model parameters. If <code>float16</code> is used for inference, the GPU memory occupied by the model parameters is approximately $2\Phi$ bytes.</p>
 <p>If KV cache is used to accelerate inference, the KV cache also occupies GPU memory. See <a href="/llm/inference_1_kv_cache/#how-big-is-the-kv-cache">How Big Is the KV Cache?</a>. In addition, the input data also needs to be placed on the GPU, and there are some intermediate results as well. However, these intermediate results are released as soon as possible during inference, so this part of the memory usage is small and can be ignored.</p>
-<h3 class="heading" id="static-and-dynamic-memory">
-  Static and Dynamic Memory
-  <a class="anchor" href="#static-and-dynamic-memory">#</a>
-</h3>
-<p>We refer to the memory used by model parameters as <strong>static memory</strong>, meaning its lifetime is effectively unbounded and it must always occupy HBM. The optimizer states, model parameters, and usually gradients are static memory, since they must persist across training steps rather than being freed immediately after one operator finishes.</p>
-<p>We refer to <strong>activation</strong> memory as <strong>dynamic memory</strong>, meaning its lifetime is short and its memory can be reused. Activations have dynamic memory since they are created during forward pass and released or recomputed after backward.</p>
-<figure><img src="/llm/distributed_training_3_zero_fsdp/images/static_dynamic_memory.jpg"
-    alt="Static memory vs. dynamic memory in training."><figcaption>
-      <p>Static memory vs. dynamic memory in training.</p>
-    </figcaption>
-</figure>
-
 
     </div>
   </article>

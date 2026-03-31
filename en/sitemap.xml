@@ -5,9 +5,6 @@
     <loc>https://liuyiyueyue.github.io/tags/gpu/</loc>
     <lastmod>2026-03-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</loc>
-    <lastmod>2026-03-28T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>https://liuyiyueyue.github.io/</loc>
     <lastmod>2026-03-28T00:00:00+00:00</lastmod>
     <xhtml:link
@@ -36,6 +33,9 @@
                 hreflang="en-us"
                 href="https://liuyiyueyue.github.io/llm/"
                 />
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</loc>
+    <lastmod>2026-03-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/optimization/</loc>
     <lastmod>2026-03-28T00:00:00+00:00</lastmod>
