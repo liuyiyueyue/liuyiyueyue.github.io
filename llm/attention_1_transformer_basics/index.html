@@ -32,7 +32,7 @@
 
 <title>
     
-    Transformer | Yiyue Liu&#39;s Blog
+    Transformer: Basics | Yiyue Liu&#39;s Blog
     
 </title>
 
@@ -40,7 +40,7 @@
 
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/attention_1_transformer_basics/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="Transformer">
+  <meta property="og:title" content="Transformer: Basics">
   <meta property="og:description" content="Overview # Transformer is a neural network architecture designed to process sequences. It was introduced as an alternative to RNN-based models, with the core idea that a model should not pass information only step by step through time. Instead, it should be able to directly look at the whole sequence and decide which parts matter most.
 The key mechanism is attention, which aggregates information from a sequence by assigning different weights to different tokens. Because of this, a Transformer can model long-range dependencies more effectively than traditional recurrent models.">
   <meta property="og:locale" content="en_us">
@@ -212,14 +212,14 @@ The key mechanism is attention, which aggregates information from a sequence by 
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/attention_1_transformer_basics/">Transformer</a></div>
+        <a href="/llm/attention_1_transformer_basics/">Transformer: Basics</a></div>
 
 
 <div >
   <article>
     <header class="single-intro-container">
         
-        <h1 class="single-title">Transformer</h1>
+        <h1 class="single-title">Transformer: Basics</h1>
         
         <div class="single-subsummary">
           
@@ -264,7 +264,7 @@ The key mechanism is attention, which aggregates information from a sequence by 
     
       
         <div class="img-container" style="--w: 1050; --h: 700;">
-            <img loading="lazy" alt="Transformer architecture" src="/llm/attention_1_transformer_basics/transformer.png" width="1050" height="700">
+            <img loading="lazy" alt="Transformer architecture" src="/llm/attention_1_transformer_basics/images/transformer.png" width="1050" height="700">
         </div>
       
     
@@ -345,7 +345,7 @@ The key mechanism is attention, which aggregates information from a sequence by 
     
       
         <div class="img-container" style="--w: 1908; --h: 902;">
-            <img loading="lazy" alt="Scaled Dot-Product Attention. Multi-Head Attention" src="/llm/attention_1_transformer_basics/scaled_dot-product_attention_and_MHA.png" width="1908" height="902">
+            <img loading="lazy" alt="Scaled Dot-Product Attention. Multi-Head Attention" src="/llm/attention_1_transformer_basics/images/scaled_dot-product_attention_and_MHA.png" width="1908" height="902">
         </div>
       
     
@@ -397,7 +397,7 @@ $$
     
       
         <div class="img-container" style="--w: 640; --h: 240;">
-            <img loading="lazy" alt="Compute attention scores" src="/llm/attention_1_transformer_basics/scaled-dot-product-attention-step-1.png" width="640" height="240">
+            <img loading="lazy" alt="Compute attention scores" src="/llm/attention_1_transformer_basics/images/scaled-dot-product-attention-step-1.png" width="640" height="240">
         </div>
       
     
@@ -423,7 +423,7 @@ $$
     
       
         <div class="img-container" style="--w: 640; --h: 206;">
-            <img loading="lazy" alt="Apply causal mask" src="/llm/attention_1_transformer_basics/scaled-dot-product-attention-step-2.png" width="640" height="206">
+            <img loading="lazy" alt="Apply causal mask" src="/llm/attention_1_transformer_basics/images/scaled-dot-product-attention-step-2.png" width="640" height="206">
         </div>
       
     
@@ -449,7 +449,7 @@ $$
     
       
         <div class="img-container" style="--w: 640; --h: 292;">
-            <img loading="lazy" alt="Multiply by values" src="/llm/attention_1_transformer_basics/scaled-dot-product-attention-step-3.png" width="640" height="292">
+            <img loading="lazy" alt="Multiply by values" src="/llm/attention_1_transformer_basics/images/scaled-dot-product-attention-step-3.png" width="640" height="292">
         </div>
       
     
@@ -475,7 +475,7 @@ $$
     
       
         <div class="img-container" style="--w: 1053; --h: 627;">
-            <img loading="lazy" alt="Attention mechanism" src="/llm/attention_1_transformer_basics/attention.png" width="1053" height="627">
+            <img loading="lazy" alt="Attention mechanism" src="/llm/attention_1_transformer_basics/images/attention.png" width="1053" height="627">
         </div>
       
     

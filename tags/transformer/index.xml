@@ -16,7 +16,7 @@
       <description>&lt;p&gt;This post continues the &lt;a href=&#34;https://liuyiyueyue.github.io/llm/attention_1_transformer/&#34;&gt;Transformer&lt;/a&gt; article and focuses on model size and compute estimation.&lt;/p&gt;&#xA;&lt;h3 class=&#34;heading&#34; id=&#34;parameter-count&#34;&gt;&#xA;  Parameter Count&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#parameter-count&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;A Transformer model consists of $l$ identical layers. Each layer has two parts: a self-attention block and an MLP block.&lt;/p&gt;&#xA;&lt;p&gt;&lt;strong&gt;The self-attention block&lt;/strong&gt; contains the weight matrices $W_Q$, $W_K$, $W_V$, and $W_O$, together with their biases. The four weight matrices satisfy $W_Q, W_K, W_V, W_O \in \mathbb{R}^{n \times n}$, and the four bias vectors satisfy $b_Q, b_K, b_V, b_O \in \mathbb{R}^{n}$. Therefore, the number of parameters in the self-attention block is&lt;/p&gt;</description>
     </item>
     <item>
-      <title>Transformer</title>
+      <title>Transformer: Basics</title>
       <link>https://liuyiyueyue.github.io/llm/attention_1_transformer_basics/</link>
       <pubDate>Wed, 12 Jul 2023 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/llm/attention_1_transformer_basics/</guid>
