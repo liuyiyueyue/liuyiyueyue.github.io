@@ -32,7 +32,7 @@
 
 <title>
     
-    Transformer: Parameter Count, FLOPs, and Training Time | Yiyue Liu&#39;s Blog
+    Transformer: Parameter Count, FLOPs, Memory Usage, and Training Time | Yiyue Liu&#39;s Blog
     
 </title>
 
@@ -40,7 +40,7 @@
 
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/attention_2_transformer_compute_memory/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="Transformer: Parameter Count, FLOPs, and Training Time">
+  <meta property="og:title" content="Transformer: Parameter Count, FLOPs, Memory Usage, and Training Time">
   <meta property="og:description" content="This post continues the Transformer article and focuses on model size and compute estimation.
 Parameter Count # A Transformer model consists of $l$ identical layers. Each layer has two parts: a self-attention block and an MLP block.
 The self-attention block contains the weight matrices $W_Q$, $W_K$, $W_V$, and $W_O$, together with their biases. The four weight matrices satisfy $W_Q, W_K, W_V, W_O \in \mathbb{R}^{n \times n}$, and the four bias vectors satisfy $b_Q, b_K, b_V, b_O \in \mathbb{R}^{n}$. Therefore, the number of parameters in the self-attention block is">
@@ -213,14 +213,14 @@ The self-attention block contains the weight matrices $W_Q$, $W_K$, $W_V$, and $
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/attention_2_transformer_compute_memory/">Transformer: Parameter Count, FLOPs, and Training Time</a></div>
+        <a href="/llm/attention_2_transformer_compute_memory/">Transformer: Parameter Count, FLOPs, Memory Usage, and Training Time</a></div>
 
 
 <div >
   <article>
     <header class="single-intro-container">
         
-        <h1 class="single-title">Transformer: Parameter Count, FLOPs, and Training Time</h1>
+        <h1 class="single-title">Transformer: Parameter Count, FLOPs, Memory Usage, and Training Time</h1>
         
         <div class="single-subsummary">
           
@@ -499,6 +499,50 @@ $$</p>
 <p>$$
 l(34bsh + 5b a s^2)
 $$</p>
+<h3 class="heading" id="memory-usage">
+  Memory Usage
+  <a class="anchor" href="#memory-usage">#</a>
+</h3>
+<p>In one training iteration, the GPU memory occupied by model parameters (or gradients) depends only on the number of model parameters and the parameter data type. It does <strong>not</strong> depend on the input size. The same is true for optimizer states: their memory usage depends on the optimizer type and the parameter count, but not on the input batch. Intermediate activations are different. Their memory usage grows with the input size, especially with batch size $b$ and sequence length $s$. As $b$ and $s$ increase, activation memory increases accordingly. This is why, when training runs into OOM issues, reducing the batch size often helps: it reduces activation memory, not the memory occupied by parameters, gradients, or optimizer states.</p>
+<p>Take GPT-3 175B as a concrete example. Its model configuration is:</p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Model</th>
+                <th style="text-align: right">Parameters</th>
+                <th style="text-align: right">Layers $l$</th>
+                <th style="text-align: right">Hidden size $h$</th>
+                <th style="text-align: right">Attention heads $a$</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>GPT-3</td>
+                <td style="text-align: right">175B</td>
+                <td style="text-align: right">96</td>
+                <td style="text-align: right">12288</td>
+                <td style="text-align: right">96</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p>Assume mixed-precision training, with both model parameters and activations stored in <code>fp16</code>, so each element takes 2 bytes.</p>
+<p>GPT-3 has 175B parameters, so the parameter memory is approximately:</p>
+<p>$$
+175 \times 10^9 \times 2 \text{ bytes} = 350 \text{ GB}
+$$</p>
+<p>Now let the sequence length be $s = 2048$. Using the activation-memory estimate derived above,</p>
+<p>$$
+l(34bsh + 5b a s^2),
+$$</p>
+<p>we can compare the activation memory at different batch sizes:</p>
+<ul>
+<li>When $b = 1$, the activation memory is about $275 \text{ GB}$, which is about $0.79\times$ the parameter memory.</li>
+<li>When $b = 64$, the activation memory is about $17.6 \text{ TB}$, which is about $50\times$ the parameter memory.</li>
+<li>When $b = 128$, the activation memory is about $35.3 \text{ TB}$, which is about $101\times$ the parameter memory.</li>
+</ul>
+<p><strong>As batch size increases, activation memory quickly grows far beyond parameter memory.</strong> In practice, activation recomputation is commonly used to reduce this cost. In exchange for one extra forward-pass worth of compute, it reduces the amount of activation memory that must be stored. This is fundamentally a time-for-space tradeoff.</p>
 
     </div>
   </article>
