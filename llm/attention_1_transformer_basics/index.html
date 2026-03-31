@@ -234,10 +234,10 @@ The key mechanism is attention, which aggregates information from a sequence by 
     </header>
     
     <div class="single-content">
-      <h2 class="heading" id="overview">
+      <h3 class="heading" id="overview">
   Overview
   <a class="anchor" href="#overview">#</a>
-</h2>
+</h3>
 <p><strong>Transformer</strong> is a neural network architecture designed to process sequences. It was introduced as an alternative to RNN-based models, with the core idea that a model should not pass information only step by step through time. Instead, it should be able to directly look at the whole sequence and decide which parts matter most.</p>
 <p>The key mechanism is <strong>attention</strong>, which aggregates information from a sequence by assigning different weights to different tokens. Because of this, a Transformer can model long-range dependencies more effectively than traditional recurrent models.</p>
 <p>A standard Transformer contains an <strong>encoder</strong> and a <strong>decoder</strong>.</p>
@@ -273,10 +273,10 @@ The key mechanism is attention, which aggregates information from a sequence by 
 </figure>
 </p>
 <p>In practice, modern large language models often use decoder-only variants, but the original encoder-decoder design is still the standard starting point for understanding the architecture.</p>
-<h2 class="heading" id="transformer-vs-rnn">
+<h3 class="heading" id="transformer-vs-rnn">
   Transformer vs. RNN
   <a class="anchor" href="#transformer-vs-rnn">#</a>
-</h2>
+</h3>
 <p>Transformer and RNN both aim to model sequence data, and both use nonlinear layers such as MLPs to transform representations into richer semantic spaces. The main difference is <strong>how they pass sequence information</strong> (如何传递序列信息).</p>
 <p>In an <strong>RNN</strong>, information is propagated recurrently:</p>
 <ul>
@@ -296,37 +296,28 @@ The key mechanism is attention, which aggregates information from a sequence by 
 <li><strong>RNN</strong>: passes information forward through recurrent hidden states</li>
 <li><strong>Transformer</strong>: aggregates information globally through attention</li>
 </ul>
-<h2 class="heading" id="attention-and-its-math">
+<h3 class="heading" id="attention-and-its-math">
   Attention and Its Math
   <a class="anchor" href="#attention-and-its-math">#</a>
-</h2>
+</h3>
 <p>Attention measures how much one token should focus on another token. It can be understood as a weighted aggregation of sequence information, regardless of distance in the sequence.</p>
 <p>At a high level:</p>
 <ul>
 <li><code>weight = similarity(query, key)</code></li>
 <li><code>output = weighted sum of values</code></li>
 </ul>
-<h3 class="heading" id="self-attention">
-  Self-Attention
-  <a class="anchor" href="#self-attention">#</a>
-</h3>
-<p>In <strong>self-attention</strong>, <code>Q</code>, <code>K</code>, and <code>V</code> all come from the same input sequence:</p>
+<p><strong>Self-Attention</strong></p>
+<p>In self-attention, <code>Q</code>, <code>K</code>, and <code>V</code> all come from the same input sequence:</p>
 <ul>
 <li><strong>Query (Q)</strong>: what the current token is looking for</li>
 <li><strong>Key (K)</strong>: what each token offers for matching</li>
 <li><strong>Value (V)</strong>: the information carried by each token</li>
 </ul>
 <p>So self-attention means that each token compares itself with all tokens in the same sequence and then gathers the most relevant information.</p>
-<h3 class="heading" id="masked-attention">
-  Masked Attention
-  <a class="anchor" href="#masked-attention">#</a>
-</h3>
-<p>In <strong>masked self-attention</strong>, token <code>t</code> is not allowed to see tokens after <code>t</code>. This is required in autoregressive language models, where prediction at position <code>t</code> must not use future tokens.</p>
-<h3 class="heading" id="multi-head-attention">
-  Multi-Head Attention
-  <a class="anchor" href="#multi-head-attention">#</a>
-</h3>
-<p><strong>Multi-head attention</strong> means using several attention heads in parallel. Each head can learn a different type of relation, such as syntax, local dependency, or long-range dependency. This is loosely similar to how different CNN channels can capture different patterns.</p>
+<p><strong>Masked Attention</strong></p>
+<p>In masked self-attention, token <code>t</code> is not allowed to see tokens after <code>t</code>. This is required in autoregressive language models, where prediction at position <code>t</code> must not use future tokens.</p>
+<p><strong>Multi-Head Attention</strong></p>
+<p>Multi-head attention means using several attention heads in parallel. Each head can learn a different type of relation, such as syntax, local dependency, or long-range dependency. This is loosely similar to how different CNN channels can capture different patterns.</p>
 <p>
 
 
@@ -353,10 +344,7 @@ The key mechanism is attention, which aggregates information from a sequence by 
     
 </figure>
 </p>
-<h3 class="heading" id="scaled-dot-product-attention">
-  Scaled Dot-Product Attention
-  <a class="anchor" href="#scaled-dot-product-attention">#</a>
-</h3>
+<p><strong>Scaled Dot-Product Attention</strong></p>
 <p>The Transformer paper defines scaled dot-product attention as:</p>
 
 $$
@@ -483,10 +471,10 @@ $$
     
 </figure>
 </p>
-<h2 class="heading" id="layer-norm-vs-batch-norm">
+<h3 class="heading" id="layer-norm-vs-batch-norm">
   Layer Norm vs. Batch Norm
   <a class="anchor" href="#layer-norm-vs-batch-norm">#</a>
-</h2>
+</h3>
 <p>Both layer normalization and batch normalization are used to stabilize training, but they normalize over different dimensions.</p>
 <p><strong>Batch normalization</strong> computes statistics across the batch. Its behavior depends on the distribution of examples inside the mini-batch. This works well in many vision settings, but it is less suitable for sequence models when:</p>
 <ul>
@@ -496,20 +484,20 @@ $$
 </ul>
 <p><strong>Layer normalization</strong> computes statistics within each individual token representation. It does not depend on other examples in the batch, which makes it more stable for variable-length sequence modeling.</p>
 <p>This is why Transformers typically use <strong>layer normalization instead of batch normalization</strong>. For language tasks, each token representation should be normalized independently, without relying on the composition of the current mini-batch.</p>
-<h2 class="heading" id="positional-encoding">
+<h3 class="heading" id="positional-encoding">
   Positional Encoding
   <a class="anchor" href="#positional-encoding">#</a>
-</h2>
+</h3>
 <p>Positional encoding provides the model with information about the positions of words in a sequence. Since the Transformer&rsquo;s self-attention mechanism does not naturally account for the order of elements in the sequence, positional encoding solves this by adding position information to each element&rsquo;s representation. In the original Transformer paper, positional encodings are defined using alternating sine and cosine functions.</p>
-<h2 class="heading" id="ffn">
+<h3 class="heading" id="ffn">
   FFN
   <a class="anchor" href="#ffn">#</a>
-</h2>
+</h3>
 <p>Feed-forward network (FFN) provides the model with nonlinear processing capacity. It operates independently on each position of the input, helping increase the model&rsquo;s complexity and expressive power.</p>
-<h2 class="heading" id="complete-code">
+<h3 class="heading" id="complete-code">
   Complete Code
   <a class="anchor" href="#complete-code">#</a>
-</h2>
+</h3>
 <p><a href="https://github.com/RethinkFun/DeepLearning/blob/master/chapter15/transformer.py">RethinkFun/DeepLearning <code>chapter15/transformer.py</code></a></p>
 <div class="footnotes" role="doc-endnotes">
 <hr>
