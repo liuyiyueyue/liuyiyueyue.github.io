@@ -392,6 +392,10 @@ $$</p>
 <p>$$
 l(24bsh^2 + 4bs^2h) + 2bshV
 $$</p>
+<p>Most people write it concisely <strong>using big-O</strong> below, ignoring the $b$ and $l$ constants. Again, $s$ is sequence length, and $h$ is hidden size.</p>
+<p>$$
+O(sh^2 + s^2h) \text{ or } O(s^2h)
+$$</p>
 <h3 class="heading" id="parameter-count-and-flops">
   Parameter Count and FLOPs
   <a class="anchor" href="#parameter-count-and-flops">#</a>
@@ -543,6 +547,26 @@ $$</p>
 <li>When $b = 128$, the activation memory is about $35.3 \text{ TB}$, which is about $101\times$ the parameter memory.</li>
 </ul>
 <p><strong>As batch size increases, activation memory quickly grows far beyond parameter memory.</strong> In practice, activation recomputation is commonly used to reduce this cost. In exchange for one extra forward-pass worth of compute, it reduces the amount of activation memory that must be stored. This is fundamentally a time-for-space tradeoff.</p>
+<h3 class="heading" id="compute-bound-vs-memory-bound">
+  Compute-Bound vs. Memory-Bound
+  <a class="anchor" href="#compute-bound-vs-memory-bound">#</a>
+</h3>
+<p>The <strong>roofline model</strong> gives a simple way to think about GPU performance. It says that the throughput of an operation is limited by two ceilings: peak compute throughput and peak memory bandwidth. If an operation hits the compute ceiling, it is <strong>compute-bound</strong>. If it hits the bandwidth ceiling, it is <strong>memory-bound</strong>.</p>
+<figure><img src="/llm/attention_2_transformer_compute_memory/images/roofline.png"
+    alt="Roofline model: throughput is limited by either compute throughput or memory bandwidth, depending on arithmetic intensity."><figcaption>
+      <p>Roofline model: throughput is limited by either compute throughput or memory bandwidth, depending on arithmetic intensity.</p>
+    </figcaption>
+</figure>
+
+<p>The key quantity is <strong>arithmetic intensity</strong>, the number of floating-point operations performed per byte of data moved:</p>
+<p>$$
+\text{Arithmetic intensity} = \frac{\text{FLOPs}}{\text{bytes moved}}
+$$</p>
+<p>Operations with high arithmetic intensity tend to be compute-bound, while operations with low arithmetic intensity tend to be memory-bound.</p>
+<p>Now, back to transformer.</p>
+<p>With a large batch size, matrix multiplications such as the $QKV$ projections and the FFN layers are usually compute-bound. Their compute grows with batch size, while data movement grows more slowly, so their arithmetic intensity is relatively high.</p>
+<p>During decode stage, however, computation is usually memory-bound. The batch size is often very small, sometimes even 1, so matrix multiplications effectively become matrix-vector multiplications, which greatly lowers arithmetic intensity. In that regime, the bottleneck often becomes the memory bandwidth required to read model weights from HBM.</p>
+<p>Elementwise operations such as softmax and layer normalization are also usually memory-bound, because their arithmetic cost is small relative to the amount of data they move.</p>
 
     </div>
   </article>
