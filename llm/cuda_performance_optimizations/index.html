@@ -41,7 +41,7 @@
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/cuda_performance_optimizations/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="CUDA Performance Optimizations">
-  <meta property="og:description" content="Let’s Start with Array Sum (Reduce) # Algorithm Overview
+  <meta property="og:description" content="Let’s Start with Array Sum via Reduction 1 # Algorithm Overview
 Assume we are given an array of length N and need to compute the sum of it. We first split the array into m chunks. In the first stage, we launch m blocks, with each block reducing one chunk to a partial sum. In the second stage, a single block reduces those m partial sums to produce the final result. Since the second stage can reuse the same kernel as the first, we will not discuss it separately here. This section focuses only on optimization techniques for the first stage.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
@@ -235,12 +235,15 @@ Assume we are given an array of length N and need to compute the sum of it. We f
     </header>
     
     <div class="single-content">
-      <h3 class="heading" id="lets-start-with-array-sum-reduce">
-  Let&rsquo;s Start with Array Sum (Reduce)
-  <a class="anchor" href="#lets-start-with-array-sum-reduce">#</a>
+      <h3 class="heading" id="lets-start-with-array-sum-via-reduction">
+  Let&rsquo;s Start with Array Sum via Reduction <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>
+  <a class="anchor" href="#lets-start-with-array-sum-via-reduction">#</a>
 </h3>
 <p><strong>Algorithm Overview</strong></p>
 <p>Assume we are given an array of length <code>N</code> and need to compute the sum of it. We first split the array into <code>m</code> chunks. In the first stage, we launch <code>m</code> blocks, with each block reducing one chunk to a partial sum. In the second stage, a single block reduces those <code>m</code> partial sums to produce the final result. Since the second stage can reuse the same kernel as the first, we will not discuss it separately here. This section focuses only on optimization techniques for the first stage.</p>
+<figure><img src="/llm/cuda_performance_optimizations/images/reduction.png">
+</figure>
+
 <p>The kernel interface is:</p>
 <div class="code-block">
   <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce</span>(T* input, T* output)</span></span></code></pre></div>
@@ -264,15 +267,15 @@ Assume we are given an array of length N and need to compute the sum of it. We f
 </span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> i=blockIdx.x*blockDim.x+threadIdx.x;
 </span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> tid=threadIdx.x;
 </span></span><span style="display:flex;"><span>    sdata[tid]=d_in[i];
-</span></span><span style="display:flex;"><span>    <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
-</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>(); <span style="color:#888;font-style:italic">// shared-memory load must be complete before reduction starts.
+</span></span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// do reduction in shared mem
-</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span>(<span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> s=1; s&lt;blockDim.x; s*=2){
-</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span>(tid%(2*s) == 0){
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span>(<span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> s=1; s&lt;blockDim.x; s*=2){ <span style="color:#888;font-style:italic">// for each reduction step
+</span></span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span>(tid%(2*s) == 0){
 </span></span><span style="display:flex;"><span>            sdata[tid]+=sdata[tid+s];
 </span></span><span style="display:flex;"><span>        }
-</span></span><span style="display:flex;"><span>        <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
-</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>(); <span style="color:#888;font-style:italic">// each reduction step must be complete before the next step starts.
+</span></span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>    
 </span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// write result for this block to global mem
 </span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span>(tid==0)d_out[blockIdx.x]=sdata[tid];
@@ -502,6 +505,23 @@ Assume we are given an array of length N and need to compute the sum of it. We f
   Matrix Multiplication!
   <a class="anchor" href="#matrix-multiplication">#</a>
 </h3>
+<p>大迭代 和 小迭代：</p>
+<ul>
+<li>对于这个block而言，它需要进行2048/8=256次迭代，我们先把这个迭代称为大迭代。每一次大迭代都需要把A里面128×8=1024个元素和B里面8×128=1024个元素先放到shared memory中。</li>
+<li>在进行一个大迭代时，shared memory中有128×8=1024个A矩阵元素和8×128=1024个B矩阵元素。随后，每个线程需要进行8次迭代，我们把这个迭代成为小迭代。</li>
+</ul>
+<p>double buffering:</p>
+<ul>
+<li>为了实现数据预取，需要开启两倍的shared memory和寄存器。</li>
+<li>很多地方把这个技术叫做双缓冲，我感觉跟预取是同一个事情。</li>
+<li>为了后续方便介绍，我们用read SM和write SM代表用来读写的两块共享内存，并用read REG和write REG来表示用来读写的两块寄存器。</li>
+</ul>
+<p>for k in 256 big_loop:
+prefetch next loop data to write_SM
+// compute in read_SM
+for iter in 8 small_loop:
+prefecth next loop data to write_REG
+compute in read_REG</p>
 <h3 class="heading" id="cublas-cudnn-and-cutlass">
   cuBLAS, cuDNN, and CUTLASS
   <a class="anchor" href="#cublas-cudnn-and-cutlass">#</a>
@@ -560,9 +580,14 @@ Assume we are given an array of length N and need to compute the sum of it. We f
   <button class="copy-code-button">copy</button>
 </div>
 <p>A complete example is here: <a href="/llm/cuda_performance_optimizations/code/simple_mat_mul.cu.txt">simple_mat_mul.cu</a>.</p>
-<ul>
-<li>Most of the Reduce kernel CUDA code is from Mark Mharris&rsquo;s slides on CUDA performance!</li>
-</ul>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>Mark Harris. Optimizing Parallel Reduction in CUDA. NVIDIA. <a href="https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf">https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
 
     </div>
   </article>
