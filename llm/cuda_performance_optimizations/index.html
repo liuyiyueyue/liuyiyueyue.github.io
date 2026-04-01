@@ -501,27 +501,89 @@ Assume we are given an array of length N and need to compute the sum of it. We f
 </span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
-<h3 class="heading" id="matrix-multiplication">
-  Matrix Multiplication!
-  <a class="anchor" href="#matrix-multiplication">#</a>
+<h3 class="heading" id="next-matrix-vector-multiplication-gemv">
+  Next, Matrix-vector Multiplication (GEMV)
+  <a class="anchor" href="#next-matrix-vector-multiplication-gemv">#</a>
 </h3>
-<p>大迭代 和 小迭代：</p>
-<ul>
-<li>对于这个block而言，它需要进行2048/8=256次迭代，我们先把这个迭代称为大迭代。每一次大迭代都需要把A里面128×8=1024个元素和B里面8×128=1024个元素先放到shared memory中。</li>
-<li>在进行一个大迭代时，shared memory中有128×8=1024个A矩阵元素和8×128=1024个B矩阵元素。随后，每个线程需要进行8次迭代，我们把这个迭代成为小迭代。</li>
-</ul>
-<p>double buffering:</p>
-<ul>
-<li>为了实现数据预取，需要开启两倍的shared memory和寄存器。</li>
-<li>很多地方把这个技术叫做双缓冲，我感觉跟预取是同一个事情。</li>
-<li>为了后续方便介绍，我们用read SM和write SM代表用来读写的两块共享内存，并用read REG和write REG来表示用来读写的两块寄存器。</li>
-</ul>
-<p>for k in 256 big_loop:
-prefetch next loop data to write_SM
-// compute in read_SM
-for iter in 8 small_loop:
-prefecth next loop data to write_REG
-compute in read_REG</p>
+<p>Matrix-vector multiplication is a foundational operation in linear algebra. Let matrix $A \in \mathbb{R}^{M \times N}$, vector $x \in \mathbb{R}^{N}$, and vector $y \in \mathbb{R}^{M}$. Then</p>
+<p>$$
+y = Ax
+$$</p>
+<p><strong>Naive Kernel</strong></p>
+<p>In the naive kernel implementation below, each thread handles a row of matrix $A$, an element of vector $x$, and an element of vector $y$. This kernel is simple and performs coalesced access on A (row-major). However, the vector $x$ is reloaded N times per thread, wasting memory bandwidth.</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">matvec1</span>(<span style="font-weight:bold;text-decoration:underline">float</span>* A, <span style="font-weight:bold;text-decoration:underline">float</span>* x, <span style="font-weight:bold;text-decoration:underline">float</span>* y,
+</span></span><span style="display:flex;"><span>                       <span style="font-weight:bold;text-decoration:underline">int</span> M, <span style="font-weight:bold;text-decoration:underline">int</span> N) {
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">int</span> row = blockIdx.x * blockDim.x + threadIdx.x;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span> (row &lt; M) {
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">float</span> sum = 0;
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">for</span> (<span style="font-weight:bold;text-decoration:underline">int</span> col = 0; col &lt; N; col++)
+</span></span><span style="display:flex;"><span>            sum += A[row*N + col] * x[col];
+</span></span><span style="display:flex;"><span>        y[row] = sum;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p><strong>Reuse Vector $x$</strong></p>
+<p>Intead of reloading vector $x$ multiple times, we use the shared memory to store a tile of it. Each thread loads an element of <code>x</code> into the shared tile <code>sx</code></p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>x:  [ x0 x1 x2 x3 | x4 x5 x6 x7 | ... ]
+</span></span><span style="display:flex;"><span>        ↑ TILE 0        ↑ TILE 1</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>There is the code for the optimized kernel:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#888;font-weight:bold">#define TILE 256
+</span></span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic">// number of elements of x loaded into shared memory per iteration
+</span></span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">matvec_opt</span>(<span style="font-weight:bold;text-decoration:underline">float</span>* A, <span style="font-weight:bold;text-decoration:underline">float</span>* x, <span style="font-weight:bold;text-decoration:underline">float</span>* y,
+</span></span><span style="display:flex;"><span>                           <span style="font-weight:bold;text-decoration:underline">int</span> M, <span style="font-weight:bold;text-decoration:underline">int</span> N) {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// shared memory buffer to cache a tile of vector x
+</span></span></span><span style="display:flex;"><span>    __shared__ <span style="font-weight:bold;text-decoration:underline">float</span> sx[TILE];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">int</span> row = blockIdx.x * blockDim.x + threadIdx.x;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">float</span> sum = 0;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// loop over x (and columns of A) in tiles
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span> (<span style="font-weight:bold;text-decoration:underline">int</span> t = 0; t &lt; (N + TILE - 1)/TILE; t++) {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic">// compute global index into x for this tile
+</span></span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">int</span> idx = t*TILE + threadIdx.x;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic">// load one element of x into shared memory if within bounds
+</span></span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span> (idx &lt; N)
+</span></span><span style="display:flex;"><span>            sx[threadIdx.x] = x[idx];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic">// ensure all threads have finished loading shared memory
+</span></span></span><span style="display:flex;"><span>        <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span> (row &lt; M) {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#888;font-style:italic">// iterate over elements in the shared memory tile
+</span></span></span><span style="display:flex;"><span>            <span style="font-weight:bold;text-decoration:underline">for</span> (<span style="font-weight:bold;text-decoration:underline">int</span> i = 0; i &lt; TILE &amp;&amp; t*TILE + i &lt; N; i++) {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                <span style="color:#888;font-style:italic">// multiply A[row, col] with cached x[col] and accumulate
+</span></span></span><span style="display:flex;"><span>                sum += A[row*N + t*TILE + i] * sx[i];
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic">// ensure all threads are done using shared memory before overwrite
+</span></span></span><span style="display:flex;"><span>        <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// write final result to output if within bounds
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span> (row &lt; M)
+</span></span><span style="display:flex;"><span>        y[row] = sum;
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<h3 class="heading" id="finally-matrix-multiplication">
+  Finally&hellip; Matrix Multiplication!
+  <a class="anchor" href="#finally-matrix-multiplication">#</a>
+</h3>
 <h3 class="heading" id="cublas-cudnn-and-cutlass">
   cuBLAS, cuDNN, and CUTLASS
   <a class="anchor" href="#cublas-cudnn-and-cutlass">#</a>
