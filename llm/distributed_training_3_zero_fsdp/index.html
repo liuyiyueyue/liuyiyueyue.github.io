@@ -42,7 +42,7 @@
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Distributed Training: ZeRO and FSDP">
   <meta property="og:description" content="ZeRo 1 # In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out. As a result, memory often becomes the main bottleneck in data-parallel training.
-Microsoft proposed a highly influential algorithm called Zero Redundancy Optimizer (ZeRO) to address the memory limitations of data-parallel training, and later built the distributed training framework DeepSpeed on top of PyTorch around it. Its core idea is to partition model states evenly across GPUs, so the memory usage on each GPU becomes inversely proportional to the degree of data parallelism, while communication efficiency remains largely unaffected.">
+Microsoft proposed a highly influential algorithm called Zero Redundancy Optimizer (ZeRO) to address the memory limitations of data-parallel training, and later built the distributed training framework DeepSpeed on top of PyTorch around it. Its core idea ZeRO-DP is to partition model states (optimizer states, gradients, and parameters) evenly across GPUs, so the memory usage on each GPU becomes inversely proportional to the degree of data parallelism, while communication efficiency remains largely unaffected. Besides model state, the remaining memory called residual states are used by activation, temporary buffers, and unusable fragmented memory. ZeRO-R is to optimize these residual memory. This section of the blog focuses on ZeRO-DP.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -241,32 +241,69 @@ Microsoft proposed a highly influential algorithm called Zero Redundancy Optimiz
   <a class="anchor" href="#zero">#</a>
 </h3>
 <p>In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out. As a result, memory often becomes the main bottleneck in data-parallel training.</p>
-<p>Microsoft proposed a highly influential algorithm called <strong>Zero Redundancy Optimizer (ZeRO)</strong> to address the memory limitations of data-parallel training, and later built the distributed training framework <strong>DeepSpeed</strong> on top of PyTorch around it. Its core idea is to partition model states evenly across GPUs, so the memory usage on each GPU becomes inversely proportional to the degree of data parallelism, while communication efficiency remains largely unaffected.</p>
+<p>Microsoft proposed a highly influential algorithm called <strong>Zero Redundancy Optimizer (ZeRO)</strong> to address the memory limitations of data-parallel training, and later built the distributed training framework <strong>DeepSpeed</strong> on top of PyTorch around it. Its core idea <strong>ZeRO-DP</strong> is to partition <strong>model states</strong> (optimizer states, gradients, and parameters) evenly across GPUs, so the memory usage on each GPU becomes inversely proportional to the degree of data parallelism, while communication efficiency remains largely unaffected. Besides model state, the remaining memory called <strong>residual states</strong> are used by activation, temporary buffers, and unusable fragmented memory. <strong>ZeRO-R</strong> is to optimize these residual memory. This section of the blog focuses on ZeRO-DP.</p>
+<p>ZeRO-DP has three main optimization stages: $P_{OS}$ refers to ZeRO-1, $P_{OS+g}$ refers to ZeRO-2, and $P_{OS+g+p}$ refers to ZeRO-3.</p>
 
 <div class="table-outer">
     <table>
         <thead>
             <tr>
-                <th>ZeRO Stage</th>
+                <th>Name</th>
+                <th>Stage</th>
+                <th>Notation</th>
                 <th>What’s Sharded</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td><strong>Stage 1</strong></td>
+                <td>ZeRO-1</td>
+                <td>Stage 1</td>
+                <td>$P_{OS}$</td>
                 <td>Optimizer states</td>
             </tr>
             <tr>
-                <td><strong>Stage 2</strong></td>
+                <td>ZeRO-2</td>
+                <td>Stage 2</td>
+                <td>$P_{OS+g}$</td>
                 <td>+ Gradients</td>
             </tr>
             <tr>
-                <td><strong>Stage 3</strong></td>
+                <td>ZeRO-3</td>
+                <td>Stage 3</td>
+                <td>$P_{OS+g+p}$</td>
                 <td>+ Model parameters</td>
             </tr>
         </tbody>
     </table>
-</div><h3 class="heading" id="fsdp">
+</div><figure><img src="/llm/distributed_training_3_zero_fsdp/images/zero-dp.png"
+    alt="ZeRO-DP optimization stages."><figcaption>
+      <p>ZeRO-DP optimization stages.</p>
+    </figcaption>
+</figure>
+
+<p><strong>Memory Reduction</strong></p>
+<p>In mixed-precision training, the model parameters are stored in <code>float16</code>, the model gradients are stored in <code>float16</code>, and the Adam states are stored in <code>float32</code>, including the master copy of the model parameters, the momentum, and the variance. Let the total number of model parameters be $\Phi$. Then the total memory required is</p>
+<p>$$
+2\Phi + 2\Phi + (4\Phi + 4\Phi + 4\Phi) = 4\Phi + 12\Phi = 16\Phi \text{ bytes}.
+$$</p>
+<p>This shows that the Adam states account for 75% of the memory footprint.</p>
+<p>Let the data-parallel degree be $N_d$.</p>
+<p>In ZeRO-1, only the Adam states are partitioned across GPUs, while the <code>float16</code> parameters and <code>float16</code> gradients are still replicated on every GPU. Therefore, the per-GPU memory usage is</p>
+<p>$$
+M_{\text{ZeRO-1}} = 2\Phi + 2\Phi + \frac{12\Phi}{N_d} = 4\Phi + \frac{12\Phi}{N_d}.
+$$</p>
+<p>In ZeRO-2, both the Adam states and the gradients are partitioned across GPUs, while the <code>float16</code> parameters are still replicated. Therefore, the per-GPU memory usage is</p>
+<p>$$
+M_{\text{ZeRO-2}} = 2\Phi + \frac{2\Phi}{N_d} + \frac{12\Phi}{N_d} = 2\Phi + \frac{14\Phi}{N_d}.
+$$</p>
+<p>In ZeRO-3, the Adam states, gradients, and model parameters are all partitioned across GPUs. Therefore, the per-GPU memory usage is</p>
+<p>$$
+M_{\text{ZeRO-3}} = \frac{2\Phi}{N_d} + \frac{2\Phi}{N_d} + \frac{12\Phi}{N_d} = \frac{16\Phi}{N_d}.
+$$</p>
+<p>Compared with conventional data parallelism, the per-GPU memory usage can therefore be reduced by up to $4\times$, $8\times$, and $N_d\times$ for ZeRO-1, ZeRO-2, and ZeRO-3, respectively.</p>
+<p><strong>Communication Overhead</strong></p>
+<p>TODO: &ldquo;Communication Analysis of ZeRO-DP&rdquo;</p>
+<h3 class="heading" id="fsdp">
   FSDP <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>
   <a class="anchor" href="#fsdp">#</a>
 </h3>
@@ -428,6 +465,27 @@ Microsoft proposed a highly influential algorithm called Zero Redundancy Optimiz
 
   </footer>
 
+  
+  <link rel="stylesheet" 
+  href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  
+<script defer 
+  src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+
+<script defer
+  src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body);"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    renderMathInElement(document.body, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false }
+      ]
+    });
+  });
+</script>
   
 </body>
 
