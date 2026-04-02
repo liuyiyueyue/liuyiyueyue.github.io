@@ -32,7 +32,7 @@
 
 <title>
     
-    Memory Usage | Yiyue Liu&#39;s Blog
+    GPU Memory Usage | Yiyue Liu&#39;s Blog
     
 </title>
 
@@ -40,7 +40,7 @@
 
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/gpu_memory_usage/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="Memory Usage">
+  <meta property="og:title" content="GPU Memory Usage">
   <meta property="og:description" content="This post gives a compact breakdown of where GPU memory goes during training and inference. For the Transformer-specific discussion of how parameter memory and activation memory scale with model size, batch size, and sequence length, see a previous blog at Transformer: Parameter Count, FLOPs, Memory Usage, and Training Time.
 Static and Dynamic Memory # We refer to the memory used by model parameters as static memory, meaning its lifetime is effectively unbounded and it must always occupy HBM. The optimizer states, model parameters, and usually gradients are static memory, since they must persist across training steps rather than being freed immediately after one operator finishes.">
   <meta property="og:locale" content="en_us">
@@ -158,6 +158,13 @@ Static and Dynamic Memory # We refer to the memory used by model parameters as s
         </p>
         
         
+        <p class="small ">
+            <a href="/system/" >
+                /System
+            </a>
+        </p>
+        
+        
     </div>
 
     
@@ -214,14 +221,14 @@ Static and Dynamic Memory # We refer to the memory used by model parameters as s
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/gpu_memory_usage/">Memory Usage</a></div>
+        <a href="/llm/gpu_memory_usage/">GPU Memory Usage</a></div>
 
 
 <div >
   <article>
     <header class="single-intro-container">
         
-        <h1 class="single-title">Memory Usage</h1>
+        <h1 class="single-title">GPU Memory Usage</h1>
         
         <div class="single-subsummary">
           
@@ -254,21 +261,6 @@ Static and Dynamic Memory # We refer to the memory used by model parameters as s
   <a class="anchor" href="#training">#</a>
 </h3>
 <p>During neural network training, the main components of GPU memory usage usually fall into four categories: <strong>model parameters</strong>, intermediate <strong>activations</strong> produced during the forward pass, <strong>gradients</strong> computed during backpropagation, and <strong>optimizer states</strong>.</p>
-<p>When training large models, it is common to use the AdamW optimizer together with mixed-precision training to accelerate computation. Based on this setup, we can analyze memory consumption as follows.</p>
-<p>In one training iteration, each trainable model parameter corresponds to one gradient, and two optimizer states in AdamW: the first-order moment and the second-order moment.</p>
-<p>Let the total number of model parameters be $\Phi$. Then the number of gradient elements is $\Phi$, and the number of AdamW optimizer-state elements is $2\Phi$. Each element of type <code>float16</code> occupies 2 bytes, and each element of type <code>float32</code> occupies 4 bytes.</p>
-<p>In mixed-precision training, <code>float16</code> model parameters are used for the forward pass and backward pass. <code>float16</code> gradients are produced during backpropagation. During the optimizer update, <code>float32</code> optimizer states, <code>float32</code> gradients, and <code>float32</code> model parameters are used to update the parameters.</p>
-<p>Therefore, for each trainable parameter, the memory cost is:</p>
-<p>$$
-(2+4) + (2+4) + (4+4) = 20 \text{ bytes}
-$$</p>
-<p>where:</p>
-<ul>
-<li>$(2+4)$ corresponds to the weights: <code>float16</code> weight + <code>float32</code> weight,</li>
-<li>$(2+4)$ corresponds to the gradient: <code>float16</code> gradient + <code>float32</code> gradient,</li>
-<li>$(4+4)$ corresponds to the two AdamW optimizer states, both stored in <code>float32</code>.</li>
-</ul>
-<p>So, when training a large model with $\Phi$ parameters using AdamW and mixed-precision training, the total GPU memory occupied by model parameters, gradients, and optimizer states is $20\Phi \text{ bytes}$.</p>
 <h3 class="heading" id="inference">
   Inference
   <a class="anchor" href="#inference">#</a>

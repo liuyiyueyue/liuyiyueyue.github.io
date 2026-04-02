@@ -6,10 +6,17 @@
     <description>Recent content in Gpu on Yiyue Liu&#39;s Blog</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 28 Mar 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 01 Apr 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://liuyiyueyue.github.io/tags/gpu/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Memory Usage</title>
+      <title>Memory Pool and Allocation</title>
+      <link>https://liuyiyueyue.github.io/system/memory_allocation/</link>
+      <pubDate>Wed, 01 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/system/memory_allocation/</guid>
+      <description>&lt;p&gt;A memory pool preallocates a large chunk of memory and manages allocation and free internally, which avoids calling &lt;code&gt;malloc&lt;/code&gt; and &lt;code&gt;free&lt;/code&gt; too often. There are any interesting topics around it: how this is implemented inside Linux kernels, why data structures such as segment trees or red-black trees are used, how PyTorch and CUDA do it, how to handle concurrency, and how &lt;code&gt;jemalloc()&lt;/code&gt; works?&lt;/p&gt;&#xA;&lt;p&gt;There are two solutions to implement allocators of a fixed-size memory pool: buddy and size-class slab allocators. A slab allocator is fast but has internal fragmentation, and is common in user-space allocators. A buddy allocator supports merging and usually has less external fragmentation, and is common in kernel page allocators.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>GPU Memory Usage</title>
       <link>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</link>
       <pubDate>Sat, 28 Mar 2026 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</guid>

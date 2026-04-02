@@ -3,10 +3,10 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://liuyiyueyue.github.io/tags/gpu/</loc>
-    <lastmod>2026-03-28T00:00:00+00:00</lastmod>
+    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/</loc>
-    <lastmod>2026-03-28T00:00:00+00:00</lastmod>
+    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="zh"
@@ -17,6 +17,41 @@
                 hreflang="en-us"
                 href="https://liuyiyueyue.github.io/"
                 />
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/memory/</loc>
+    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/system/memory_allocation/</loc>
+    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/system/</loc>
+    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh"
+                href="https://liuyiyueyue.github.io/zh/system/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="en-us"
+                href="https://liuyiyueyue.github.io/system/"
+                />
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/</loc>
+    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh"
+                href="https://liuyiyueyue.github.io/zh/tags/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="en-us"
+                href="https://liuyiyueyue.github.io/tags/"
+                />
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</loc>
+    <lastmod>2026-03-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/llm/</loc>
     <lastmod>2026-03-28T00:00:00+00:00</lastmod>
@@ -34,24 +69,8 @@
                 href="https://liuyiyueyue.github.io/llm/"
                 />
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</loc>
-    <lastmod>2026-03-28T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>https://liuyiyueyue.github.io/tags/optimization/</loc>
     <lastmod>2026-03-28T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/</loc>
-    <lastmod>2026-03-28T00:00:00+00:00</lastmod>
-    <xhtml:link
-                rel="alternate"
-                hreflang="zh"
-                href="https://liuyiyueyue.github.io/zh/tags/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="en-us"
-                href="https://liuyiyueyue.github.io/tags/"
-                />
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/training/</loc>
     <lastmod>2026-03-28T00:00:00+00:00</lastmod>

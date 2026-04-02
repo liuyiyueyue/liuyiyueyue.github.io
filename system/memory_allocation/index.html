@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en-us"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    Memory Pool and Allocation | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/system/memory_allocation/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/system/memory_allocation/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="Memory Pool and Allocation">
+  <meta property="og:description" content="A memory pool preallocates a large chunk of memory and manages allocation and free internally, which avoids calling malloc and free too often. There are any interesting topics around it: how this is implemented inside Linux kernels, why data structures such as segment trees or red-black trees are used, how PyTorch and CUDA do it, how to handle concurrency, and how jemalloc() works?
+There are two solutions to implement allocators of a fixed-size memory pool: buddy and size-class slab allocators. A slab allocator is fast but has internal fragmentation, and is common in user-space allocators. A buddy allocator supports merging and usually has less external fragmentation, and is common in kernel page allocators.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="system">
+    <meta property="article:published_time" content="2026-04-01T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-04-01T00:00:00+00:00">
+    <meta property="article:tag" content="Gpu">
+    <meta property="article:tag" content="Memory">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/system/" >
+                /System
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/system/">System</a><span class="breadcrumbs-separator">/</span>
+        <a href="/system/memory_allocation/">Memory Pool and Allocation</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">Memory Pool and Allocation</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2026-04-01T00:00:00&#43;00:00">April 1, 2026</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <p>A memory pool preallocates a large chunk of memory and manages allocation and free internally, which avoids calling <code>malloc</code> and <code>free</code> too often. There are any interesting topics around it: how this is implemented inside Linux kernels, why data structures such as segment trees or red-black trees are used, how PyTorch and CUDA do it, how to handle concurrency, and how <code>jemalloc()</code> works?</p>
+<p>There are two solutions to implement allocators of a fixed-size memory pool: buddy and size-class slab allocators. A slab allocator is fast but has internal fragmentation, and is common in user-space allocators. A buddy allocator supports merging and usually has less external fragmentation, and is common in kernel page allocators.</p>
+<h3 class="heading" id="slab-allocator">
+  Slab Allocator
+  <a class="anchor" href="#slab-allocator">#</a>
+</h3>
+<p>The slab allocator uses one pool per size class. On allocation, the requested size is rounded up to the nearest size class, such as 8, 16, 32, or 64 bytes. Its main advantage is <code>O(1)</code> allocation. In practice, multiple pools can be used for multiple size classes.</p>
+<h3 class="heading" id="flexible-size-memory-pool-buddy-allocator">
+  Flexible-Size Memory Pool: Buddy Allocator
+  <a class="anchor" href="#flexible-size-memory-pool-buddy-allocator">#</a>
+</h3>
+<p>The buddy allocator organizes memory by orders of size <code>2^k</code>. On allocation, it finds the smallest order that can fit the request. If that order is unavailable, it splits a larger block. On free, it finds the buddy through XOR, merges if the buddy is also free, and keeps merging upward. One drawback is fragmentation. The merge algorithm determines whether the addresses are contiguous and how to merge them.</p>
+<p>A Sample implementation is Yunfeng&rsquo;s ~200-line buddy allocator code: <a href="https://github.com/cloudwu/buddy/blob/master/buddy.c">https://github.com/cloudwu/buddy/blob/master/buddy.c</a></p>
+<h3 class="heading" id="how-pytorch-implements-a-memory-pool">
+  How PyTorch Implements a Memory Pool
+  <a class="anchor" href="#how-pytorch-implements-a-memory-pool">#</a>
+</h3>
+<p>PyTorch uses <code>CUDACachingAllocator</code>.</p>
+<p>The reason is that GPU code should not rely on calling <code>cudaMalloc</code> and <code>cudaFree</code> for every allocation. <code>cudaMalloc</code> is slow and synchronous, and <code>cudaFree</code> may trigger a device-wide synchronization.</p>
+<p>PyTorch does not use a buddy allocator. Its CUDA allocator is a caching allocator with block splitting and coalescing. It also uses size-based binning, separates small and large pools, and applies a best-fit strategy to reduce fragmentation.</p>
+<p>PyTorch 2.x also introduced <code>cudaMallocAsync</code> and the CUDA memory pool API for a more modern stream-ordered allocator.</p>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+  <link rel="stylesheet" 
+  href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  
+<script defer 
+  src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+
+<script defer
+  src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body);"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    renderMathInElement(document.body, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false }
+      ]
+    });
+  });
+</script>
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+

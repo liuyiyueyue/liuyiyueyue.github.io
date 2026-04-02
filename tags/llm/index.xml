@@ -9,7 +9,7 @@
     <lastBuildDate>Sat, 28 Mar 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://liuyiyueyue.github.io/tags/llm/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Memory Usage</title>
+      <title>GPU Memory Usage</title>
       <link>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</link>
       <pubDate>Sat, 28 Mar 2026 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</guid>

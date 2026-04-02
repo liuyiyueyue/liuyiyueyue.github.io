@@ -14,6 +14,18 @@
                 href="https://liuyiyueyue.github.io/zh/tags/"
                 />
   </url><url>
+    <loc>https://liuyiyueyue.github.io/zh/system/</loc>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en-us"
+                href="https://liuyiyueyue.github.io/system/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh"
+                href="https://liuyiyueyue.github.io/zh/system/"
+                />
+  </url><url>
     <loc>https://liuyiyueyue.github.io/zh/llm/</loc>
     <xhtml:link
                 rel="alternate"
