@@ -41,8 +41,8 @@
 <meta property="og:url" content="https://liuyiyueyue.github.io/system/memory_allocation/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Memory Pool and Allocation">
-  <meta property="og:description" content="A memory pool preallocates a large chunk of memory and manages allocation and free internally, which avoids calling malloc and free too often. There are any interesting topics around it: how this is implemented inside Linux kernels, why data structures such as segment trees or red-black trees are used, how PyTorch and CUDA do it, how to handle concurrency, and how jemalloc() works?
-There are two solutions to implement allocators of a fixed-size memory pool: buddy and size-class slab allocators. A slab allocator is fast but has internal fragmentation, and is common in user-space allocators. A buddy allocator supports merging and usually has less external fragmentation, and is common in kernel page allocators.">
+  <meta property="og:description" content="A memory pool preallocates a large chunk of memory and manages allocation and free internally, which avoids calling malloc and free too often. There are many interesting topics around it: how this is implemented inside Linux kernels, why data structures such as segment trees or red-black trees are used, how PyTorch and CUDA do it, how to handle concurrency, and how jemalloc() works?
+There are two solutions to implement allocators of a memory pool: buddy and size-class slab allocators. A slab allocator is fast but has internal fragmentation, and is common in user-space allocators. A buddy allocator supports merging and usually has less external fragmentation, and is common in kernel page allocators.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="system">
@@ -241,27 +241,44 @@ There are two solutions to implement allocators of a fixed-size memory pool: bud
     </header>
     
     <div class="single-content">
-      <p>A memory pool preallocates a large chunk of memory and manages allocation and free internally, which avoids calling <code>malloc</code> and <code>free</code> too often. There are any interesting topics around it: how this is implemented inside Linux kernels, why data structures such as segment trees or red-black trees are used, how PyTorch and CUDA do it, how to handle concurrency, and how <code>jemalloc()</code> works?</p>
-<p>There are two solutions to implement allocators of a fixed-size memory pool: buddy and size-class slab allocators. A slab allocator is fast but has internal fragmentation, and is common in user-space allocators. A buddy allocator supports merging and usually has less external fragmentation, and is common in kernel page allocators.</p>
+      <p>A memory pool preallocates a large chunk of memory and manages allocation and free internally, which avoids calling <code>malloc</code> and <code>free</code> too often. There are many interesting topics around it: how this is implemented inside Linux kernels, why data structures such as segment trees or red-black trees are used, how PyTorch and CUDA do it, how to handle concurrency, and how <code>jemalloc()</code> works?</p>
+<p>There are two solutions to implement allocators of a memory pool: buddy and size-class slab allocators. A slab allocator is fast but has internal fragmentation, and is common in user-space allocators. A buddy allocator supports merging and usually has less external fragmentation, and is common in kernel page allocators.</p>
 <h3 class="heading" id="slab-allocator">
   Slab Allocator
   <a class="anchor" href="#slab-allocator">#</a>
 </h3>
-<p>The slab allocator uses one pool per size class. On allocation, the requested size is rounded up to the nearest size class, such as 8, 16, 32, or 64 bytes. Its main advantage is <code>O(1)</code> allocation. In practice, multiple pools can be used for multiple size classes.</p>
-<h3 class="heading" id="flexible-size-memory-pool-buddy-allocator">
-  Flexible-Size Memory Pool: Buddy Allocator
-  <a class="anchor" href="#flexible-size-memory-pool-buddy-allocator">#</a>
+<p>The slab allocator uses one pool per size class and maintains a fixed-size memory pool. On allocation, the requested size is rounded up to the nearest size class, such as 8, 16, 32, or 64 bytes. Its main advantage is <code>O(1)</code> allocation. In practice, multiple pools can be used for multiple size classes.</p>
+<h3 class="heading" id="buddy-allocator">
+  Buddy Allocator
+  <a class="anchor" href="#buddy-allocator">#</a>
 </h3>
-<p>The buddy allocator organizes memory by orders of size <code>2^k</code>. On allocation, it finds the smallest order that can fit the request. If that order is unavailable, it splits a larger block. On free, it finds the buddy through XOR, merges if the buddy is also free, and keeps merging upward. One drawback is fragmentation. The merge algorithm determines whether the addresses are contiguous and how to merge them.</p>
-<p>A Sample implementation is Yunfeng&rsquo;s ~200-line buddy allocator code: <a href="https://github.com/cloudwu/buddy/blob/master/buddy.c">https://github.com/cloudwu/buddy/blob/master/buddy.c</a></p>
+<p>The buddy allocator organizes memory by orders of size <code>2^k</code> and maintains a flexible-size memory pool. On allocation, it finds the smallest order that can fit the request. If that order is unavailable, it splits a larger block. On free, it finds the buddy through XOR, merges if the buddy is also free, and keeps merging upward. One drawback is fragmentation. The merge algorithm determines whether the addresses are contiguous and how to merge them.</p>
+<p>A sample implementation is Yunfeng&rsquo;s ~200-line buddy allocator code: <a href="https://github.com/cloudwu/buddy/blob/master/buddy.c">https://github.com/cloudwu/buddy/blob/master/buddy.c</a></p>
+<h3 class="heading" id="cuda-memory-pool">
+  CUDA Memory Pool
+  <a class="anchor" href="#cuda-memory-pool">#</a>
+</h3>
+<p>The CUDA driver maintains a global GPU memory pool by default. When memory is freed asynchronously, it is returned to this pool and can be reused by later allocations. <code>cudaMallocAsync</code> and <code>cudaFreeAsync</code> are built on top of the CUDA memory pool. By reusing freed buffers instead of repeatedly requesting new memory from the OS, this pool improves allocation efficiency and helps reduce fragmentation over time. CUDA also exposes knobs such as <code>cudaMemPoolAttrReleaseThreshold</code>, <code>cudaMemPoolTrimTo</code>, and <code>cudaMemPoolSetAttribute</code> to control when cached memory is released and how pool behavior is configured. <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
 <h3 class="heading" id="how-pytorch-implements-a-memory-pool">
   How PyTorch Implements a Memory Pool
   <a class="anchor" href="#how-pytorch-implements-a-memory-pool">#</a>
 </h3>
-<p>PyTorch uses <code>CUDACachingAllocator</code>.</p>
-<p>The reason is that GPU code should not rely on calling <code>cudaMalloc</code> and <code>cudaFree</code> for every allocation. <code>cudaMalloc</code> is slow and synchronous, and <code>cudaFree</code> may trigger a device-wide synchronization.</p>
-<p>PyTorch does not use a buddy allocator. Its CUDA allocator is a caching allocator with block splitting and coalescing. It also uses size-based binning, separates small and large pools, and applies a best-fit strategy to reduce fragmentation.</p>
-<p>PyTorch 2.x also introduced <code>cudaMallocAsync</code> and the CUDA memory pool API for a more modern stream-ordered allocator.</p>
+<p>One should not rely on calling <code>cudaMalloc</code> and <code>cudaFree</code> for every allocation. <code>cudaMalloc</code> is slow and synchronous, and <code>cudaFree</code> may trigger a device-wide synchronization.
+PyTorch has the <code>CUDACachingAllocator</code>, which is its GPU memory allocator (memory pool) that caches and reuses CUDA memory blocks instead of calling <code>cudaMalloc</code>/<code>cudaFree</code> for every tensor. <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup></p>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>NVIDIA. CUDA Runtime API, Stream Ordered Memory Allocator. <a href="https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY__POOLS.html">https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY__POOLS.html</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p>PyTorch Dev Discuss. FSDP + CUDACachingAllocator: An Outsider Newb Perspective. <a href="https://dev-discuss.pytorch.org/t/fsdp-cudacachingallocator-an-outsider-newb-perspective/1486">https://dev-discuss.pytorch.org/t/fsdp-cudacachingallocator-an-outsider-newb-perspective/1486</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:3">
+<p>Zach DeVito. A guide to PyTorch&rsquo;s CUDA Caching Allocator. <a href="https://zdevito.github.io/2022/08/04/cuda-caching-allocator.html">https://zdevito.github.io/2022/08/04/cuda-caching-allocator.html</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
 
     </div>
   </article>
