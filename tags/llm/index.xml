@@ -6,8 +6,22 @@
     <description>Recent content in Llm on Yiyue Liu&#39;s Blog</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 28 Mar 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 02 Apr 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://liuyiyueyue.github.io/tags/llm/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>CUDA Graph</title>
+      <link>https://liuyiyueyue.github.io/llm/cuda_graph/</link>
+      <pubDate>Thu, 02 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/cuda_graph/</guid>
+      <description>&lt;p&gt;In vLLM, kernel launch overhead is much lower during decode than during prefill. The main reason is that &lt;strong&gt;decode can use CUDA Graphs more easily&lt;/strong&gt;, while prefill usually cannot. In this blog, we will discuss CUDA graph and its usages in inference.&lt;/p&gt;&#xA;&lt;h3 class=&#34;heading&#34; id=&#34;what-is-cuda-graph&#34;&gt;&#xA;  What is CUDA Graph?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#what-is-cuda-graph&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;Normally, the CPU launches GPU kernels one by one. Each launch only costs a few to a few dozen microseconds, but LLM inference may require dozens or even hundreds of launches per token. Those small costs add up, and the GPU can end up waiting on the CPU.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Inference Servers</title>
+      <link>https://liuyiyueyue.github.io/llm/inference_5_inference_servers/</link>
+      <pubDate>Wed, 01 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/inference_5_inference_servers/</guid>
+      <description></description>
+    </item>
     <item>
       <title>GPU Memory Usage</title>
       <link>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</link>

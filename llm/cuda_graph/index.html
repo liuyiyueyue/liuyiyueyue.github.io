@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en-us"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    CUDA Graph | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/cuda_graph/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/cuda_graph/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="CUDA Graph">
+  <meta property="og:description" content="In vLLM, kernel launch overhead is much lower during decode than during prefill. The main reason is that decode can use CUDA Graphs more easily, while prefill usually cannot. In this blog, we will discuss CUDA graph and its usages in inference.
+What is CUDA Graph? # Normally, the CPU launches GPU kernels one by one. Each launch only costs a few to a few dozen microseconds, but LLM inference may require dozens or even hundreds of launches per token. Those small costs add up, and the GPU can end up waiting on the CPU.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2026-04-02T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-04-02T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Cuda">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/system/" >
+                /System
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/cuda_graph/">CUDA Graph</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">CUDA Graph</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2026-04-02T00:00:00&#43;00:00">April 2, 2026</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <p>In vLLM, kernel launch overhead is much lower during decode than during prefill. The main reason is that <strong>decode can use CUDA Graphs more easily</strong>, while prefill usually cannot. In this blog, we will discuss CUDA graph and its usages in inference.</p>
+<h3 class="heading" id="what-is-cuda-graph">
+  What is CUDA Graph?
+  <a class="anchor" href="#what-is-cuda-graph">#</a>
+</h3>
+<p>Normally, the CPU launches GPU kernels one by one. Each launch only costs a few to a few dozen microseconds, but LLM inference may require dozens or even hundreds of launches per token. Those small costs add up, and the GPU can end up waiting on the CPU.</p>
+<p>CUDA Graph reduces that overhead by <strong>capturing a fixed sequence of kernel launches once and replaying it later as a single graph</strong>. Replay is much cheaper than launching every kernel individually, so it can remove most launch overhead.<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup></p>
+<figure><img src="/llm/cuda_graph/images/cuda_graph.png"
+    alt="CUDA Graph captures a fixed sequence of GPU work and replays it with much lower launch overhead."><figcaption>
+      <p>CUDA Graph captures a fixed sequence of GPU work and replays it with much lower launch overhead.</p>
+    </figcaption>
+</figure>
+
+<h3 class="heading" id="why-it-works-for-decode">
+  Why It Works for Decode
+  <a class="anchor" href="#why-it-works-for-decode">#</a>
+</h3>
+<p>Decode generates one token at a time. The input shape is typically:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>batch_size x 1 x hidden_dim</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>That middle dimension stays <code>1</code>, so the execution pattern is mostly stable. The same kernels run in the same order with the same shapes, and only the data changes. This is exactly the case where CUDA Graph works well.</p>
+<p>In practice, systems such as vLLM can capture graphs for several fixed batch sizes and replay the closest one at runtime, sometimes with padding. This makes CUDA Graph effective in the decode path.</p>
+<h3 class="heading" id="why-prefill-is-hard">
+  Why Prefill Is Hard
+  <a class="anchor" href="#why-prefill-is-hard">#</a>
+</h3>
+<p>Prefill is different because <strong>the input sequence length is not fixed</strong>. Once sequence length changes, tensor shapes change, attention shapes change, and kernel launch configurations can change too. At that point, it is no longer just different data on the same graph. The graph structure itself changes.</p>
+<p>CUDA Graph requires capture and replay to use the same execution graph with static shapes. That is the most direct reason prefill usually does not use CUDA Graph.</p>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>NVIDIA CUDA Graphs documentation, no publication date listed. <a href="https://docs.nvidia.com/dl-cuda-graph/latest/">https://docs.nvidia.com/dl-cuda-graph/latest/</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p>NVIDIA Developer Blog, &ldquo;Getting Started with CUDA Graphs,&rdquo; posted September 5, 2019. <a href="https://developer.nvidia.com/blog/cuda-graphs/">https://developer.nvidia.com/blog/cuda-graphs/</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:3">
+<p>PyTorch Blog, &ldquo;Accelerating PyTorch with CUDA Graphs,&rdquo; posted October 26, 2021, updated November 15, 2024. <a href="https://pytorch.org/blog/accelerating-pytorch-with-cuda-graphs/">https://pytorch.org/blog/accelerating-pytorch-with-cuda-graphs/</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/llm/inference_5_inference_servers/">
+                        Inference Servers
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+
