@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-us"
+<html lang="en"
   dir="ltr">
 
 <head>
@@ -43,7 +43,7 @@
   <meta property="og:title" content="CUDA Performance Optimizations">
   <meta property="og:description" content="Let’s Start with Array Sum via Reduction 1 # Algorithm Overview
 Assume we are given an array of length N and need to compute the sum of it. We first split the array into m chunks. In the first stage, we launch m blocks, with each block reducing one chunk to a partial sum. In the second stage, a single block reduces those m partial sums to produce the final result. Since the second stage can reuse the same kernel as the first, we will not discuss it separately here. This section focuses only on optimization techniques for the first stage.">
-  <meta property="og:locale" content="en_us">
+  <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
     <meta property="article:published_time" content="2025-11-13T00:00:00+00:00">
@@ -63,7 +63,7 @@ Assume we are given an array of length N and need to compute the sum of it. We f
 
 
 
-<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+<link rel="stylesheet" href="/assets/combined.min.49b6ff94a9420792033557a871a8ef9868a409da75a3a6ce35af19aec5f475fe.css" media="all">
 
 
 
@@ -253,7 +253,7 @@ Assume we are given an array of length N and need to compute the sum of it. We f
 
 <p>The kernel interface is:</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce</span>(T* input, T* output)</span></span></code></pre></div>
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce</span>(T* input, T* output)</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
 <p>Here, input is the <code>input</code> array of length <code>N</code>, and <code>output</code> is the output array for the first stage, containing the <code>m</code> partial sums.</p>
@@ -267,7 +267,7 @@ Assume we are given an array of length N and need to compute the sum of it. We f
 <p><strong>Baseline Kernel</strong></p>
 <p>The baseline algorithm is straightforward and consists of three steps. First, load the data into shared memory. Second, perform the reduction inside shared memory. Third, write the final result back to global memory. The code is as follows:</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce0</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce0</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
 </span></span><span style="display:flex;"><span>    __shared__ <span style="font-weight:bold;text-decoration:underline">float</span> sdata[THREAD_PER_BLOCK];
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">//each thread loads one element from global memory to shared mem
@@ -305,7 +305,7 @@ Assume we are given an array of length N and need to compute the sum of it. We f
 </blockquote>
 <p>The improved kernel <code>reduce1</code> tries to keep as many threads as possible on the same branch:</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce1</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce1</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
 </span></span><span style="display:flex;"><span>    __shared__ <span style="font-weight:bold;text-decoration:underline">float</span> sdata[THREAD_PER_BLOCK];
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">//each thread loads one element from global memory to shared mem
@@ -337,7 +337,7 @@ Assume we are given an array of length N and need to compute the sum of it. We f
 <p>In reduction, the way to avoid bank conflicts is to reverse the for loop. Instead of increasing the stride from 1 up to 256, we decrease it from 128 down to 1.</p>
 <p>The pseudocode is as follows:</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce2</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce2</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
 </span></span><span style="display:flex;"><span>    __shared__ <span style="font-weight:bold;text-decoration:underline">float</span> sdata[THREAD_PER_BLOCK];
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">//each thread loads one element from global memory to shared mem
@@ -363,7 +363,7 @@ Assume we are given an array of length N and need to compute the sum of it. We f
 <p><strong>Prevent Idle Threads</strong></p>
 <p>The main problem in <code>reduce2</code> is wasted threads. We launch <code>256</code> threads, but only <code>128</code> are active in the first iteration, only <code>64</code> in the second, and the number of working threads is cut in half each round.</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce3</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce3</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
 </span></span><span style="display:flex;"><span>    __shared__ <span style="font-weight:bold;text-decoration:underline">float</span> sdata[THREAD_PER_BLOCK];
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// each thread loads one element from global memory to shared mem
@@ -393,7 +393,7 @@ Assume we are given an array of length N and need to compute the sum of it. We f
 </blockquote>
 <p>When <code>s = 32</code>, only a single SIMD unit is still active, so <code>__syncthreads()</code> can be removed entirely at that point. Therefore, we unroll the last stage of the reduction to reduce synchronization overhead. The pseudocode is as follows:</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__device__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">warpReduce</span>(<span style="font-weight:bold;text-decoration:underline">volatile</span> <span style="font-weight:bold;text-decoration:underline">float</span>* cache,<span style="font-weight:bold;text-decoration:underline">int</span> tid){
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__device__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">warpReduce</span>(<span style="font-weight:bold;text-decoration:underline">volatile</span> <span style="font-weight:bold;text-decoration:underline">float</span>* cache,<span style="font-weight:bold;text-decoration:underline">int</span> tid){
 </span></span><span style="display:flex;"><span>    cache[tid]+=cache[tid+32];
 </span></span><span style="display:flex;"><span>    cache[tid]+=cache[tid+16];
 </span></span><span style="display:flex;"><span>    cache[tid]+=cache[tid+8];
@@ -428,7 +428,7 @@ Assume we are given an array of length N and need to compute the sum of it. We f
 <p><strong>Loop Unrolling</strong></p>
 <p>At this point, the reduction is already highly efficient. Further optimization becomes quite difficult. To push performance to the limit, we can fully unrolling the for loop. There is still some benefit, but it is no longer especially significant. This is mainly due to the continued evolution of GPU hardware architectures, along with substantial improvements NVIDIA has made in the compiler. The pseudocode is as follows:</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>template &lt;<span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> blockSize&gt;
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>template &lt;<span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> blockSize&gt;
 </span></span><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce5</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
 </span></span><span style="display:flex;"><span>    __shared__ <span style="font-weight:bold;text-decoration:underline">float</span> sdata[THREAD_PER_BLOCK];
 </span></span><span style="display:flex;"><span>
@@ -470,7 +470,7 @@ Assume we are given an array of length N and need to compute the sum of it. We f
 <p>Threads within a warp share the same execution units, and all registers are stored in a common register file.</p>
 </blockquote>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__device__ __forceinline__ <span style="font-weight:bold;text-decoration:underline">float</span> <span style="color:#666;font-weight:bold;font-style:italic">warpReduceSum</span>(<span style="font-weight:bold;text-decoration:underline">float</span> sum) {
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__device__ __forceinline__ <span style="font-weight:bold;text-decoration:underline">float</span> <span style="color:#666;font-weight:bold;font-style:italic">warpReduceSum</span>(<span style="font-weight:bold;text-decoration:underline">float</span> sum) {
 </span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span> (<span style="font-weight:bold;text-decoration:underline">int</span> offset = warpSize / 2; offset &gt; 0; offset &gt;&gt;= 1) {
 </span></span><span style="display:flex;"><span>        sum += <span style="color:#666;font-weight:bold;font-style:italic">__shfl_down_sync</span>(0xffffffff, sum, offset);
 </span></span><span style="display:flex;"><span>    }
@@ -519,7 +519,7 @@ $$</p>
 <p><strong>Naive Kernel</strong></p>
 <p>In the naive kernel implementation below, each thread handles a row of matrix $A$, an element of vector $x$, and an element of vector $y$. This kernel is simple and performs coalesced access on A (row-major). However, the vector $x$ is reloaded N times per thread, wasting memory bandwidth.</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">matvec1</span>(<span style="font-weight:bold;text-decoration:underline">float</span>* A, <span style="font-weight:bold;text-decoration:underline">float</span>* x, <span style="font-weight:bold;text-decoration:underline">float</span>* y,
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">matvec1</span>(<span style="font-weight:bold;text-decoration:underline">float</span>* A, <span style="font-weight:bold;text-decoration:underline">float</span>* x, <span style="font-weight:bold;text-decoration:underline">float</span>* y,
 </span></span><span style="display:flex;"><span>                       <span style="font-weight:bold;text-decoration:underline">int</span> M, <span style="font-weight:bold;text-decoration:underline">int</span> N) {
 </span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">int</span> row = blockIdx.x * blockDim.x + threadIdx.x;
 </span></span><span style="display:flex;"><span>
@@ -535,13 +535,13 @@ $$</p>
 <p><strong>Reuse Vector $x$</strong></p>
 <p>Intead of reloading vector $x$ multiple times, we use the shared memory to store a tile of it. Each thread loads an element of <code>x</code> into the shared tile <code>sx</code></p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>x:  [ x0 x1 x2 x3 | x4 x5 x6 x7 | ... ]
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>x:  [ x0 x1 x2 x3 | x4 x5 x6 x7 | ... ]
 </span></span><span style="display:flex;"><span>        ↑ TILE 0        ↑ TILE 1</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
 <p>There is the code for the optimized kernel:</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#888;font-weight:bold">#define TILE 256
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#888;font-weight:bold">#define TILE 256
 </span></span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic">// number of elements of x loaded into shared memory per iteration
 </span></span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">matvec_opt</span>(<span style="font-weight:bold;text-decoration:underline">float</span>* A, <span style="font-weight:bold;text-decoration:underline">float</span>* x, <span style="font-weight:bold;text-decoration:underline">float</span>* y,
@@ -603,7 +603,7 @@ $$</p>
 <p><strong>cuBLAS Uses Column-Major Layout</strong></p>
 <p>cuBLAS follows Fortran-style column-major order. For example:</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>A = [[1, 2],
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>A = [[1, 2],
 </span></span><span style="display:flex;"><span>     [3, 4]]
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>column-major storage: 1, 3, 2, 4</span></span></code></pre></div>
@@ -611,17 +611,17 @@ $$</p>
 </div>
 <p>If your matrices are row-major on the host and you want <code>C = A x B</code>, the equivalent cuBLAS call computes:</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C = B_colmajor x A_colmajor</span></span></code></pre></div>
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C = B_colmajor x A_colmajor</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
 <p><strong><code>cublasSgemm()</code></strong></p>
 <p>Single-precision GEMM uses:</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>C = alpha * <span style="color:#666;font-weight:bold;font-style:italic">op</span>(A) * <span style="color:#666;font-weight:bold;font-style:italic">op</span>(B) + beta * C</span></span></code></pre></div>
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>C = alpha * <span style="color:#666;font-weight:bold;font-style:italic">op</span>(A) * <span style="color:#666;font-weight:bold;font-style:italic">op</span>(B) + beta * C</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">cublasStatus_t</span> <span style="color:#666;font-weight:bold;font-style:italic">cublasSgemm</span>(
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">cublasStatus_t</span> <span style="color:#666;font-weight:bold;font-style:italic">cublasSgemm</span>(
 </span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">cublasHandle_t</span> handle,
 </span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">cublasOperation_t</span> transa,
 </span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">cublasOperation_t</span> transb,
@@ -635,7 +635,7 @@ $$</p>
 </div>
 <p>If <code>A</code> is <code>2x4</code>, <code>B</code> is <code>4x3</code>, and <code>C</code> is <code>2x3</code>, then:</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#666;font-weight:bold;font-style:italic">cublasSgemm</span>(handle,
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#666;font-weight:bold;font-style:italic">cublasSgemm</span>(handle,
 </span></span><span style="display:flex;"><span>            CUBLAS_OP_N, CUBLAS_OP_N,
 </span></span><span style="display:flex;"><span>            2, 3, 4,
 </span></span><span style="display:flex;"><span>            &amp;alpha,

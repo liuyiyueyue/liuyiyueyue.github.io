@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-us"
+<html lang="en"
   dir="ltr">
 
 <head>
@@ -43,7 +43,7 @@
   <meta property="og:title" content="Distributed Training: ZeRO and FSDP">
   <meta property="og:description" content="ZeRo 1 # In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out. As a result, memory often becomes the main bottleneck in data-parallel training.
 Microsoft proposed a highly influential algorithm called Zero Redundancy Optimizer (ZeRO) to address the memory limitations of data-parallel training, and later built the distributed training framework DeepSpeed on top of PyTorch around it. Its core idea ZeRO-DP is to partition model states (optimizer states, gradients, and parameters) evenly across GPUs, so the memory usage on each GPU becomes inversely proportional to the degree of data parallelism, while communication efficiency remains largely unaffected. Besides model state, the remaining memory called residual states are used by activation, temporary buffers, and unusable fragmented memory. ZeRO-R is to optimize these residual memory. This section of the blog focuses on ZeRO-DP.">
-  <meta property="og:locale" content="en_us">
+  <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
     <meta property="article:published_time" content="2025-12-15T00:00:00+00:00">
@@ -64,7 +64,7 @@ Microsoft proposed a highly influential algorithm called Zero Redundancy Optimiz
 
 
 
-<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+<link rel="stylesheet" href="/assets/combined.min.49b6ff94a9420792033557a871a8ef9868a409da75a3a6ce35af19aec5f475fe.css" media="all">
 
 
 
@@ -316,7 +316,7 @@ $$</p>
 </h3>
 <p>Facebook introduced <strong>FSDP (Fully Sharded Data Parallel)</strong> as PyTorch’s counterpart to Microsoft’s <strong>ZeRO</strong> in DeepSpeed. FSDP can be viewed as an optimized version of <strong>DDP</strong> within PyTorch. It is still a form of data parallelism, but unlike DDP, FSDP uses <strong>parameter sharding</strong>. In other words, model parameters are partitioned across GPUs, whereas in DDP each GPU keeps a full copy of the parameters. This allows FSDP to achieve better training efficiency, both in terms of speed and GPU memory usage.</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fsdp_module = FullyShardedDataParallel(module)</span></span></code></pre></div>
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fsdp_module = FullyShardedDataParallel(module)</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
 <figure><img src="/llm/distributed_training_3_zero_fsdp/images/fsdp-graph-2.png"

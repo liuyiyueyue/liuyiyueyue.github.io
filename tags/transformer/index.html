@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-us"
+<html lang="en"
   dir="ltr">
 
 <head>
@@ -43,7 +43,7 @@
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Transformer">
   <meta property="og:description" content="A Tech Blog">
-  <meta property="og:locale" content="en_us">
+  <meta property="og:locale" content="en">
   <meta property="og:type" content="website">
 
 
@@ -57,7 +57,7 @@
 
 
 
-<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+<link rel="stylesheet" href="/assets/combined.min.49b6ff94a9420792033557a871a8ef9868a409da75a3a6ce35af19aec5f475fe.css" media="all">
 
 
 
@@ -224,6 +224,185 @@
     
     
     
+
+    
+
+    
+
+    
+    <div class="post-line">
+
+    
+
+    
+        <p class="line-date">4 Apr 2026 </p>
+    
+
+    <div>
+        <p class="line-title">
+            <a href="/llm/attention_4_transformer_improvements/">
+                Transformer: Improvements
+            </a>
+        </p>
+
+        
+        
+        
+        
+        
+        
+        
+            
+        
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+        
+        
+        <p class="line-summary">This post continues the Transformer series and focuses on the changes that made the original architecture work better for large language models. The core idea of attention is still the same, but several parts of the 2017 design are now commonly replaced: encoder-decoder &amp;ndash;&amp;gt; decoder-only post-norm &amp;ndash;&amp;gt; pre-norm LayerNorm &amp;ndash;&amp;gt; RMSNorm absolute positional encoding &amp;ndash;&amp;gt; RoPE MHA &amp;ndash;&amp;gt; GQA or MQA GELU &amp;ndash;&amp;gt; gated MLP such as SwiGLU Decoder-Only Instead of Encoder-Decoder For autoregressive language modeling, the model only needs to predict the next token from previous tokens. That makes the encoder-decoder split unnecessary....</p>
+        
+    </div>
+</div>
 
     
 
@@ -556,14 +735,6 @@
             
                 
                     
-                
-            
-                
-            
-                
-            
-                
-            
                 
             
                 

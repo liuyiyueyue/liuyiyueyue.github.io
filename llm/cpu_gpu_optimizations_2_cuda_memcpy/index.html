@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-us"
+<html lang="en"
   dir="ltr">
 
 <head>
@@ -44,7 +44,7 @@
   <meta property="og:description" content="This is the second blog of the “CPU-GPU Optimization” series. Using the foundations built from the previous blog, we will discuss 4 types of memory allocation and transfer methods in CUDA. Then we will showcase a performance analysis with flamegraph profiles.
 1. Normal Memcpy # Data moves slowly and may incur an extra CPU memcpy
 malloc to allocate memory on CPU. cudaMalloc to allocate memory on GPU. cudaMemcpy to transfer data from the CPU memory to the GPU memory. This call hides a subtle performance trap. As described in the Compare to “bounce-buffer” section of the previous blog, the kernel implicitly allocates a temporary buffer and results in an extra CPU memcpy. free to free the CPU memory. cudaFree to free the GPU memory. The below example shows a host-to-device transfer:">
-  <meta property="og:locale" content="en_us">
+  <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
     <meta property="article:published_time" content="2026-02-05T00:00:00+00:00">
@@ -64,7 +64,7 @@ malloc to allocate memory on CPU. cudaMalloc to allocate memory on GPU. cudaMemc
 
 
 
-<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+<link rel="stylesheet" href="/assets/combined.min.49b6ff94a9420792033557a871a8ef9868a409da75a3a6ce35af19aec5f475fe.css" media="all">
 
 
 

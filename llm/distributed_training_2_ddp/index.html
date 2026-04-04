@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-us"
+<html lang="en"
   dir="ltr">
 
 <head>
@@ -43,7 +43,7 @@
   <meta property="og:title" content="Distributed Training: PyTorch DP vs DDP">
   <meta property="og:description" content="nn.DataParallel (DP) # DP is a single-node, multi-GPU parallelization method (单机多卡).
 How It Works # PyTorch’s DataParallel, or DP, uses a parameter-server architecture and runs in a single process. During training, one GPU acts as the server and the remaining GPUs act as workers. Each GPU keeps a replica of the model for computation. The input data is first split across GPUs, each worker computes on its own shard, and the gradients are then gathered on the server GPU. The server updates the model parameters and synchronizes the updated model back to the other GPUs.">
-  <meta property="og:locale" content="en_us">
+  <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
     <meta property="article:published_time" content="2025-12-07T00:00:00+00:00">
@@ -63,7 +63,7 @@ How It Works # PyTorch’s DataParallel, or DP, uses a parameter-server architec
 
 
 
-<link rel="stylesheet" href="/assets/combined.min.193751c7c84c163250a3e82d1303b35239f5da6f92fa07c5bd63d2ef2586476d.css" media="all">
+<link rel="stylesheet" href="/assets/combined.min.49b6ff94a9420792033557a871a8ef9868a409da75a3a6ce35af19aec5f475fe.css" media="all">
 
 
 
@@ -254,7 +254,7 @@ How It Works # PyTorch’s DataParallel, or DP, uses a parameter-server architec
 <p>PyTorch&rsquo;s <code>DataParallel</code>, or <code>DP</code>, uses a parameter-server architecture and runs in a single process. During training, one GPU acts as the <strong>server</strong> and the remaining GPUs act as <strong>workers</strong>. Each GPU keeps a replica of the model for computation. The input data is first split across GPUs, each worker computes on its own shard, and the gradients are then gathered on the server GPU. The server updates the model parameters and synchronizes the updated model back to the other GPUs.</p>
 <p><code>DataParallel</code> is very easy to use. In many cases, it only requires one extra line in a single-GPU training script:</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>model = nn.DataParallel(model)</span></span></code></pre></div>
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>model = nn.DataParallel(model)</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
 <h4 class="heading" id="limitations">
