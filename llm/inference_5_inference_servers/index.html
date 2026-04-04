@@ -41,7 +41,8 @@
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/inference_5_inference_servers/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Inference Servers">
-  <meta property="og:description" content="A Tech Blog">
+  <meta property="og:description" content="How would we design an LLM inference serving system that supports multi-user concurrency, low latency, and high throughput? Such a system introduces a new set of systems challenges:
+How do we achieve low latency and high throughput when many user requests arrive concurrently? What should we do when the model is too large and the KV cache exceeds GPU memory capacity? How can we schedule GPU resources efficiently across many users and many models? vLLM # For simplicity, we use nano-vLLM as the example here 1. Its key components are:">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -50,6 +51,7 @@
     <meta property="article:tag" content="Llm">
     <meta property="article:tag" content="Inference">
     <meta property="article:tag" content="Serving">
+    <meta property="article:tag" content="System">
 
 
 
@@ -241,7 +243,71 @@
     </header>
     
     <div class="single-content">
-      
+      <p>How would we design an LLM inference serving system that supports multi-user concurrency, low latency, and high throughput? Such a system introduces a new set of systems challenges:</p>
+<ul>
+<li>How do we achieve low latency and high throughput when many user requests arrive concurrently?</li>
+<li>What should we do when the model is too large and the KV cache exceeds GPU memory capacity?</li>
+<li>How can we schedule GPU resources efficiently across many users and many models?</li>
+</ul>
+<h3 class="heading" id="vllm">
+  vLLM
+  <a class="anchor" href="#vllm">#</a>
+</h3>
+<p>For simplicity, we use nano-vLLM as the example here <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>. Its key components are:</p>
+<ol>
+<li><code>LLM Engine</code>: The top-level orchestration component of the inference service. It initializes the modules required for serving, exposes the request interface (generate), and coordinates the full request lifecycle, including input processing/encoding, scheduling, model execution, and output decoding.</li>
+<li><code>Scheduler</code>: Maintains pending requests through queues, organizes them, and dispatches the requests that need to be executed at each step.</li>
+<li><code>Model Runner</code>: Loads and runs the model, performing computation for each request. When <code>TP &gt; 1</code>, the main process launches multiple <code>Model Runner</code> instances to jointly complete the forward pass.</li>
+<li><code>Block Manager</code>: Manages the GPU memory used for the KV cache based on PagedAttention.</li>
+</ol>
+<p><strong>LLM Engine</strong></p>
+<p>LLM Engine is the core module of the inference framework. It creates one <code>Scheduler</code> instance and at least one <code>Model Runner</code> instance. Its main logic is encapsulated in the <code>generate</code> function, with data passed between modules through function arguments.</p>
+<p>The process can be described as follows:</p>
+<ol>
+<li>After receiving a user request, it uses the tokenizer to encode the prompt into token IDs and calls <code>add_request</code> to create a <code>Sequence</code> instance for each request.</li>
+<li>It then calls <code>step</code>, which triggers the scheduler and lets it pass the pending request data to the <code>Model Runner</code>.</li>
+<li>Finally, it decodes the token IDs into text and returns the result to the user, while the scheduler releases the corresponding resources.</li>
+</ol>
+<p>Use tighter versions like these.</p>
+<p><strong>Scheduler</strong></p>
+<p>Scheduler is the component responsible for request scheduling and execution orchestration. It maintains two queues, <code>waiting</code> and <code>running</code>, and moves requests between them during execution. The default policy is <code>prefill</code>-first to reduce time to first token. During <code>decode</code>, if KV cache blocks are insufficient, it preempts later-admitted requests in <code>running</code> and moves them back to <code>waiting</code>. This design prioritizes admission latency and KV-cache feasibility over strict fairness. It also creates a <code>Block Manager</code> instance to manage KV cache blocks.</p>
+<p>The process can be described as follows:</p>
+<ol>
+<li>New requests are added to the <code>waiting</code> queue.</li>
+<li>For runnable requests, it allocates the required KV cache blocks and records the mappings in the <code>block table</code>.</li>
+<li>Scheduling proceeds in two stages, <code>prefill</code> and <code>decode</code>, with <code>prefill</code> prioritized by default.</li>
+<li>After execution, it updates request states and releases KV cache resources for finished requests.</li>
+<li>The generated results are returned to the upper-layer module for decoding.</li>
+</ol>
+<p><strong>Model Runner</strong></p>
+<p>Model Runner is the component responsible for model execution, including input preparation, forward passes, and sampling. When <code>TP &gt; 1</code>, different ranks coordinate through <code>multiprocessing</code>, <code>SharedMemory</code>, and distributed communication. Rank 0 receives execution requests from the scheduler and shares the invocation data with other ranks. All ranks participate in the forward pass, but only rank 0 performs sampling and returns the final <code>token ids</code>. Its main execution entry point is <code>run()</code>.</p>
+<p>The process can be described as follows:</p>
+<ol>
+<li>At service startup, it loads model weights, performs warmup, allocates KV cache, and optionally captures CUDA Graphs.</li>
+<li>Rank 0 receives runnable requests from the scheduler.</li>
+<li>When <code>TP &gt; 1</code>, rank 0 writes the invocation data into <code>SharedMemory</code>, and other ranks read it in <code>loop()</code> and execute the same method.</li>
+<li><code>run()</code> prepares the inputs for either <code>prefill</code> or <code>decode</code> and builds the required attention context.</li>
+<li><code>run_model()</code> performs the forward pass, and rank 0 samples from the resulting <code>logits</code> to produce <code>token ids</code>.</li>
+</ol>
+<p><strong>Block Manager</strong></p>
+<p>Block Manager manages KV cache blocks in GPU memory. It maintains the global block pool, tracks free and used blocks, and records each request’s block mappings in the <code>block table</code>. Following the PagedAttention design, it allocates KV cache in fixed-size blocks and supports prefix cache reuse through block hashing and reference counting.</p>
+<p>The process can be described as follows:</p>
+<ol>
+<li>When a request enters <code>prefill</code>, it checks whether enough KV cache blocks are available.</li>
+<li>It allocates the required blocks and records them in the request’s <code>block table</code>; cached prefix blocks may be reused when available.</li>
+<li>During <code>decode</code>, it checks whether the request can append new tokens and allocates a new block if needed.</li>
+<li>It maintains reference counts for shared cached blocks.</li>
+<li>When a request finishes or is preempted, it releases the corresponding blocks and returns unused blocks to the free pool.</li>
+</ol>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>Nano-vLLM <a href="https://github.com/GeeeekExplorer/nano-vllm">https://github.com/GeeeekExplorer/nano-vllm</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
+
     </div>
   </article>
 
