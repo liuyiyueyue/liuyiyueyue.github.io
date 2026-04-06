@@ -41,8 +41,8 @@
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/inference_5_inference_servers/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Inference Servers">
-  <meta property="og:description" content="How would we design an LLM inference serving system that supports multi-user concurrency, low latency, and high throughput? Such a system introduces a new set of systems challenges:
-How do we achieve low latency and high throughput when many user requests arrive concurrently? What should we do when the model is too large and the KV cache exceeds GPU memory capacity? How can we schedule GPU resources efficiently across many users and many models? vLLM # For simplicity, we use nano-vLLM as the example here 1. Its key components are:">
+  <meta property="og:description" content="How would we design an LLM inference serving system that supports multi-request concurrency, low latency, and high throughput? Such a system introduces a new set of systems challenges:
+How do we achieve low latency and high throughput when many user requests arrive concurrently? What should we do when the model is too large and the KV cache exceeds GPU memory capacity? How can we schedule GPU resources efficiently across many users and many models? This section will discuss each chanllenge above.">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -243,12 +243,13 @@ How do we achieve low latency and high throughput when many user requests arrive
     </header>
     
     <div class="single-content">
-      <p>How would we design an LLM inference serving system that supports multi-user concurrency, low latency, and high throughput? Such a system introduces a new set of systems challenges:</p>
+      <p>How would we design an LLM inference serving system that supports multi-request concurrency, low latency, and high throughput? Such a system introduces a new set of systems challenges:</p>
 <ul>
 <li>How do we achieve low latency and high throughput when many user requests arrive concurrently?</li>
 <li>What should we do when the model is too large and the KV cache exceeds GPU memory capacity?</li>
 <li>How can we schedule GPU resources efficiently across many users and many models?</li>
 </ul>
+<p>This section will discuss each chanllenge above.</p>
 <h3 class="heading" id="vllm">
   vLLM
   <a class="anchor" href="#vllm">#</a>
@@ -299,11 +300,80 @@ How do we achieve low latency and high throughput when many user requests arrive
 <li>It maintains reference counts for shared cached blocks.</li>
 <li>When a request finishes or is preempted, it releases the corresponding blocks and returns unused blocks to the free pool.</li>
 </ol>
+<p><strong>vLLM v.s. SGLang</strong></p>
+<p>vLLM maximizes per-request efficiency with PagedAttention (memory paging for KV cache), while SGLang maximizes cross-request reuse via prefix sharing (radix tree KV cache).
+In practice: SGLang wins on prefix-heavy workloads (chat/RAG), while vLLM is more general-purpose and production-ready; both are otherwise converging in performance.</p>
+<p><strong>Other Inference Servers</strong></p>
+<p>Beyond vLLM and SGLang, systems such as <strong>Fireworks AI</strong> and <strong>NVIDIA Dynamo</strong> also target high-throughput LLM serving. They focus on the same core problems: request scheduling, KV-cache management, batching, and multi-GPU execution. The main differences are in system design, optimization priorities, and how tightly they integrate with production infrastructure.</p>
+<h3 class="heading" id="memory-bandwidth-bottlenecks">
+  Memory Bandwidth Bottlenecks
+  <a class="anchor" href="#memory-bandwidth-bottlenecks">#</a>
+</h3>
+<p>Many people wonder: GPUs today have extremely high compute capability, so why is inference still slow? In most inference cases, the primary bottleneck is not compute (FLOPs), but <strong>memory bandwidth</strong>—how fast data can be read from GPU memory.</p>
+<p><strong>Performance Metrics</strong></p>
+<p>Inference performance is primarily determined by two interrelated and often competing metrics: <strong>throughput</strong> and <strong>latency</strong>.</p>
+<ol>
+<li>
+<p><strong>Throughput</strong> measures the total amount of work a system can process per unit time. In large model systems, it is typically expressed as <strong>tokens per second (tokens/s)</strong>. It reflects overall system capacity and directly impacts cost: the more tokens generated within the same time window, the lower the cost per token.</p>
+</li>
+<li>
+<p><strong>Latency</strong> measures the response time for a single request and can be further decomposed into two key metrics. <strong>Time to First Token (TTFT)</strong> is the time from request arrival to the first generated token, determining perceived responsiveness. <strong>Time per Output Token (TPOT)</strong> is the average time to generate each subsequent token, determining the effective generation speed.</p>
+</li>
+</ol>
+<p>Throughput and latency are inherently in tension. Improving throughput (e.g., via batching) often increases latency, while optimizing latency may reduce system utilization and increase cost. The key mechanism to balance this tradeoff is <strong>concurrency</strong>, which, through scheduling and resource management, mediates between cost efficiency and service quality (SLA).</p>
+<p>Besides, <strong>fault tolerance</strong> is another nontrivial serving challenge. In a distributed LLM system, failures can occur at the GPU, host, interconnect, or rack level during live traffic. Because modern serving stacks schedule work at mixed granularities such as requests, groups, and tokens, they must preserve runtime state and recover quickly. Memory management is part of the same problem: some models fit at load time but still hit OOM on long sequences without robust runtime safeguards.</p>
+<p><strong>1. Single Request</strong></p>
+<p>Large language models use autoregressive decoding, generating one token at a time. For each token, the GPU must stream essentially the entire model weights from HBM into GPU. This creates a hard upper bound on generation speed:</p>
+<p>max token/s ≈ memory bandwidth / model size</p>
+<p>For example, a 32B parameter model with 4-bit quantization occupies about 18GB in memory. On a GPU with 900 GB/s bandwidth, the theoretical limit is:</p>
+<p>900 / 18 ≈ 50 tokens per second</p>
+<p>In reality, additional overheads such as KV cache access and other system overheads further reduce this number.</p>
+<p><strong>2. Concurrent Requests</strong></p>
+<p>Since single-request latency is bounded by bandwidth, we can improve utilization via <strong>batching</strong>. Instead of serving one request at a time, the system aggregates multiple requests and processes them together.</p>
+<p>The model weights are still loaded once per step, but now produce tokens for multiple sequences simultaneously. This does not reduce latency for an individual request. In fact, queuing may slightly increase it—but it significantly improves overall throughput and cost efficiency. See <a href="/llm/inference_4_other_optimizations/#continuous-batching">Continuous Batching</a>.</p>
+<p>In the same example, the system still needs to load the 18 GB model only once, but it can compute the next token for several users at the same time. As another example, one Wallstreetcn news estimates that a single H20 can support about 500 concurrent users of the full DeepSeek model on WeChat. At that scale, 100,000 to 200,000 H20s would support roughly 50 million to 100 million concurrent users <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>.</p>
+<p><strong>3. Mixture of Experts (MoE)</strong></p>
+<p>Another approach is to reduce the amount of data moved per step. Mixture of Experts (MoE) architectures activate only a subset of parameters for each token.</p>
+<p>Instead of loading the full 32B model, only a fraction (e.g., 8B) is used per step. This reduces memory traffic proportionally. In the same example, the effective data movement drops to ~4.5GB, increasing the theoretical throughput to:</p>
+<p>900 / 4.5 ≈ 200 tokens per second</p>
+<p><strong>4. Speculative Decoding</strong></p>
+<p>Speculative decoding changes the computation pattern itself. Instead of generating one token per forward pass, a small, fast model first predicts multiple tokens. The large model then verifies these predictions in a single pass. If the predictions are correct, one expensive memory load yields multiple tokens. This effectively increases tokens produced per unit of memory bandwidth, improving single-user latency without changing hardware. See <a href="/llm/inference_4_other_optimizations/#speculative-decoding">Speculative Decoding</a>.</p>
+<p>For example, the 18 GB model is loaded just once, to verify whether all tokens generated by the small model are correct at the same time.</p>
+<p><strong>5. Specialized Hardware</strong></p>
+<p>A more radical direction is to eliminate the memory bottleneck at the hardware level.</p>
+<p>One approach places the entire model in on-chip SRAM, avoiding external memory access entirely, like Groq and Cerebras. Since SRAM bandwidth is orders of magnitude higher than HBM, this can dramatically increase token generation speed, albeit at high cost and limited capacity.</p>
+<p>An even more extreme approach compiles model weights directly into hardware circuits, like Taalas. In this design, computation becomes signal propagation through fixed wiring, with no concept of memory reads. Fully pipelined execution allows extremely high throughput (on the order of tens of thousands of tokens per second) and low power consumption, but the chip becomes immutable after fabrication.</p>
+<h3 class="heading" id="memory-capacity-bottlenecks">
+  Memory Capacity Bottlenecks
+  <a class="anchor" href="#memory-capacity-bottlenecks">#</a>
+</h3>
+<p>Though most LLM inference is bounded by memory bandwidth, some scenarios are bounded by memory capacity. Memory bandwidth limits speed. Memory capacity limits feasibility. If the KV cache for long sequences or many concurrent requests does not fit, you get OOM or have to evict/preempt requests.</p>
+<p>Common strategies to reduce memory capacity overhead in LLM inference are mostly about shrinking or managing the <strong>KV cache</strong>, since that is usually the dominant runtime memory consumer. See backround in <a href="/llm/inference_1_kv_cache/">KV Cache</a>.</p>
+<p>System-level optimizations:</p>
+<ol>
+<li>Paged/block-based KV allocation. Systems like vLLM&rsquo;s PagedAttention allocate fixed-size blocks instead of large contiguous buffers, which reduces fragmentation and wasted space.</li>
+<li>Prefix cache reuse. Reuse KV blocks for requests with the same prompt prefix, often with copy-on-write, such as SGLang.</li>
+<li>Chunked prefill. Split very long prompts into smaller chunks to avoid large temporary peaks during prefill.</li>
+<li>Reduce concurrency or max context length. This is the simplest operational control when memory is the limiting factor.</li>
+<li>KV eviction/offloading. Move cold KV blocks to CPU memory or evict lower-priority requests when GPU memory is tight.</li>
+</ol>
+<p>Model-level optimizations:</p>
+<ol>
+<li>Use MQA/GQA. Multi-Query Attention or Grouped-Query Attention reduces KV size by sharing keys/values across heads.</li>
+<li>Sliding-window or local attention. Keep only a recent window of tokens instead of the full history, when the model architecture supports it.</li>
+</ol>
+<p>Numerical-level optimizations:</p>
+<ol>
+<li>Quantize the KV cache. Store KV in lower precision such as <code>FP8</code> or <code>INT8</code> instead of <code>FP16</code>/<code>BF16</code>.</li>
+</ol>
 <div class="footnotes" role="doc-endnotes">
 <hr>
 <ol>
 <li id="fn:1">
 <p>Nano-vLLM <a href="https://github.com/GeeeekExplorer/nano-vllm">https://github.com/GeeeekExplorer/nano-vllm</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p><a href="https://wallstreetcn.com/articles/3741189">https://wallstreetcn.com/articles/3741189</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 </ol>
 </div>

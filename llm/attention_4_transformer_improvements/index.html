@@ -42,7 +42,7 @@
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Transformer: Improvements">
   <meta property="og:description" content="This post continues the Transformer series and focuses on the changes that made the original architecture work better for large language models. The core idea of attention is still the same, but several parts of the 2017 design are now commonly replaced:
-encoder-decoder –&gt; decoder-only post-norm –&gt; pre-norm LayerNorm –&gt; RMSNorm absolute positional encoding –&gt; RoPE MHA –&gt; GQA or MQA GELU –&gt; gated MLP such as SwiGLU Decoder-Only Instead of Encoder-Decoder # For autoregressive language modeling, the model only needs to predict the next token from previous tokens. That makes the encoder-decoder split unnecessary. Modern LLMs therefore usually keep only masked self-attention, an MLP block, residual connections, and normalization layers. This simplifies both training and inference. It also makes the model easier to scale, because every block has the same structure and all attention is causal self-attention.">
+encoder-decoder –&gt; decoder-only post-norm –&gt; pre-norm LayerNorm –&gt; RMSNorm absolute positional encoding –&gt; RoPE MHA –&gt; GQA or MQA GELU –&gt; gated MLP such as SwiGLU As a refresher, the below is the original transformer architecture:">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -251,6 +251,11 @@ encoder-decoder –&gt; decoder-only post-norm –&gt; pre-norm LayerNorm –&gt
 <li>MHA &ndash;&gt; GQA or MQA</li>
 <li>GELU &ndash;&gt; gated MLP such as SwiGLU</li>
 </ul>
+<p>As a refresher, the below is the original transformer architecture:</p>
+<figure><img src="/llm/attention_4_transformer_improvements/images/transformer-with-notes.png"
+    alt="Transformer arch with notes" width="650">
+</figure>
+
 <h3 class="heading" id="decoder-only-instead-of-encoder-decoder">
   Decoder-Only Instead of Encoder-Decoder
   <a class="anchor" href="#decoder-only-instead-of-encoder-decoder">#</a>
@@ -274,9 +279,6 @@ $$</p>
 </h3>
 <p>Many modern language models replace LayerNorm with <strong>RMSNorm</strong>. RMSNorm is a simplified variant that normalizes by the <strong>root mean square</strong> of the activations and does not subtract the mean. This reduces computation while usually preserving similar model quality. In practice, RMSNorm is often preferred because it can effectively mitigate the vanishing-gradient problem in deep networks while maintaining fast training convergence.</p>
 <p>The corresponding formulas are:</p>
-<p>$$
-\hat{x}_{\mathrm{LayerNorm}} = \frac{x - \mu}{\sigma + \epsilon}
-$$</p>
 
 $$
 \hat{x}_{\mathrm{RMSNorm}} = \frac{x}{\operatorname{RMS}(x) + \epsilon},
