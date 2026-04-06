@@ -42,7 +42,7 @@
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Inference Servers">
   <meta property="og:description" content="How would we design an LLM inference serving system that supports multi-request concurrency, low latency, and high throughput? Such a system introduces a new set of systems challenges:
-How do we achieve low latency and high throughput when many user requests arrive concurrently? What should we do when the model is too large and the KV cache exceeds GPU memory capacity? How can we schedule GPU resources efficiently across many users and many models? This section will discuss each chanllenge above.">
+How do we achieve low latency and high throughput when many user requests arrive concurrently? What should we do when the model is too large and the KV cache exceeds GPU memory capacity? How can we schedule GPU resources efficiently across many users and many models? This section discusses the main challenges above in the context of inference serving systems. The focus is on how modern servers handle concurrency, memory pressure, and scheduling efficiency in practice.">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -249,7 +249,7 @@ How do we achieve low latency and high throughput when many user requests arrive
 <li>What should we do when the model is too large and the KV cache exceeds GPU memory capacity?</li>
 <li>How can we schedule GPU resources efficiently across many users and many models?</li>
 </ul>
-<p>This section will discuss each chanllenge above.</p>
+<p>This section discusses the main challenges above in the context of inference serving systems. The focus is on how modern servers handle concurrency, memory pressure, and scheduling efficiency in practice.</p>
 <h3 class="heading" id="vllm">
   vLLM
   <a class="anchor" href="#vllm">#</a>
@@ -261,6 +261,26 @@ How do we achieve low latency and high throughput when many user requests arrive
 <li><code>Model Runner</code>: Loads and runs the model, performing computation for each request. When <code>TP &gt; 1</code>, the main process launches multiple <code>Model Runner</code> instances to jointly complete the forward pass.</li>
 <li><code>Block Manager</code>: Manages the GPU memory used for the KV cache based on PagedAttention.</li>
 </ol>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+
+    
+</figure>
+</p>
 <p><strong>LLM Engine</strong></p>
 <p>LLM Engine is the core module of the inference framework. It creates one <code>Scheduler</code> instance and at least one <code>Model Runner</code> instance. Its main logic is encapsulated in the <code>generate</code> function, with data passed between modules through function arguments.</p>
 <p>The process can be described as follows:</p>
@@ -271,7 +291,7 @@ How do we achieve low latency and high throughput when many user requests arrive
 </ol>
 <p>Use tighter versions like these.</p>
 <p><strong>Scheduler</strong></p>
-<p>Scheduler is the component responsible for request scheduling and execution orchestration. It maintains two queues, <code>waiting</code> and <code>running</code>, and moves requests between them during execution. The default policy is <code>prefill</code>-first to reduce time to first token. During <code>decode</code>, if KV cache blocks are insufficient, it preempts later-admitted requests in <code>running</code> and moves them back to <code>waiting</code>. This design prioritizes admission latency and KV-cache feasibility over strict fairness. It also creates a <code>Block Manager</code> instance to manage KV cache blocks.</p>
+<p>Scheduler is the component responsible for request scheduling and execution orchestration. It maintains two queues, <code>waiting</code> and <code>running</code>, and moves requests between them during execution. The default <strong>policy</strong> is <code>prefill</code>-first to reduce time to first token. During <code>decode</code>, if KV cache blocks are insufficient, it <strong>preempts</strong> later-admitted requests in <code>running</code> and moves them back to <code>waiting</code>. This design <strong>prioritizes</strong> admission latency and KV-cache feasibility over strict fairness. It also creates a <code>Block Manager</code> instance to manage KV cache blocks.</p>
 <p>The process can be described as follows:</p>
 <ol>
 <li>New requests are added to the <code>waiting</code> queue.</li>
