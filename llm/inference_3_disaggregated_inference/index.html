@@ -246,7 +246,7 @@
   <a class="anchor" href="#what-is-disaggregated-inference-di">#</a>
 </h3>
 <p>In LLM inference, the prefill and decode stages have different compute, memory, and bandwidth requirements. Prefill is typically compute-intensive, while decode is memory-bandwidth-intensive. Having both prefill and decode on the same node lead to <strong>interference</strong>. A prefill stage on a long prompt occupies the GPU and delays the decode stage for other requests. Hence, separating prefill and decode onto separate processes or hosts can improve performance. <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup> <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup></p>
-<figure><img src="./images/prefill_decode_interference.png"
+<figure><img src="/llm/inference_3_disaggregated_inference/images/prefill_decode_interference.png"
     alt="Prefill and decode interference when both stages share the same GPU resources v.s. disaggregated inference."><figcaption>
       <p>Prefill and decode interference when both stages share the same GPU resources v.s. disaggregated inference.</p>
     </figcaption>
