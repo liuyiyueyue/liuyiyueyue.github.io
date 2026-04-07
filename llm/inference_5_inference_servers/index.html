@@ -331,12 +331,10 @@ How do we achieve low latency and high throughput when many user requests arrive
 In practice: SGLang wins on prefix-heavy workloads (chat/RAG), while vLLM is more general-purpose and production-ready; both are otherwise converging in performance.</p>
 <p><strong>Other Inference Servers</strong></p>
 <p>Beyond vLLM and SGLang, systems such as <strong>Fireworks AI</strong> and <strong>NVIDIA Dynamo</strong> also target high-throughput LLM serving. They focus on the same core problems: request scheduling, KV-cache management, batching, and multi-GPU execution. The main differences are in system design, optimization priorities, and how tightly they integrate with production infrastructure.</p>
-<h3 class="heading" id="memory-bandwidth-bottlenecks">
-  Memory Bandwidth Bottlenecks
-  <a class="anchor" href="#memory-bandwidth-bottlenecks">#</a>
+<h3 class="heading" id="performance-metrics">
+  Performance Metrics
+  <a class="anchor" href="#performance-metrics">#</a>
 </h3>
-<p>Many people wonder: GPUs today have extremely high compute capability, so why is inference still slow? In most inference cases, the primary bottleneck is not compute (FLOPs), but <strong>memory bandwidth</strong>—how fast data can be read from GPU memory.</p>
-<p><strong>Performance Metrics</strong></p>
 <p>Inference performance is primarily determined by two interrelated and often competing metrics: <strong>throughput</strong> and <strong>latency</strong>.</p>
 <ol>
 <li>
@@ -348,6 +346,11 @@ In practice: SGLang wins on prefix-heavy workloads (chat/RAG), while vLLM is mor
 </ol>
 <p>Throughput and latency are inherently in tension. Improving throughput (e.g., via batching) often increases latency, while optimizing latency may reduce system utilization and increase cost. The key mechanism to balance this tradeoff is <strong>concurrency</strong>, which, through scheduling and resource management, mediates between cost efficiency and service quality (SLA).</p>
 <p>Besides, <strong>fault tolerance</strong> is another nontrivial serving challenge. In a distributed LLM system, failures can occur at the GPU, host, interconnect, or rack level during live traffic. Because modern serving stacks schedule work at mixed granularities such as requests, groups, and tokens, they must preserve runtime state and recover quickly. Memory management is part of the same problem: some models fit at load time but still hit OOM on long sequences without robust runtime safeguards.</p>
+<h3 class="heading" id="memory-bandwidth-bottlenecks">
+  Memory Bandwidth Bottlenecks
+  <a class="anchor" href="#memory-bandwidth-bottlenecks">#</a>
+</h3>
+<p>Many people wonder: GPUs today have extremely high compute capability, so why is inference still slow? In most inference cases, the primary bottleneck is not compute (FLOPs), but <strong>memory bandwidth</strong>—how fast data can be read from GPU memory.</p>
 <p><strong>1. Single Request</strong></p>
 <p>Large language models use autoregressive decoding, generating one token at a time. For each token, the GPU must stream essentially the entire model weights from HBM into GPU. This creates a hard upper bound on generation speed:</p>
 <p>max token/s ≈ memory bandwidth / model size</p>
