@@ -9,10 +9,10 @@
     <lastBuildDate>Wed, 01 Apr 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://liuyiyueyue.github.io/tags/system/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Inference Servers</title>
-      <link>https://liuyiyueyue.github.io/llm/inference_5_inference_servers/</link>
+      <title>LLM Inference: Inference Servers</title>
+      <link>https://liuyiyueyue.github.io/llm/inference_4_inference_servers/</link>
       <pubDate>Wed, 01 Apr 2026 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyueyue.github.io/llm/inference_5_inference_servers/</guid>
+      <guid>https://liuyiyueyue.github.io/llm/inference_4_inference_servers/</guid>
       <description>&lt;p&gt;How would we design an LLM inference serving system that supports multi-request concurrency, low latency, and high throughput? Such a system introduces a new set of systems challenges:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;How do we achieve low latency and high throughput when many user requests arrive concurrently?&lt;/li&gt;&#xA;&lt;li&gt;What should we do when the model is too large and the KV cache exceeds GPU memory capacity?&lt;/li&gt;&#xA;&lt;li&gt;How can we schedule GPU resources efficiently across many users and many models?&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;This section discusses the main challenges above in the context of inference serving systems. The focus is on how modern servers handle concurrency, memory pressure, and scheduling efficiency in practice.&lt;/p&gt;</description>
     </item>
   </channel>

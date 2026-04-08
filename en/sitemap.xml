@@ -65,7 +65,7 @@
     <loc>https://liuyiyueyue.github.io/tags/inference/</loc>
     <lastmod>2026-04-01T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/inference_5_inference_servers/</loc>
+    <loc>https://liuyiyueyue.github.io/llm/inference_4_inference_servers/</loc>
     <lastmod>2026-04-01T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/memory/</loc>
@@ -126,7 +126,7 @@
     <loc>https://liuyiyueyue.github.io/tags/programming-languages/</loc>
     <lastmod>2026-03-13T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/inference_4_other_optimizations/</loc>
+    <loc>https://liuyiyueyue.github.io/llm/inference_3_optimizations/</loc>
     <lastmod>2026-02-26T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/cpu_gpu_optimizations_4_torch/</loc>
@@ -208,14 +208,11 @@
     <loc>https://liuyiyueyue.github.io/llm/cuda_basics/</loc>
     <lastmod>2025-10-25T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/inference_3_disaggregated_inference/</loc>
-    <lastmod>2023-12-15T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/inference_2_prefill_decode/</loc>
-    <lastmod>2023-12-14T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/inference_1_kv_cache/</loc>
+    <loc>https://liuyiyueyue.github.io/llm/inference_2_kv_cache/</loc>
     <lastmod>2023-12-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/inference_1_prefill_decode/</loc>
+    <lastmod>2023-12-12T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/attention_3_flashattention/</loc>
     <lastmod>2023-12-10T00:00:00+00:00</lastmod>

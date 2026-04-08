@@ -32,15 +32,15 @@
 
 <title>
     
-    Inference Servers | Yiyue Liu&#39;s Blog
+    LLM Inference: Inference Servers | Yiyue Liu&#39;s Blog
     
 </title>
 
-<link rel="canonical" href="https://liuyiyueyue.github.io/llm/inference_5_inference_servers/"/>
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/inference_4_inference_servers/"/>
 
-<meta property="og:url" content="https://liuyiyueyue.github.io/llm/inference_5_inference_servers/">
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/inference_4_inference_servers/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="Inference Servers">
+  <meta property="og:title" content="LLM Inference: Inference Servers">
   <meta property="og:description" content="How would we design an LLM inference serving system that supports multi-request concurrency, low latency, and high throughput? Such a system introduces a new set of systems challenges:
 How do we achieve low latency and high throughput when many user requests arrive concurrently? What should we do when the model is too large and the KV cache exceeds GPU memory capacity? How can we schedule GPU resources efficiently across many users and many models? This section discusses the main challenges above in the context of inference serving systems. The focus is on how modern servers handle concurrency, memory pressure, and scheduling efficiency in practice.">
   <meta property="og:locale" content="en">
@@ -221,14 +221,14 @@ How do we achieve low latency and high throughput when many user requests arrive
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/inference_5_inference_servers/">Inference Servers</a></div>
+        <a href="/llm/inference_4_inference_servers/">LLM Inference: Inference Servers</a></div>
 
 
 <div >
   <article>
     <header class="single-intro-container">
         
-        <h1 class="single-title">Inference Servers</h1>
+        <h1 class="single-title">LLM Inference: Inference Servers</h1>
         
         <div class="single-subsummary">
           
@@ -279,7 +279,7 @@ How do we achieve low latency and high throughput when many user requests arrive
     
       
         <div class="img-container" style="--w: 1440; --h: 441;">
-            <img loading="lazy" alt="vLLM" src="/llm/inference_5_inference_servers/images/vllm.jpg" width="1440" height="441">
+            <img loading="lazy" alt="vLLM" src="/llm/inference_4_inference_servers/images/vllm.jpg" width="1440" height="441">
         </div>
       
     
@@ -378,7 +378,7 @@ In practice: SGLang wins on prefix-heavy workloads (chat/RAG), while vLLM is mor
   <a class="anchor" href="#memory-capacity-bottlenecks">#</a>
 </h3>
 <p>Though most LLM inference is bounded by memory bandwidth, some scenarios are bounded by memory capacity. Memory bandwidth limits speed. Memory capacity limits feasibility. If the KV cache for long sequences or many concurrent requests does not fit, you get OOM or have to evict/preempt requests.</p>
-<p>Common strategies to reduce memory capacity overhead in LLM inference are mostly about shrinking or managing the <strong>KV cache</strong>, since that is usually the dominant runtime memory consumer. See backround in <a href="/llm/inference_1_kv_cache/">KV Cache</a>.</p>
+<p>Common strategies to reduce memory capacity overhead in LLM inference are mostly about shrinking or managing the <strong>KV cache</strong>, since that is usually the dominant runtime memory consumer. See backround in <a href="/llm/inference_1_kv_cache">KV Cache</a>.</p>
 <p>System-level optimizations:</p>
 <ol>
 <li>Paged/block-based KV allocation. Systems like vLLM&rsquo;s PagedAttention allocate fixed-size blocks instead of large contiguous buffers, which reduces fragmentation and wasted space.</li>
