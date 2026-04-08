@@ -269,7 +269,7 @@ Prefill phase is the first forward pass through the model, where the entire p
     
       
         <div class="img-container" style="--w: 1433; --h: 686;">
-            <img loading="lazy" alt="Prefill and decode latency breakdown" src="/llm/inference_2_prefill_decode/prefill-decode-latency.jpg" width="1433" height="686">
+            <img loading="lazy" alt="Prefill and decode latency breakdown" src="/llm/inference_2_prefill_decode/images/prefill-decode-latency.jpg" width="1433" height="686">
         </div>
       
     
@@ -286,7 +286,7 @@ Prefill phase is the first forward pass through the model, where the entire p
 <li>Prefill processes the entire prompt in parallel, so the GPU spends most of its time on large matrix multiplications. This makes it <strong>compute-bound</strong>.</li>
 <li>Decode generates one token at a time, so each step does relatively little compute but repeatedly reads model weights and KV cache from memory. This makes it <strong>memory-bound</strong>.</li>
 </ul>
-<p>The diagrams below illustrate the different bottlenecks of prefill and decode. <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
+<p>The roofline diagrams below illustrate the different bottlenecks of prefill and decode. <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
 <p>
 
 
@@ -305,7 +305,7 @@ Prefill phase is the first forward pass through the model, where the entire p
     
       
         <div class="img-container" style="--w: 1075; --h: 671;">
-            <img loading="lazy" alt="Attention roofline" src="/llm/inference_2_prefill_decode/attention-roofline.png" width="1075" height="671">
+            <img loading="lazy" alt="Attention roofline" src="/llm/inference_2_prefill_decode/images/attention-roofline.png" width="1075" height="671">
         </div>
       
     
@@ -313,6 +313,20 @@ Prefill phase is the first forward pass through the model, where the entire p
     
 </figure>
 </p>
+<h3 class="heading" id="concurrency">
+  Concurrency
+  <a class="anchor" href="#concurrency">#</a>
+</h3>
+<p>Why prefills and/or decode from different requests can be execute at the same time on a GPU? Batching is handled by the inference server (scheduler), which aggregates multiple requests into a single tensor before launching one large GEMM on the GPU. The GPU is unaware of individual requests; it only executes the combined matrix operation.</p>
+<p>In a Transformer, the computation is essentially:</p>
+<ul>
+<li>Prefill: <code>[B, L, d] x [d, d]</code></li>
+<li>Decode (single step):<code>[B, 1, d] x [d, d]</code></li>
+</ul>
+<p>Here, <code>B</code> (batch size) is the number of concurrent requests. <code>L</code> is sequence length and <code>d</code> is hidden dimension.</p>
+<p>Why can the prefill batch not be too large? Or equivalently, why can prefill concurrency not be too high? Because <code>L</code> is large for prefill. Compute already saturates the tensor cores, and memory usage also grows quickly due to activations and KV cache.</p>
+<p>Why can decode support higher concurrency?
+Decode uses <code>[B, 1, d] x [d, d]</code>. Since <code>L</code> does not appear in the computation, the compute per step is much smaller.</p>
 <div class="footnotes" role="doc-endnotes">
 <hr>
 <ol>
