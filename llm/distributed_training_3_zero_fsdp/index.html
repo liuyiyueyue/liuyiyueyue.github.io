@@ -309,7 +309,12 @@ M_{\text{ZeRO-3}} = \frac{2\Phi}{N_d} + \frac{2\Phi}{N_d} + \frac{12\Phi}{N_d} =
 $$</p>
 <p>Compared with conventional data parallelism, the per-GPU memory usage can therefore be reduced by up to $4\times$, $8\times$, and $N_d\times$ for ZeRO-1, ZeRO-2, and ZeRO-3, respectively.</p>
 <p><strong>Communication Overhead</strong></p>
-<p>TODO: &ldquo;Communication Analysis of ZeRO-DP&rdquo;</p>
+<p>TODO:
+&ldquo;7.2 ZeRO-DP Communication Volume&rdquo; + &ldquo;Communication Analysis of ZeRO-DP&rdquo;
+As such, instead of an all-reduce, ZeRO only
+requires a scatter-reduce operation on the gradients, incurring communication volume of Ψ.</p>
+<p>DeepSpeed之ZeRO系列：将显存优化进行到底 - basicv8vc的文章 - 知乎
+<a href="https://zhuanlan.zhihu.com/p/513571706">https://zhuanlan.zhihu.com/p/513571706</a></p>
 <h3 class="heading" id="fsdp">
   FSDP <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>
   <a class="anchor" href="#fsdp">#</a>
