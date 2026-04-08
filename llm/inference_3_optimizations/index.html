@@ -45,7 +45,7 @@
 Overview of inference serving methods.
 We already covered some in other posts of the LLM Inference: series:
 LLM Inference: KV Cache LLM Inference: Prefill and Decode This post covers more optimization methods used in LLM inference.
-Performance Metrics # Inference performance is primarily determined by two interrelated and often competing metrics: throughput and latency.">
+Paged Attention (vLLM) # Inference servers handle live traffic rather than a static batch job, so requests can have very different token lengths. This creates a challenge for KV cache allocation. A naive approach is to reserve a fixed-size buffer for the maximum token length for every request. Since each request has a different input length, much of that allocated memory remains unused.">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -259,6 +259,109 @@ optimization and system-level optimization, illustrated below <sup id="fnref:1">
 <li><a href="/llm/inference_1_prefill_decode/">LLM Inference: Prefill and Decode</a></li>
 </ul>
 <p>This post covers more optimization methods used in LLM inference.</p>
+<h3 class="heading" id="paged-attention-vllm">
+  Paged Attention (vLLM)
+  <a class="anchor" href="#paged-attention-vllm">#</a>
+</h3>
+<p>Inference servers handle live traffic rather than a static batch job, so requests can have very different token lengths. This creates a challenge for KV cache allocation. A naive approach is to reserve a fixed-size buffer for the maximum token length for every request. Since each request has a different input length, much of that allocated memory remains unused.</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 939; --h: 229;">
+            <img loading="lazy" alt="Three types of memory wastes" src="/llm/inference_3_optimizations/images/pagedattention.png" width="939" height="229">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
+<p>PagedAttention is a memory management system for KV cache designed to solve this problem <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>. Instead of allocating one large contiguous buffer, it divides the KV cache into fixed-size blocks (&ldquo;pages&rdquo;). Each request&rsquo;s KV cache is then represented as a linked list of blocks. This reduces fragmentation and makes allocation more flexible and efficient.</p>
+<p>This is analogous to OS virtual memory:</p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>OS concept</th>
+                <th>vLLM equivalent</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Virtual page</td>
+                <td>Logical KV block</td>
+            </tr>
+            <tr>
+                <td>Physical page</td>
+                <td>Physical KV cache block in GPU memory</td>
+            </tr>
+            <tr>
+                <td>Page table</td>
+                <td>Block table mapping logical to physical blocks</td>
+            </tr>
+            <tr>
+                <td>Memory allocator</td>
+                <td>KV cache manager / block allocator</td>
+            </tr>
+        </tbody>
+    </table>
+</div><h3 class="heading" id="continuous-batching">
+  Continuous Batching
+  <a class="anchor" href="#continuous-batching">#</a>
+</h3>
+<p>Traditional static batching has to wait until all requests in a batch finish before processing the next batch, which causes earlier-finished requests to sit idle.
+Continuous batching is a special case of dynamic batching and one of the main reasons vLLM outperforms older serving engines. It can <em>add new requests to an active batch</em> while removing finished ones at the same time. With PagedAttention, each request&rsquo;s KV cache is managed independently, so adding or removing requests does not disrupt the memory layout <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>.</p>
+<figure><img src="/llm/inference_3_optimizations/images/continuous_batching.png"
+    alt="Continuous batching"><figcaption>
+      <p>Each sequence generates one token (blue) from the prompt tokens (yellow). After several iterations, the completed sequences each have different sizes because each emits its end-of-sequence token (red) at a different iteration. Once a sequence emits an end-of-sequence token, a new sequence is inserted in its place.</p>
+    </figcaption>
+</figure>
+
+<h3 class="heading" id="speculative-decoding">
+  Speculative Decoding
+  <a class="anchor" href="#speculative-decoding">#</a>
+</h3>
+<p>(这章写的不走心啊！)</p>
+<p>In normal decoding, each new token requires a full forward pass through the large LLM. This is expensive, especially for long generations. Speculative decoding uses a small, fast draft model to propose several tokens ahead, and then the large target model verifies them in parallel <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup> <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>.</p>
+<h3 class="heading" id="chunked-prefill">
+  Chunked prefill
+  <a class="anchor" href="#chunked-prefill">#</a>
+</h3>
+<p>(这章也写的不走心啊！)</p>
+<p>When prompts are long, the prefill phase can monopolize GPU compute and delay decode-heavy traffic. Chunked prefill addresses this by splitting a long prefill into equal-sized chunks and scheduling those chunks alongside decode requests <sup id="fnref:6"><a href="#fn:6" class="footnote-ref" role="doc-noteref">6</a></sup>.</p>
+<p>The key idea is to form hybrid batches: one prefill chunk keeps the GPU compute-saturated, while decode requests piggyback in the remaining slots. This improves utilization, reduces pipeline bubbles, and lowers tail latency compared with running large prefills as a single monolithic step.</p>
+<h3 class="heading" id="disaggregated-inference">
+  Disaggregated Inference
+  <a class="anchor" href="#disaggregated-inference">#</a>
+</h3>
+<p>In LLM inference, the prefill and decode stages have different compute, memory, and bandwidth requirements. Prefill is typically compute-intensive, while decode is more memory-bandwidth-intensive. Running both on the same node can cause interference: a long prefill can occupy the GPU and delay decode steps for other requests. Disaggregated inference separates prefill and decode onto different processes or hosts to reduce this interference and improve overall serving performance <sup id="fnref:7"><a href="#fn:7" class="footnote-ref" role="doc-noteref">7</a></sup> <sup id="fnref:8"><a href="#fn:8" class="footnote-ref" role="doc-noteref">8</a></sup> <sup id="fnref:9"><a href="#fn:9" class="footnote-ref" role="doc-noteref">9</a></sup> <sup id="fnref:10"><a href="#fn:10" class="footnote-ref" role="doc-noteref">10</a></sup>.</p>
+<figure><img src="/llm/inference_3_optimizations/images/prefill_decode_interference.png"
+    alt="Prefill and decode interference versus disaggregated inference"><figcaption>
+      <p>Prefill and decode interference when both stages share the same GPU resources versus disaggregated inference.</p>
+    </figcaption>
+</figure>
+
+<p>The system usually includes a connector or scheduler that transfers KV cache from prefill nodes to decode nodes. Within a node this can use NVLink or NVSwitch; across nodes it can use GPUDirect RDMA.</p>
+<h4 class="heading" id="heterogeneous-disaggregation">
+  Heterogeneous disaggregation
+  <a class="anchor" href="#heterogeneous-disaggregation">#</a>
+</h4>
+<p>Different systems split inference at different boundaries. Cerebras and AWS describe disaggregated inference by separating compute-bound prefill from memory-bound decode: AWS Trainium builds the KV cache during prefill, and Cerebras CS-3 handles decode for high token output speed <sup id="fnref:11"><a href="#fn:11" class="footnote-ref" role="doc-noteref">11</a></sup>. NVIDIA&rsquo;s Vera Rubin plus Groq 3 LPX design is different: prefill stays on GPUs, and decode itself is further split so GPUs run attention while LPX accelerates latency-sensitive FFN and MoE work <sup id="fnref:12"><a href="#fn:12" class="footnote-ref" role="doc-noteref">12</a></sup>. In other words, Cerebras and AWS separate the major phases of inference, while NVIDIA and Groq separate sub-operations inside the decode loop.</p>
 <h3 class="heading" id="performance-metrics">
   Performance Metrics
   <a class="anchor" href="#performance-metrics">#</a>
@@ -289,7 +392,7 @@ optimization and system-level optimization, illustrated below <sup id="fnref:1">
 <p>Since single-request latency is bounded by bandwidth, we can improve utilization via <strong>batching</strong>. Instead of serving one request at a time, the system aggregates multiple requests and processes them together.</p>
 <p>The model weights are still loaded once per step, but now produce tokens for multiple sequences simultaneously. This does not reduce latency for an individual request. In fact, queuing may slightly increase it—but it significantly improves overall throughput and cost efficiency. See <a href="/llm/inference_4_other_optimizations/#continuous-batching">Continuous Batching</a>.</p>
 <p>vLLM decides batching dynamically under three constraints: token budget, sequence limit, and KV-cache availability. A request is only admitted if the scheduler still has token/sequence budget and the KV cache manager can allocate enough KV blocks for it.</p>
-<p>In the same example, the system still needs to load the 18 GB model only once, but it can compute the next token for several users at the same time. As another example, a WallstreetCN report estimates that a single H20 can support about 500 concurrent users of the full DeepSeek model on WeChat. At that scale, 100,000 to 200,000 H20s would support roughly 50 million to 100 million concurrent users <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>.</p>
+<p>In the same example, the system still needs to load the 18 GB model only once, but it can compute the next token for several users at the same time. As another example, a WallstreetCN report estimates that a single H20 can support about 500 concurrent users of the full DeepSeek model on WeChat. At that scale, 100,000 to 200,000 H20s would support roughly 50 million to 100 million concurrent users <sup id="fnref:13"><a href="#fn:13" class="footnote-ref" role="doc-noteref">13</a></sup>.</p>
 <p><strong>3. Mixture of Experts (MoE)</strong></p>
 <p>Another approach is to reduce the amount of data moved per step. Mixture of Experts (MoE) architectures activate only a subset of parameters for each token.</p>
 <p>Instead of loading the full 32B model, only a fraction (e.g., 8B) is used per step. This reduces memory traffic proportionally. In the same example, the effective data movement drops to ~4.5GB, increasing the theoretical throughput to:</p>
@@ -326,109 +429,6 @@ optimization and system-level optimization, illustrated below <sup id="fnref:1">
 <ol>
 <li>Quantize the KV cache. Store KV in lower precision such as <code>FP8</code> or <code>INT8</code> instead of <code>FP16</code>/<code>BF16</code>.</li>
 </ol>
-<h3 class="heading" id="paged-attention-vllm">
-  Paged Attention (vLLM)
-  <a class="anchor" href="#paged-attention-vllm">#</a>
-</h3>
-<p>Inference servers handle live traffic rather than a static batch job, so requests can have very different token lengths. This creates a challenge for KV cache allocation. A naive approach is to reserve a fixed-size buffer for the maximum token length for every request. Since each request has a different input length, much of that allocated memory remains unused.</p>
-<p>
-
-
-
-
-
-
-
-
-
-
-
-<figure class="">
-
-    
-    
-      
-        <div class="img-container" style="--w: 939; --h: 229;">
-            <img loading="lazy" alt="Three types of memory wastes" src="/llm/inference_3_optimizations/images/pagedattention.png" width="939" height="229">
-        </div>
-      
-    
-
-    
-</figure>
-</p>
-<p>PagedAttention is a memory management system for KV cache designed to solve this problem <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>. Instead of allocating one large contiguous buffer, it divides the KV cache into fixed-size blocks (&ldquo;pages&rdquo;). Each request&rsquo;s KV cache is then represented as a linked list of blocks. This reduces fragmentation and makes allocation more flexible and efficient.</p>
-<p>This is analogous to OS virtual memory:</p>
-
-<div class="table-outer">
-    <table>
-        <thead>
-            <tr>
-                <th>OS concept</th>
-                <th>vLLM equivalent</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Virtual page</td>
-                <td>Logical KV block</td>
-            </tr>
-            <tr>
-                <td>Physical page</td>
-                <td>Physical KV cache block in GPU memory</td>
-            </tr>
-            <tr>
-                <td>Page table</td>
-                <td>Block table mapping logical to physical blocks</td>
-            </tr>
-            <tr>
-                <td>Memory allocator</td>
-                <td>KV cache manager / block allocator</td>
-            </tr>
-        </tbody>
-    </table>
-</div><h3 class="heading" id="continuous-batching">
-  Continuous Batching
-  <a class="anchor" href="#continuous-batching">#</a>
-</h3>
-<p>Traditional static batching has to wait until all requests in a batch finish before processing the next batch, which causes earlier-finished requests to sit idle.
-Continuous batching is a special case of dynamic batching and one of the main reasons vLLM outperforms older serving engines. It can <em>add new requests to an active batch</em> while removing finished ones at the same time. With PagedAttention, each request&rsquo;s KV cache is managed independently, so adding or removing requests does not disrupt the memory layout <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup>.</p>
-<figure><img src="/llm/inference_3_optimizations/images/continuous_batching.png"
-    alt="Continuous batching"><figcaption>
-      <p>Each sequence generates one token (blue) from the prompt tokens (yellow). After several iterations, the completed sequences each have different sizes because each emits its end-of-sequence token (red) at a different iteration. Once a sequence emits an end-of-sequence token, a new sequence is inserted in its place.</p>
-    </figcaption>
-</figure>
-
-<h3 class="heading" id="speculative-decoding">
-  Speculative Decoding
-  <a class="anchor" href="#speculative-decoding">#</a>
-</h3>
-<p>(这章写的不走心啊！)</p>
-<p>In normal decoding, each new token requires a full forward pass through the large LLM. This is expensive, especially for long generations. Speculative decoding uses a small, fast draft model to propose several tokens ahead, and then the large target model verifies them in parallel <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup> <sup id="fnref:6"><a href="#fn:6" class="footnote-ref" role="doc-noteref">6</a></sup>.</p>
-<h3 class="heading" id="chunked-prefill">
-  Chunked prefill
-  <a class="anchor" href="#chunked-prefill">#</a>
-</h3>
-<p>(这章也写的不走心啊！)</p>
-<p>When prompts are long, the prefill phase can monopolize GPU compute and delay decode-heavy traffic. Chunked prefill addresses this by splitting a long prefill into equal-sized chunks and scheduling those chunks alongside decode requests <sup id="fnref:7"><a href="#fn:7" class="footnote-ref" role="doc-noteref">7</a></sup>.</p>
-<p>The key idea is to form hybrid batches: one prefill chunk keeps the GPU compute-saturated, while decode requests piggyback in the remaining slots. This improves utilization, reduces pipeline bubbles, and lowers tail latency compared with running large prefills as a single monolithic step.</p>
-<h3 class="heading" id="disaggregated-inference">
-  Disaggregated Inference
-  <a class="anchor" href="#disaggregated-inference">#</a>
-</h3>
-<p>In LLM inference, the prefill and decode stages have different compute, memory, and bandwidth requirements. Prefill is typically compute-intensive, while decode is more memory-bandwidth-intensive. Running both on the same node can cause interference: a long prefill can occupy the GPU and delay decode steps for other requests. Disaggregated inference separates prefill and decode onto different processes or hosts to reduce this interference and improve overall serving performance <sup id="fnref:8"><a href="#fn:8" class="footnote-ref" role="doc-noteref">8</a></sup> <sup id="fnref:9"><a href="#fn:9" class="footnote-ref" role="doc-noteref">9</a></sup> <sup id="fnref:10"><a href="#fn:10" class="footnote-ref" role="doc-noteref">10</a></sup> <sup id="fnref:11"><a href="#fn:11" class="footnote-ref" role="doc-noteref">11</a></sup>.</p>
-<figure><img src="/llm/inference_3_optimizations/images/prefill_decode_interference.png"
-    alt="Prefill and decode interference versus disaggregated inference"><figcaption>
-      <p>Prefill and decode interference when both stages share the same GPU resources versus disaggregated inference.</p>
-    </figcaption>
-</figure>
-
-<p>The system usually includes a connector or scheduler that transfers KV cache from prefill nodes to decode nodes. Within a node this can use NVLink or NVSwitch; across nodes it can use GPUDirect RDMA.</p>
-<h4 class="heading" id="heterogeneous-disaggregation">
-  Heterogeneous disaggregation
-  <a class="anchor" href="#heterogeneous-disaggregation">#</a>
-</h4>
-<p>Different systems split inference at different boundaries. Cerebras and AWS describe disaggregated inference by separating compute-bound prefill from memory-bound decode: AWS Trainium builds the KV cache during prefill, and Cerebras CS-3 handles decode for high token output speed <sup id="fnref:12"><a href="#fn:12" class="footnote-ref" role="doc-noteref">12</a></sup>. NVIDIA&rsquo;s Vera Rubin plus Groq 3 LPX design is different: prefill stays on GPUs, and decode itself is further split so GPUs run attention while LPX accelerates latency-sensitive FFN and MoE work <sup id="fnref:13"><a href="#fn:13" class="footnote-ref" role="doc-noteref">13</a></sup>. In other words, Cerebras and AWS separate the major phases of inference, while NVIDIA and Groq separate sub-operations inside the decode loop.</p>
 <div class="footnotes" role="doc-endnotes">
 <hr>
 <ol>
@@ -436,40 +436,40 @@ Continuous batching is a special case of dynamic batching and one of the main re
 <p>Zixuan Zhou, Xuefei Ning, Ke Hong, Tianyu Fu, Jiaming Xu, Shiyao Li, Yuming Lou, Luning Wang, Zhihang Yuan, Xiuhong Li, Shengen Yan, Guohao Dai, Xiao-Ping Zhang, Huazhong Yang, Yuhan Dong, and Yu Wang. A Survey on Efficient Inference for Large Language Models. arXiv, April 22, 2024. <a href="https://arxiv.org/abs/2404.14294">https://arxiv.org/abs/2404.14294</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:2">
-<p>WallstreetCN. &ldquo;一台 H20 能带动 500 个微信用户？一文看懂 DeepSeek 是怎么炼成的&rdquo;. <a href="https://wallstreetcn.com/articles/3741189">https://wallstreetcn.com/articles/3741189</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Efficient Memory Management for Large Language Model Serving with PagedAttention. arXiv, September 12, 2023. <a href="https://arxiv.org/abs/2309.06180">https://arxiv.org/abs/2309.06180</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:3">
-<p>Efficient Memory Management for Large Language Model Serving with PagedAttention. arXiv, September 12, 2023. <a href="https://arxiv.org/abs/2309.06180">https://arxiv.org/abs/2309.06180</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>How continuous batching enables 23x throughput in LLM inference while reducing p50 latency. June 22, 2023. <a href="https://www.anyscale.com/blog/continuous-batching-llm-inference">https://www.anyscale.com/blog/continuous-batching-llm-inference</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:4">
-<p>How continuous batching enables 23x throughput in LLM inference while reducing p50 latency. June 22, 2023. <a href="https://www.anyscale.com/blog/continuous-batching-llm-inference">https://www.anyscale.com/blog/continuous-batching-llm-inference</a>&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Fast Inference from Transformers via Speculative Decoding. arXiv, November 30, 2022. <a href="https://arxiv.org/abs/2211.17192">https://arxiv.org/abs/2211.17192</a>&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:5">
-<p>Fast Inference from Transformers via Speculative Decoding. arXiv, November 30, 2022. <a href="https://arxiv.org/abs/2211.17192">https://arxiv.org/abs/2211.17192</a>&#160;<a href="#fnref:5" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Accelerating Large Language Model Decoding with Speculative Sampling. arXiv, February 2, 2023. <a href="https://arxiv.org/abs/2302.01318">https://arxiv.org/abs/2302.01318</a>&#160;<a href="#fnref:5" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:6">
-<p>Accelerating Large Language Model Decoding with Speculative Sampling. arXiv, February 2, 2023. <a href="https://arxiv.org/abs/2302.01318">https://arxiv.org/abs/2302.01318</a>&#160;<a href="#fnref:6" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Amey Agrawal, Ashish Panwar, Jayashree Mohan, Nipun Kwatra, Bhargav S. Gulavani, and Ramachandran Ramjee. SARATHI: Efficient LLM Inference by Piggybacking Decodes with Chunked Prefills. arXiv, August 31, 2023. <a href="https://arxiv.org/abs/2308.16369">https://arxiv.org/abs/2308.16369</a>&#160;<a href="#fnref:6" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:7">
-<p>Amey Agrawal, Ashish Panwar, Jayashree Mohan, Nipun Kwatra, Bhargav S. Gulavani, and Ramachandran Ramjee. SARATHI: Efficient LLM Inference by Piggybacking Decodes with Chunked Prefills. arXiv, August 31, 2023. <a href="https://arxiv.org/abs/2308.16369">https://arxiv.org/abs/2308.16369</a>&#160;<a href="#fnref:7" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving. arXiv, June 6, 2024. <a href="https://arxiv.org/pdf/2401.09670">https://arxiv.org/pdf/2401.09670</a>&#160;<a href="#fnref:7" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:8">
-<p>DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving. arXiv, June 6, 2024. <a href="https://arxiv.org/pdf/2401.09670">https://arxiv.org/pdf/2401.09670</a>&#160;<a href="#fnref:8" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>vLLM Project. &ldquo;Disaggregated Prefill V1&rdquo;. GitHub Pull Request #10502. <a href="https://github.com/vllm-project/vllm/pull/10502">https://github.com/vllm-project/vllm/pull/10502</a>&#160;<a href="#fnref:8" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:9">
-<p>vLLM Project. &ldquo;Disaggregated Prefill V1&rdquo;. GitHub Pull Request #10502. <a href="https://github.com/vllm-project/vllm/pull/10502">https://github.com/vllm-project/vllm/pull/10502</a>&#160;<a href="#fnref:9" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Disaggregated Inference: 18 Months Later. November 3, 2025. <a href="https://haoailab.com/blogs/distserve-retro/">https://haoailab.com/blogs/distserve-retro/</a>&#160;<a href="#fnref:9" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:10">
-<p>Disaggregated Inference: 18 Months Later. November 3, 2025. <a href="https://haoailab.com/blogs/distserve-retro/">https://haoailab.com/blogs/distserve-retro/</a>&#160;<a href="#fnref:10" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Disaggregated Inference at Scale with PyTorch &amp; vLLM. September 12, 2025. <a href="https://pytorch.org/blog/disaggregated-inference-at-scale-with-pytorch-vllm/">https://pytorch.org/blog/disaggregated-inference-at-scale-with-pytorch-vllm/</a>&#160;<a href="#fnref:10" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:11">
-<p>Disaggregated Inference at Scale with PyTorch &amp; vLLM. September 12, 2025. <a href="https://pytorch.org/blog/disaggregated-inference-at-scale-with-pytorch-vllm/">https://pytorch.org/blog/disaggregated-inference-at-scale-with-pytorch-vllm/</a>&#160;<a href="#fnref:11" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>James Wang. Cerebras is coming to AWS. March 13, 2026. <a href="https://www.cerebras.ai/blog/cerebras-is-coming-to-aws">https://www.cerebras.ai/blog/cerebras-is-coming-to-aws</a>&#160;<a href="#fnref:11" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:12">
-<p>James Wang. Cerebras is coming to AWS. March 13, 2026. <a href="https://www.cerebras.ai/blog/cerebras-is-coming-to-aws">https://www.cerebras.ai/blog/cerebras-is-coming-to-aws</a>&#160;<a href="#fnref:12" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Kyle Aubrey and Farshad Ghodsian. Inside NVIDIA Groq 3 LPX: The Low-Latency Inference Accelerator for the NVIDIA Vera Rubin Platform. March 16, 2026. <a href="https://developer.nvidia.com/blog/inside-nvidia-groq-3-lpx-the-low-latency-inference-accelerator-for-the-nvidia-vera-rubin-platform/">https://developer.nvidia.com/blog/inside-nvidia-groq-3-lpx-the-low-latency-inference-accelerator-for-the-nvidia-vera-rubin-platform/</a>&#160;<a href="#fnref:12" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:13">
-<p>Kyle Aubrey and Farshad Ghodsian. Inside NVIDIA Groq 3 LPX: The Low-Latency Inference Accelerator for the NVIDIA Vera Rubin Platform. March 16, 2026. <a href="https://developer.nvidia.com/blog/inside-nvidia-groq-3-lpx-the-low-latency-inference-accelerator-for-the-nvidia-vera-rubin-platform/">https://developer.nvidia.com/blog/inside-nvidia-groq-3-lpx-the-low-latency-inference-accelerator-for-the-nvidia-vera-rubin-platform/</a>&#160;<a href="#fnref:13" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>WallstreetCN. &ldquo;一台 H20 能带动 500 个微信用户？一文看懂 DeepSeek 是怎么炼成的&rdquo;. <a href="https://wallstreetcn.com/articles/3741189">https://wallstreetcn.com/articles/3741189</a>&#160;<a href="#fnref:13" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 </ol>
 </div>
