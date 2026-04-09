@@ -254,14 +254,29 @@ There are two solutions to implement allocators of a memory pool: buddy and size
 </h3>
 <p>The buddy allocator organizes memory by orders of size <code>2^k</code> and maintains a flexible-size memory pool. On allocation, it finds the smallest order that can fit the request. If that order is unavailable, it splits a larger block. On free, it finds the buddy through XOR, merges if the buddy is also free, and keeps merging upward. One drawback is fragmentation. The merge algorithm determines whether the addresses are contiguous and how to merge them.</p>
 <p>A sample implementation is Yunfeng&rsquo;s ~200-line buddy allocator code: <a href="https://github.com/cloudwu/buddy/blob/master/buddy.c">https://github.com/cloudwu/buddy/blob/master/buddy.c</a></p>
+<h3 class="heading" id="slab-vs-buddy">
+  Slab vs. Buddy
+  <a class="anchor" href="#slab-vs-buddy">#</a>
+</h3>
+<p>What is the difference between buddy and size-class slab allocators?</p>
+<ul>
+<li>slab: faster allocation, but more internal fragmentation. Common in user-space allocators.</li>
+<li>buddy: supports merging, so it usually has less external fragmentation. Common in kernel page allocators.</li>
+</ul>
+<blockquote>
+<ul>
+<li>internal fragmentation: wasted space inside an allocated block, usually because the allocator rounds a request up to a larger size class.</li>
+<li>external fragmentation: free memory exists, but it is split into small non-contiguous pieces, so a larger allocation still cannot be satisfied.</li>
+</ul>
+</blockquote>
 <h3 class="heading" id="cuda-memory-pool">
   CUDA Memory Pool
   <a class="anchor" href="#cuda-memory-pool">#</a>
 </h3>
 <p>The CUDA driver maintains a global GPU memory pool by default. When memory is freed asynchronously, it is returned to this pool and can be reused by later allocations. <code>cudaMallocAsync</code> and <code>cudaFreeAsync</code> are built on top of the CUDA memory pool. By reusing freed buffers instead of repeatedly requesting new memory from the OS, this pool improves allocation efficiency and helps reduce fragmentation over time. CUDA also exposes knobs such as <code>cudaMemPoolAttrReleaseThreshold</code>, <code>cudaMemPoolTrimTo</code>, and <code>cudaMemPoolSetAttribute</code> to control when cached memory is released and how pool behavior is configured. <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
-<h3 class="heading" id="how-pytorch-implements-a-memory-pool">
-  How PyTorch Implements a Memory Pool
-  <a class="anchor" href="#how-pytorch-implements-a-memory-pool">#</a>
+<h3 class="heading" id="pytorch-memory-pool">
+  PyTorch Memory Pool
+  <a class="anchor" href="#pytorch-memory-pool">#</a>
 </h3>
 <p>One should not rely on calling <code>cudaMalloc</code> and <code>cudaFree</code> for every allocation. <code>cudaMalloc</code> is slow and synchronous, and <code>cudaFree</code> may trigger a device-wide synchronization.
 PyTorch has the <code>CUDACachingAllocator</code>, which is its GPU memory allocator (memory pool) that caches and reuses CUDA memory blocks instead of calling <code>cudaMalloc</code>/<code>cudaFree</code> for every tensor. <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup></p>
