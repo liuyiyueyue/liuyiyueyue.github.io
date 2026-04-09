@@ -313,9 +313,9 @@ Prefill phase is the first forward pass through the model, where the entire p
     
 </figure>
 </p>
-<h3 class="heading" id="concurrency">
-  Concurrency
-  <a class="anchor" href="#concurrency">#</a>
+<h3 class="heading" id="batching">
+  Batching
+  <a class="anchor" href="#batching">#</a>
 </h3>
 <p>Why prefills and/or decode from different requests can be execute at the same time on a GPU? Batching is handled by the inference server (scheduler), which aggregates multiple requests into a single tensor before launching one large GEMM on the GPU. The GPU is unaware of individual requests; it only executes the combined matrix operation.</p>
 <p>In a Transformer, the computation is essentially:</p>
