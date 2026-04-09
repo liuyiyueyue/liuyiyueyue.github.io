@@ -258,6 +258,28 @@ optimization and system-level optimization, illustrated below <sup id="fnref:1">
 <li><a href="/llm/inference_2_kv_cache/">LLM Inference: KV Cache</a></li>
 </ul>
 <p>This post first introduces several common inference optimization techniques, then explains when to use them to improve performance and reduce memory usage.</p>
+<h2 class="heading" id="table-of-contents">
+  Table of Contents
+  <a class="anchor" href="#table-of-contents">#</a>
+</h2>
+<ul>
+<li><a href="/llm/inference_3_optimizations/#inference-optimization-techniques">Inference Optimization Techniques</a>
+<ul>
+<li><a href="/llm/inference_3_optimizations/#paged-attention-vllm">Paged Attention (vLLM)</a></li>
+<li><a href="/llm/inference_3_optimizations/#continuous-batching">Continuous Batching</a></li>
+<li><a href="/llm/inference_3_optimizations/#speculative-decoding">Speculative Decoding</a></li>
+<li><a href="/llm/inference_3_optimizations/#chunked-prefill">Chunked prefill</a></li>
+<li><a href="/llm/inference_3_optimizations/#disaggregated-inference">Disaggregated Inference</a></li>
+</ul>
+</li>
+<li><a href="/llm/inference_3_optimizations/#root-cause-bottlenecks">Root Cause Bottlenecks</a>
+<ul>
+<li><a href="/llm/inference_3_optimizations/#performance-metrics">Performance Metrics</a></li>
+<li><a href="/llm/inference_3_optimizations/#memory-bandwidth-bottlenecks">Memory Bandwidth Bottlenecks</a></li>
+<li><a href="/llm/inference_3_optimizations/#memory-capacity-bottlenecks">Memory Capacity Bottlenecks</a></li>
+</ul>
+</li>
+</ul>
 <h2 class="heading" id="inference-optimization-techniques">
   Inference Optimization Techniques
   <a class="anchor" href="#inference-optimization-techniques">#</a>
