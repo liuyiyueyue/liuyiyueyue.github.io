@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    CUDA Reduction | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/cuda_reduction/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/cuda_reduction/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="CUDA Reduction">
+  <meta property="og:description" content="Reduction is one of the classic CUDA optimization exercises because it exposes several GPU performance bottlenecks in a compact example: warp divergence, shared-memory bank conflicts, idle threads, and synchronization overhead. This post walks through the usual progression from a naive reduction kernel to more optimized versions.1
+Algorithm Overview
+Assume we are given an array of length N and need to compute the sum of it. We first split the array into m chunks. In the first stage, we launch m blocks, with each block reducing one chunk to a partial sum. In the second stage, a single block reduces those m partial sums to produce the final result. Since the second stage can reuse the same kernel as the first, we will not discuss it separately here. This post focuses only on optimization techniques for the first stage.">
+  <meta property="og:locale" content="en">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2025-11-13T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-11-13T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Cuda">
+    <meta property="article:tag" content="Optimization">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.49b6ff94a9420792033557a871a8ef9868a409da75a3a6ce35af19aec5f475fe.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/system/" >
+                /System
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/cuda_reduction/">CUDA Reduction</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">CUDA Reduction</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2025-11-13T00:00:00&#43;00:00">November 13, 2025</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <p>Reduction is one of the classic CUDA optimization exercises because it exposes several GPU performance bottlenecks in a compact example: warp divergence, shared-memory bank conflicts, idle threads, and synchronization overhead. This post walks through the usual progression from a naive reduction kernel to more optimized versions.<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
+<figure><img src="/llm/cuda_reduction/images/reduction.png">
+</figure>
+
+<p><strong>Algorithm Overview</strong></p>
+<p>Assume we are given an array of length <code>N</code> and need to compute the sum of it. We first split the array into <code>m</code> chunks. In the first stage, we launch <code>m</code> blocks, with each block reducing one chunk to a partial sum. In the second stage, a single block reduces those <code>m</code> partial sums to produce the final result. Since the second stage can reuse the same kernel as the first, we will not discuss it separately here. This post focuses only on optimization techniques for the first stage.</p>
+<p>The kernel interface is:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce</span>(T* input, T* output)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Here, input is the <code>input</code> array of length <code>N</code>, and <code>output</code> is the output array for the first stage, containing the <code>m</code> partial sums.</p>
+<p>We need to define three parameters:</p>
+<ul>
+<li><code>BlockNum</code>: the number of launched blocks, i.e. <code>m</code>, which determines how many chunks the array is divided into.</li>
+<li><code>Thread_per_block</code>: the number of threads in each block. Common choices are <code>128</code>, <code>256</code>, <code>512</code>, and <code>1024</code>.</li>
+<li><code>Num_per_block</code>: the number of elements reduced by each block.</li>
+</ul>
+<p>These parameters satisfy <code>BlockNum * Num_per_block = N</code>.</p>
+<p><strong>Baseline Kernel</strong></p>
+<p>The baseline algorithm is straightforward and consists of three steps. First, load the data into shared memory. Second, perform the reduction inside shared memory. Third, write the final result back to global memory. The code is as follows:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce0</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
+</span></span><span style="display:flex;"><span>    __shared__ <span style="font-weight:bold;text-decoration:underline">float</span> sdata[THREAD_PER_BLOCK];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">//each thread loads one element from global memory to shared mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> i=blockIdx.x*blockDim.x+threadIdx.x;
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> tid=threadIdx.x;
+</span></span><span style="display:flex;"><span>    sdata[tid]=d_in[i];
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>(); <span style="color:#888;font-style:italic">// shared-memory load must be complete before reduction starts.
+</span></span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// do reduction in shared mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span>(<span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> s=1; s&lt;blockDim.x; s*=2){ <span style="color:#888;font-style:italic">// for each reduction step
+</span></span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span>(tid%(2*s) == 0){
+</span></span><span style="display:flex;"><span>            sdata[tid]+=sdata[tid+s];
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>(); <span style="color:#888;font-style:italic">// each reduction step must be complete before the next step starts.
+</span></span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// write result for this block to global mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span>(tid==0)d_out[blockIdx.x]=sdata[tid];
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>This section focuses on explaining how the code maps to the hardware:</p>
+<ol>
+<li>
+<p>In the first step, we set <code>Num_per_block = Thread_per_block</code>. For example, with <code>256</code> threads per block, each block reduces <code>256</code> elements. If the input has <code>32M</code> elements, we launch <code>128K</code> blocks. Here, <code>tid</code> is the thread index within a block, and <code>i</code> is the index in the original array. In this stage, thread <code>tid</code> loads element <code>i</code> from global memory, passes it through a register, and stores it in shared memory.</p>
+</li>
+<li>
+<p>In the second step, once all <code>256</code> values are in shared memory, the block performs reduction over multiple rounds: in round 1, threads with <code>tid % 2 == 0</code> add <code>sdata[tid + 1]</code> into <code>sdata[tid]</code>; in round 2, threads with <code>tid % 4 == 0</code> add <code>sdata[tid + 2]</code>; and so on until all values are accumulated into <code>sdata[0]</code>.</p>
+</li>
+</ol>
+<p><strong>Wrap-level Control-flow Optimization</strong></p>
+<p>The main problem with the baseline <code>reduce0</code> kernel is <strong>warp divergence</strong>. Within a block, threads are expected to follow the same instruction stream, and in our case there are 256 / 32 = 8 warps per block. When an if/else branch appears, the warp must execute all branches, and only the results from the threads that satisfy the condition are kept. As shown above, each iteration introduces two branches, which significantly hurts performance.</p>
+<blockquote>
+<p>The smallest execution unit in hardware is a <strong>warp</strong>, which contains 32 threads. A thread is just one lane within a warp.</p>
+</blockquote>
+<p>The improved kernel <code>reduce1</code> tries to keep as many threads as possible on the same branch:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce1</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
+</span></span><span style="display:flex;"><span>    __shared__ <span style="font-weight:bold;text-decoration:underline">float</span> sdata[THREAD_PER_BLOCK];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">//each thread loads one element from global memory to shared mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> i=blockIdx.x*blockDim.x+threadIdx.x;
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> tid=threadIdx.x;
+</span></span><span style="display:flex;"><span>    sdata[tid]=d_in[i];
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// do reduction in shared mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span>(<span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> s=1; s&lt;blockDim.x; s*=2){
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">int</span> index = 2*s*tid;
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span>(index &lt; blockDim.x){
+</span></span><span style="display:flex;"><span>            sdata[index]+=sdata[index+s];
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// write result for this block to global mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span>(tid==0)d_out[blockIdx.x]=sdata[tid];
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>For each warp, all threads take the same branch in a given iteration, so this pattern avoids warp divergence within that warp. In the first iteration, warps <code>0-3</code> satisfy <code>index &lt; blockDim.x</code> while warps <code>4-7</code> do not; in the second iteration, only warps <code>0</code> and <code>1</code> remain active, etc.</p>
+<p><strong>Avoid Bank-conflict</strong></p>
+<p>The main problem in <code>reduce1</code> is bank conflict: in the first iteration, warp 0 accesses shared-memory locations with a stride of 2, so thread 0 reads <code>sdata[0]</code> and thread 16 reads <code>sdata[32]</code>, which map to the same bank. More generally, pairs such as <code>0</code> and <code>32</code>, <code>1</code> and <code>33</code>, and <code>2</code> and <code>34</code> fall into the same bank, so the warp&rsquo;s memory accesses are serialized instead of being served in parallel.</p>
+<blockquote>
+<p>Shared memory has <strong>32 banks</strong>, matching the warp size. The bank ID is roughly <em>shared-memory address index % 32</em>. If multiple threads access the same bank, a bank conflict occurs, the accesses are serialized, and performance drops sharply.</p>
+</blockquote>
+<p>In reduction, the way to avoid bank conflicts is to reverse the for loop. Instead of increasing the stride from 1 up to 256, we decrease it from 128 down to 1.</p>
+<p>The pseudocode is as follows:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce2</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
+</span></span><span style="display:flex;"><span>    __shared__ <span style="font-weight:bold;text-decoration:underline">float</span> sdata[THREAD_PER_BLOCK];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">//each thread loads one element from global memory to shared mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> i=blockIdx.x*blockDim.x+threadIdx.x;
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> tid=threadIdx.x;
+</span></span><span style="display:flex;"><span>    sdata[tid]=d_in[i];
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// do reduction in shared mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span>(<span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> s=blockDim.x/2; s&gt;0; s&gt;&gt;=1){
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span>(tid &lt; s){
+</span></span><span style="display:flex;"><span>            sdata[tid]+=sdata[tid+s];
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// write result for this block to global mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span>(tid==0)d_out[blockIdx.x]=sdata[tid];
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>If we focus on warp 0, then in the first few iterations each active thread reads two values separated by the current stride, such as <code>(0,128)</code>, <code>(1,129)</code>, then <code>(0,64)</code>, <code>(1,65)</code>, and then <code>(0,32)</code>, <code>(1,33)</code>. These accesses stay aligned so that a warp reads one shared-memory row at a time without bank conflicts, and once the stride shrinks to <code>16</code>, only threads <code>0-15</code> remain active while threads <code>16-31</code> do no work.</p>
+<p><strong>Prevent Idle Threads</strong></p>
+<p>The main problem in <code>reduce2</code> is wasted threads. We launch <code>256</code> threads, but only <code>128</code> are active in the first iteration, only <code>64</code> in the second, and the number of working threads is cut in half each round.</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce3</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
+</span></span><span style="display:flex;"><span>    __shared__ <span style="font-weight:bold;text-decoration:underline">float</span> sdata[THREAD_PER_BLOCK];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// each thread loads one element from global memory to shared mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> i=blockIdx.x*(blockDim.x*2)+threadIdx.x;
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> tid=threadIdx.x;
+</span></span><span style="display:flex;"><span>    sdata[tid]=d_in[i] + d_in[i+blockDim.x]; <span style="color:#888;font-style:italic">// each thread reads 2 numbers and performs an addition.
+</span></span></span><span style="display:flex;"><span>    <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// do reduction in shared mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span>(<span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> s=blockDim.x/2; s&gt;0; s&gt;&gt;=1){
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span>(tid &lt; s){
+</span></span><span style="display:flex;"><span>            sdata[tid]+=sdata[tid+s];
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// write result for this block to global mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span>(tid==0)d_out[blockIdx.x]=sdata[tid];
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Before reduce3, Num_per_block = 256, and the number of blocks is approximately N / 256. In reduce3, Num_per_block = 512, and the number of blocks is approximately N / 512. That means Num_per_block doubles, while the number of blocks is halved.</p>
+<p><strong>Reduce Synchronization</strong></p>
+<p>In reduce3 kernel, when the reduction reaches the final few iterations, only warp 0 in each block is still doing useful work, yet the threads are still forced to execute synchronization operations. This causes substantial overhead.</p>
+<blockquote>
+<p>Threads within a warp execute in <strong>lockstep</strong>, so no explicit synchronization is needed. At the hardware level, warp threads are issued and executed together.</p>
+</blockquote>
+<p>When <code>s = 32</code>, only a single SIMD unit is still active, so <code>__syncthreads()</code> can be removed entirely at that point. Therefore, we unroll the last stage of the reduction to reduce synchronization overhead. The pseudocode is as follows:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__device__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">warpReduce</span>(<span style="font-weight:bold;text-decoration:underline">volatile</span> <span style="font-weight:bold;text-decoration:underline">float</span>* cache,<span style="font-weight:bold;text-decoration:underline">int</span> tid){
+</span></span><span style="display:flex;"><span>    cache[tid]+=cache[tid+32];
+</span></span><span style="display:flex;"><span>    cache[tid]+=cache[tid+16];
+</span></span><span style="display:flex;"><span>    cache[tid]+=cache[tid+8];
+</span></span><span style="display:flex;"><span>    cache[tid]+=cache[tid+4];
+</span></span><span style="display:flex;"><span>    cache[tid]+=cache[tid+2];
+</span></span><span style="display:flex;"><span>    cache[tid]+=cache[tid+1];
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce4</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
+</span></span><span style="display:flex;"><span>    __shared__ <span style="font-weight:bold;text-decoration:underline">float</span> sdata[THREAD_PER_BLOCK];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">//each thread loads one element from global memory to shared mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> i=blockIdx.x*(blockDim.x*2)+threadIdx.x;
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> tid=threadIdx.x;
+</span></span><span style="display:flex;"><span>    sdata[tid]=d_in[i] + d_in[i+blockDim.x];
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// do reduction in shared mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span>(<span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> s=blockDim.x/2; s&gt;32; s&gt;&gt;=1){
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span>(tid &lt; s){
+</span></span><span style="display:flex;"><span>            sdata[tid]+=sdata[tid+s];
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// write result for this block to global mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span>(tid&lt;32)<span style="color:#666;font-weight:bold;font-style:italic">warpReduce</span>(sdata,tid);
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span>(tid==0)d_out[blockIdx.x]=sdata[tid];
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p><strong>Loop Unrolling</strong></p>
+<p>At this point, the reduction is already highly efficient. Further optimization becomes quite difficult. To push performance to the limit, we can fully unrolling the for loop. There is still some benefit, but it is no longer especially significant. This is mainly due to the continued evolution of GPU hardware architectures, along with substantial improvements NVIDIA has made in the compiler. The pseudocode is as follows:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>template &lt;<span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> blockSize&gt;
+</span></span><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce5</span>(<span style="font-weight:bold;text-decoration:underline">float</span> *d_in,<span style="font-weight:bold;text-decoration:underline">float</span> *d_out){
+</span></span><span style="display:flex;"><span>    __shared__ <span style="font-weight:bold;text-decoration:underline">float</span> sdata[THREAD_PER_BLOCK];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">//each thread loads one element from global memory to shared mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> i=blockIdx.x*(blockDim.x*2)+threadIdx.x;
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> tid=threadIdx.x;
+</span></span><span style="display:flex;"><span>    sdata[tid]=d_in[i] + d_in[i+blockDim.x];
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// do reduction in shared mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span>(blockSize&gt;=512){
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span>(tid&lt;256){
+</span></span><span style="display:flex;"><span>            sdata[tid]+=sdata[tid+256];
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span>(blockSize&gt;=256){
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span>(tid&lt;128){
+</span></span><span style="display:flex;"><span>            sdata[tid]+=sdata[tid+128];
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span>(blockSize&gt;=128){
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span>(tid&lt;64){
+</span></span><span style="display:flex;"><span>            sdata[tid]+=sdata[tid+64];
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic">// write result for this block to global mem
+</span></span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span>(tid&lt;32)warpReduce&lt;blockSize&gt;(sdata,tid);
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span>(tid==0)d_out[blockIdx.x]=sdata[tid];
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p><strong>Shuffle</strong></p>
+<p>Shuffle instructions are a set of warp-level instructions. Warp Shuffles are special CUDA instructions that let threads inside the same warp (32 threads) directly exchange values. No shared memory, no <code>__syncthreads()</code>. Their biggest advantage is improved programmability: in some scenarios, they let you avoid using shared memory altogether.</p>
+<blockquote>
+<p>Threads within a warp share the same execution units, and all registers are stored in a common register file.</p>
+</blockquote>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>__device__ __forceinline__ <span style="font-weight:bold;text-decoration:underline">float</span> <span style="color:#666;font-weight:bold;font-style:italic">warpReduceSum</span>(<span style="font-weight:bold;text-decoration:underline">float</span> sum) {
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span> (<span style="font-weight:bold;text-decoration:underline">int</span> offset = warpSize / 2; offset &gt; 0; offset &gt;&gt;= 1) {
+</span></span><span style="display:flex;"><span>        sum += <span style="color:#666;font-weight:bold;font-style:italic">__shfl_down_sync</span>(0xffffffff, sum, offset);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">return</span> sum;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>__global__ <span style="font-weight:bold;text-decoration:underline">void</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce7</span>(<span style="font-weight:bold;text-decoration:underline">const</span> <span style="font-weight:bold;text-decoration:underline">float</span> *d_in, <span style="font-weight:bold;text-decoration:underline">float</span> *d_out, <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> n) {
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">float</span> sum = 0.0f;
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> tid = threadIdx.x;
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> i = blockIdx.x * blockDim.x * 2 + tid;
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> gridSize = blockDim.x * 2 * gridDim.x;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">while</span> (i &lt; n) {
+</span></span><span style="display:flex;"><span>        sum += d_in[i];
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span> (i + blockDim.x &lt; n) {
+</span></span><span style="display:flex;"><span>            sum += d_in[i + blockDim.x];
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        i += gridSize;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    __shared__ <span style="font-weight:bold;text-decoration:underline">float</span> warpSums[32];
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> lane = tid % warpSize;
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">unsigned</span> <span style="font-weight:bold;text-decoration:underline">int</span> warp = tid / warpSize;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    sum = <span style="color:#666;font-weight:bold;font-style:italic">warpReduceSum</span>(sum);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span> (lane == 0) warpSums[warp] = sum;
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-weight:bold;font-style:italic">__syncthreads</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    sum = (tid &lt; blockDim.x / warpSize) ? warpSums[lane] : 0.0f;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span> (warp == 0) sum = <span style="color:#666;font-weight:bold;font-style:italic">warpReduceSum</span>(sum);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span> (tid == 0) d_out[blockIdx.x] = sum;
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>Mark Harris. Optimizing Parallel Reduction in CUDA. NVIDIA. <a href="https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf">https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/llm/cuda_basics/">
+                        CUDA Basics
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+            <div class="single-pagination-container-next">
+                <div class="single-pagination-text">
+                    <a href="/llm/cuda_performance_optimizations/">
+                        CUDA Performance Optimizations
+                    </a>
+                </div>
+                <div class="single-pagination-text">→</div>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+
