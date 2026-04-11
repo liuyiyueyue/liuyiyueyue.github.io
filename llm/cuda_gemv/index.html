@@ -41,7 +41,8 @@
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/cuda_gemv/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="CUDA Matrix-Vector Multiplication">
-  <meta property="og:description" content="Matrix-vector multiplication (GEMV) is a foundational operation in linear algebra. Let matrix $A \in \mathbb{R}^{M \times N}$, vector $x \in \mathbb{R}^{N}$, and vector $y \in \mathbb{R}^{M}$. Then
+  <meta property="og:description" content="TODO:
+每个算法的FLOPs总数 Matrix-vector multiplication (GEMV) is a foundational operation in linear algebra. Let matrix $A \in \mathbb{R}^{M \times N}$, vector $x \in \mathbb{R}^{N}$, and vector $y \in \mathbb{R}^{M}$. Then
 $$ y = Ax $$
 Naive Kernel
 In the naive kernel implementation below, each thread handles a row of matrix $A$, an element of vector $x$, and an element of vector $y$. This kernel is simple and performs coalesced access on A (row-major). However, the vector $x$ is reloaded N times per thread, wasting memory bandwidth.">
@@ -244,7 +245,11 @@ In the naive kernel implementation below, each thread handles a row of matrix $A
     </header>
     
     <div class="single-content">
-      <p>Matrix-vector multiplication (GEMV) is a foundational operation in linear algebra. Let matrix $A \in \mathbb{R}^{M \times N}$, vector $x \in \mathbb{R}^{N}$, and vector $y \in \mathbb{R}^{M}$. Then</p>
+      <p>TODO:</p>
+<ol>
+<li>每个算法的FLOPs总数</li>
+</ol>
+<p>Matrix-vector multiplication (GEMV) is a foundational operation in linear algebra. Let matrix $A \in \mathbb{R}^{M \times N}$, vector $x \in \mathbb{R}^{N}$, and vector $y \in \mathbb{R}^{M}$. Then</p>
 <p>$$
 y = Ax
 $$</p>
@@ -265,7 +270,7 @@ $$</p>
   <button class="copy-code-button">copy</button>
 </div>
 <p><strong>Reuse Vector $x$</strong></p>
-<p>Intead of reloading vector $x$ multiple times, we use the shared memory to store a tile of it. Each thread loads an element of <code>x</code> into the shared tile <code>sx</code></p>
+<p>Intead of reloading vector $x$ multiple times, we use the shared memory to store a tile of it. Each thread loads an element of $x$ into the shared tile $sx$</p>
 <div class="code-block">
   <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>x:  [ x0 x1 x2 x3 | x4 x5 x6 x7 | ... ]
 </span></span><span style="display:flex;"><span>        ↑ TILE 0        ↑ TILE 1</span></span></code></pre></div>
@@ -320,7 +325,14 @@ $$</p>
   <button class="copy-code-button">copy</button>
 </div>
 <p><strong>Memory Bound</strong></p>
-<p>Focus on the naive kernel. For each of the N positions: 1 multiply + 1 add = 2 FLOPs. So about 2N FLOPs per output row. For one output row, read N floats from A and N floats from x. That is 2N floats total. Each float is 4 bytes, so memory is 2N * 4 = 8N bytes. Arithmetic intensity is 2N FLOPs / 8N bytes = 0.25 FLOPs/byte. 0.25 FLOPs/byte is very low, so GEMV is strongly memory-bound.</p>
+<p>For the naive GEMV kernel over the whole $M \times N$ matrix, there are $MN$ multiply operations and about $MN$ add operations, so the total work is approximately $2MN$ FLOPs.</p>
+<p>The kernel reads all $MN$ floats from $A$. Although $x$ contains only $N$ floats, the kernel accesses those $N$ elements for each of the $M$ output rows, which contributes another $MN$ float accesses. Besides these reads, the kernel writes $M$ floats to $y$. Each float is 4 bytes, so the total memory traffic is $4(MN + MN + M)$ bytes.</p>
+<p>Therefore, the arithmetic intensity is approximately</p>
+<p>$$
+\frac{2MN}{4(MN + MN + M)} \lesssim 0.25
+$$</p>
+<p>FLOPs/byte.</p>
+<p>This is very low, so GEMV is strongly memory-bound.</p>
 
     </div>
   </article>

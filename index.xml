@@ -139,7 +139,7 @@
       <link>https://liuyiyueyue.github.io/llm/cuda_gemv/</link>
       <pubDate>Thu, 13 Nov 2025 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/llm/cuda_gemv/</guid>
-      <description>&lt;p&gt;Matrix-vector multiplication (GEMV) is a foundational operation in linear algebra. Let matrix $A \in \mathbb{R}^{M \times N}$, vector $x \in \mathbb{R}^{N}$, and vector $y \in \mathbb{R}^{M}$. Then&lt;/p&gt;&#xA;&lt;p&gt;$$&#xA;y = Ax&#xA;$$&lt;/p&gt;&#xA;&lt;p&gt;&lt;strong&gt;Naive Kernel&lt;/strong&gt;&lt;/p&gt;&#xA;&lt;p&gt;In the naive kernel implementation below, each thread handles a row of matrix $A$, an element of vector $x$, and an element of vector $y$. This kernel is simple and performs coalesced access on A (row-major). However, the vector $x$ is reloaded N times per thread, wasting memory bandwidth.&lt;/p&gt;</description>
+      <description>&lt;p&gt;TODO:&lt;/p&gt;&#xA;&lt;ol&gt;&#xA;&lt;li&gt;每个算法的FLOPs总数&lt;/li&gt;&#xA;&lt;/ol&gt;&#xA;&lt;p&gt;Matrix-vector multiplication (GEMV) is a foundational operation in linear algebra. Let matrix $A \in \mathbb{R}^{M \times N}$, vector $x \in \mathbb{R}^{N}$, and vector $y \in \mathbb{R}^{M}$. Then&lt;/p&gt;&#xA;&lt;p&gt;$$&#xA;y = Ax&#xA;$$&lt;/p&gt;&#xA;&lt;p&gt;&lt;strong&gt;Naive Kernel&lt;/strong&gt;&lt;/p&gt;&#xA;&lt;p&gt;In the naive kernel implementation below, each thread handles a row of matrix $A$, an element of vector $x$, and an element of vector $y$. This kernel is simple and performs coalesced access on A (row-major). However, the vector $x$ is reloaded N times per thread, wasting memory bandwidth.&lt;/p&gt;</description>
     </item>
     <item>
       <title>CUDA Performance Optimizations</title>
