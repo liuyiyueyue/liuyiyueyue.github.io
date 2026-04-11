@@ -283,8 +283,8 @@ Prefill phase is the first forward pass through the model, where the entire p
   <a class="anchor" href="#prefill-and-decode-have-different-performance-characteristics">#</a>
 </h3>
 <ul>
-<li>Prefill processes the entire prompt in parallel, so the GPU spends most of its time on large matrix multiplications. This makes it <strong>compute-bound</strong>.</li>
-<li>Decode generates one token at a time, so each step does a matrix-vector multiplication and does relatively little compute, but it repeatedly reads model weights and KV cache from memory. This makes it <strong>memory-bound</strong>.</li>
+<li>Prefill processes the entire prompt in parallel, so the GPU spends most of its time on <strong>large matrix multiplications</strong>. This makes it <strong>compute-bound</strong>.</li>
+<li>Decode generates one token at a time, so each step does a <strong>matrix-vector multiplication</strong> and does relatively little compute, but it repeatedly reads model weights and KV cache from memory. This makes it <strong>memory-bound</strong>.</li>
 </ul>
 <p>The roofline diagrams below illustrate the different bottlenecks of prefill and decode. <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
 <p>
