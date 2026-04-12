@@ -491,7 +491,6 @@ Continuous batching is a special case of dynamic batching and one of the main re
 <ol>
 <li><a href="/llm/inference_3_optimizations/#continuous-batching">Continuous Batching</a> mainly helps decode because decode runs token by token, and different requests finish at different times.</li>
 <li><a href="/llm/cuda_graph/">CUDA Graph</a>. Each decode step has a fixed computation graph, with only the input token changing. CUDA Graph records all CUDA kernels in an entire decode step as a graph and replays it during inference, eliminating the overhead of Python scheduling and CUDA kernel launches.</li>
-<li>未完待续 <a href="https://zhuanlan.zhihu.com/p/2013203040564454281">https://zhuanlan.zhihu.com/p/2013203040564454281</a></li>
 </ol>
 <div class="footnotes" role="doc-endnotes">
 <hr>
