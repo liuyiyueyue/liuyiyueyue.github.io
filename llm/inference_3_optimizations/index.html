@@ -266,6 +266,7 @@ optimization and system-level optimization, illustrated below <sup id="fnref:1">
 <li><a href="/llm/inference_3_optimizations/#inference-optimization-techniques">Inference Optimization Techniques</a>
 <ul>
 <li><a href="/llm/inference_3_optimizations/#paged-attention-vllm">Paged Attention (vLLM)</a></li>
+<li><a href="/llm/inference_3_optimizations/#prefix-caching">Prefix Caching</a></li>
 <li><a href="/llm/inference_3_optimizations/#continuous-batching">Continuous Batching</a></li>
 <li><a href="/llm/inference_3_optimizations/#speculative-decoding">Speculative Decoding</a></li>
 <li><a href="/llm/inference_3_optimizations/#chunked-prefill">Chunked prefill</a></li>
@@ -345,7 +346,13 @@ optimization and system-level optimization, illustrated below <sup id="fnref:1">
             </tr>
         </tbody>
     </table>
-</div><h3 class="heading" id="continuous-batching">
+</div><h3 class="heading" id="prefix-caching">
+  Prefix Caching
+  <a class="anchor" href="#prefix-caching">#</a>
+</h3>
+<p>When multiple requests share the same prompt prefix, prefix caching avoids recomputing the KV cache for that shared prefix. Instead of rebuilding those KV states during prefill for every request, the server reuses previously computed cached blocks. This mainly reduces prefill cost and improves time to first token.</p>
+<p>In vLLM, prefix caching is implemented on top of block-based KV-cache management. Cached KV blocks are identified by hashes of the prefix contents, so later requests can reuse matching blocks instead of recomputing them.</p>
+<h3 class="heading" id="continuous-batching">
   Continuous Batching
   <a class="anchor" href="#continuous-batching">#</a>
 </h3>
@@ -463,6 +470,27 @@ Continuous batching is a special case of dynamic batching and one of the main re
 <p>Numerical-level optimizations:</p>
 <ol>
 <li>Quantize the KV cache. Store KV in lower precision such as <code>FP8</code> or <code>INT8</code> instead of <code>FP16</code>/<code>BF16</code>.</li>
+</ol>
+<h3 class="heading" id="reduce-ttft-from-prefill">
+  Reduce TTFT from Prefill
+  <a class="anchor" href="#reduce-ttft-from-prefill">#</a>
+</h3>
+<p>To reduce the TTFT, we can apply a set of techniques on prefill as below:</p>
+<ol>
+<li>FlashAttention mainly helps prefill because prefill computes attention over long prompt sequences in parallel, creating heavy attention memory traffic. During decode, the query length is usually 1, so the bottleneck shifts to KV-cache reads and memory bandwidth, leaving much less room for FlashAttention to help. In addition, it&rsquo;s memory-efficient as well, reducing the memory usage during prefill.</li>
+<li><a href="/llm/inference_3_optimizations/#chunked-prefill">Chunked prefill</a> helps prefill because it splits a long prompt into smaller chunks, preventing one large prefill from monopolizing the GPU. It does not directly help decode, because decode is already incremental and is usually bottlenecked by KV-cache access and memory bandwidth instead.</li>
+<li>Prefill can also be scaled across multiple GPUs with tensor parallelism, sequence parallelism, or prefill-decode disaggregation. The main benefit is near-linear prefill throughput scaling.</li>
+<li>Sparse attention, linear attention, and SSM-style architectures reduce the O(N^2) cost of prefill on long sequences. They mainly help prefill because prefill processes the full prompt, where attention cost grows with sequence length quadratically. During decode, each step usually adds only one token, so they won&rsquo;t help.</li>
+</ol>
+<h3 class="heading" id="reduce-tpot-from-decode">
+  Reduce TPOT from Decode
+  <a class="anchor" href="#reduce-tpot-from-decode">#</a>
+</h3>
+<p>To reduce the TPOT, we can apply a set of techniques on decode as below:</p>
+<ol>
+<li><a href="/llm/inference_3_optimizations/#continuous-batching">Continuous Batching</a> mainly helps decode because decode runs token by token, and different requests finish at different times.</li>
+<li><a href="/llm/cuda_graph/">CUDA Graph</a>. Each decode step has a fixed computation graph, with only the input token changing. CUDA Graph records all CUDA kernels in an entire decode step as a graph and replays it during inference, eliminating the overhead of Python scheduling and CUDA kernel launches.</li>
+<li>未完待续 <a href="https://zhuanlan.zhihu.com/p/2013203040564454281">https://zhuanlan.zhihu.com/p/2013203040564454281</a></li>
 </ol>
 <div class="footnotes" role="doc-endnotes">
 <hr>
