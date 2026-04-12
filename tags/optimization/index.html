@@ -1661,165 +1661,7 @@
 
     <div>
         <p class="line-title">
-            <a href="/llm/cuda_gemv/">
-                CUDA Matrix-Vector Multiplication
-            </a>
-        </p>
-
-        
-        
-        
-        
-        
-        
-        
-            
-        
-        
-            
-            
-                
-                    
-                
-            
-                
-                    
-                
-            
-                
-                    
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-        
-        
-        <p class="line-summary">Matrix-vector multiplication (GEMV) is a foundational operation in linear algebra. Let matrix $A \in \mathbb{R}^{M \times N}$, vector $x \in \mathbb{R}^{N}$, and vector $y \in \mathbb{R}^{M}$. Then $$ y = Ax $$ Naive Kernel In the naive kernel implementation below, each thread handles a row of matrix $A$, an element of vector $x$, and an element of vector $y$....</p>
-        
-    </div>
-</div>
-
-    
-
-    
-
-    
-    <div class="post-line">
-
-    
-
-    
-        <p class="line-date">13 Nov 2025 </p>
-    
-
-    <div>
-        <p class="line-title">
-            <a href="/llm/cuda_performance_optimizations/">
-                CUDA Performance Optimizations
-            </a>
-        </p>
-
-        
-        
-        
-        
-        
-        
-        
-            
-        
-        
-            
-            
-                
-                    
-                
-            
-        
-        
-        <p class="line-summary"> Finally&amp;hellip; Matrix Multiplication!...</p>
-        
-    </div>
-</div>
-
-    
-
-    
-
-    
-    <div class="post-line">
-
-    
-
-    
-        <p class="line-date">13 Nov 2025 </p>
-    
-
-    <div>
-        <p class="line-title">
-            <a href="/llm/cuda_reduction/">
+            <a href="/llm/cuda_reduction_3/">
                 CUDA Reduction
             </a>
         </p>
@@ -2097,6 +1939,121 @@
         
         
         <p class="line-summary">Reduction is one of the classic CUDA optimization exercises because it exposes several GPU performance bottlenecks in a compact example: warp divergence, shared-memory bank conflicts, idle threads, and synchronization overhead. This post walks through the usual progression from a naive reduction kernel to more optimized versions.1 Algorithm Overview Assume we are given an array of length N and need to compute the sum of it....</p>
+        
+    </div>
+</div>
+
+    
+
+    
+
+    
+    <div class="post-line">
+
+    
+
+    
+        <p class="line-date">10 Nov 2025 </p>
+    
+
+    <div>
+        <p class="line-title">
+            <a href="/llm/cuda_gemv_2/">
+                CUDA Matrix-Vector Multiplication
+            </a>
+        </p>
+
+        
+        
+        
+        
+        
+        
+        
+            
+        
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+        
+        
+        <p class="line-summary">Matrix-vector multiplication (GEMV) is a foundational operation in linear algebra. Let matrix $A \in \mathbb{R}^{M \times N}$, vector $x \in \mathbb{R}^{N}$, and vector $y \in \mathbb{R}^{M}$. Then $$ y = Ax $$ Naive Kernel In the naive kernel implementation below, each thread handles a row of matrix $A$, an element of vector $x$, and an element of vector $y$....</p>
         
     </div>
 </div>

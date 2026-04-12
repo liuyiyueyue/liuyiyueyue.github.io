@@ -202,16 +202,13 @@
     <loc>https://liuyiyueyue.github.io/tags/parallelism/</loc>
     <lastmod>2025-12-01T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/cuda_gemv/</loc>
+    <loc>https://liuyiyueyue.github.io/llm/cuda_reduction_3/</loc>
     <lastmod>2025-11-13T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/cuda_performance_optimizations/</loc>
-    <lastmod>2025-11-13T00:00:00+00:00</lastmod>
+    <loc>https://liuyiyueyue.github.io/llm/cuda_gemv_2/</loc>
+    <lastmod>2025-11-10T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/cuda_reduction/</loc>
-    <lastmod>2025-11-13T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/cuda_basics/</loc>
+    <loc>https://liuyiyueyue.github.io/llm/cuda_basics_1/</loc>
     <lastmod>2025-10-25T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/inference_2_kv_cache/</loc>

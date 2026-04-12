@@ -36,9 +36,9 @@
     
 </title>
 
-<link rel="canonical" href="https://liuyiyueyue.github.io/llm/cuda_reduction/"/>
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/cuda_reduction_3/"/>
 
-<meta property="og:url" content="https://liuyiyueyue.github.io/llm/cuda_reduction/">
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/cuda_reduction_3/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="CUDA Reduction">
   <meta property="og:description" content="Reduction is one of the classic CUDA optimization exercises because it exposes several GPU performance bottlenecks in a compact example: warp divergence, shared-memory bank conflicts, idle threads, and synchronization overhead. This post walks through the usual progression from a naive reduction kernel to more optimized versions.1
@@ -221,7 +221,7 @@ Assume we are given an array of length N and need to compute the sum of it. We f
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/cuda_reduction/">CUDA Reduction</a></div>
+        <a href="/llm/cuda_reduction_3/">CUDA Reduction</a></div>
 
 
 <div >
@@ -244,7 +244,7 @@ Assume we are given an array of length N and need to compute the sum of it. We f
     
     <div class="single-content">
       <p>Reduction is one of the classic CUDA optimization exercises because it exposes several GPU performance bottlenecks in a compact example: warp divergence, shared-memory bank conflicts, idle threads, and synchronization overhead. This post walks through the usual progression from a naive reduction kernel to more optimized versions.<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
-<figure><img src="/llm/cuda_reduction/images/reduction.png">
+<figure><img src="/llm/cuda_reduction_3/images/reduction.png">
 </figure>
 
 <p><strong>Algorithm Overview</strong></p>
@@ -535,8 +535,8 @@ Assume we are given an array of length N and need to compute the sum of it. We f
             <div class="single-pagination-container-prev">
                 <div class="single-pagination-text">←</div>
                 <div class="single-pagination-text">
-                    <a href="/llm/cuda_basics/">
-                        CUDA Basics
+                    <a href="/llm/cuda_gemv_2/">
+                        CUDA Matrix-Vector Multiplication
                     </a>
                 </div>
             </div>
@@ -547,8 +547,8 @@ Assume we are given an array of length N and need to compute the sum of it. We f
             
             <div class="single-pagination-container-next">
                 <div class="single-pagination-text">
-                    <a href="/llm/cuda_performance_optimizations/">
-                        CUDA Performance Optimizations
+                    <a href="/llm/distributed_training_1_parallelism/">
+                        Distributed Training: Parallelism Strategies
                     </a>
                 </div>
                 <div class="single-pagination-text">→</div>
