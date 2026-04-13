@@ -466,6 +466,18 @@
     </figcaption>
 </figure>
 
+<h3 class="heading" id="cuda-compilation">
+  CUDA Compilation
+  <a class="anchor" href="#cuda-compilation">#</a>
+</h3>
+<p>CUDA code is usually compiled with <code>nvcc</code>, NVIDIA&rsquo;s CUDA compiler driver. A <code>.cu</code> file often contains both host code and device code, so compilation is split into two parts: ordinary C or C++ host code is passed to the host compiler, while GPU kernels and device functions are compiled for the target NVIDIA architecture.</p>
+<p>In practice, CUDA compilation often goes through an intermediate representation called <strong>PTX</strong>, which can later be just-in-time compiled by the driver. The final machine code that actually runs on the GPU is called <strong>SASS</strong>. PTX is a virtual ISA, which means it is portable across GPU generations, while SASS is hardware-specific and matched to a concrete architecture such as <code>sm_90</code>. A simple example is <code>nvcc vec_add.cu -o vec_add</code>, which builds an executable containing both CPU code and GPU kernel code. Conceptually, <code>nvcc</code> is not just compiling one program in one pass; it is coordinating host compilation, device compilation, and packaging the results together.</p>
+<figure><img src="/llm/cuda_basics_1/images/compiler-stack.png"
+    alt="CUDA compiler."><figcaption>
+      <p>CUDA compiler.</p>
+    </figcaption>
+</figure>
+
 <h3 class="heading" id="cuda-stream">
   CUDA Stream
   <a class="anchor" href="#cuda-stream">#</a>
