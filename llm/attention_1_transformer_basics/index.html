@@ -317,6 +317,13 @@
 <li><strong>RNN</strong>: passes information forward through recurrent hidden states</li>
 <li><strong>Transformer</strong>: aggregates information globally through attention</li>
 </ul>
+<h3 class="heading" id="encoder-only-decoder-only-and-encoder-decoder-tasks">
+  Encoder-Only, Decoder-Only, and Encoder-Decoder Tasks
+  <a class="anchor" href="#encoder-only-decoder-only-and-encoder-decoder-tasks">#</a>
+</h3>
+<p>Tasks that take an input sequence and generate a different output sequence usually need <strong>both</strong> encoder and decoder, such as machine translation, summarization, and many sequence-to-sequence generation problems. T5 and BART are encoder-decoder models.</p>
+<p>Tasks that only need to <strong>understand</strong> an input sequence usually need only an <strong>encoder</strong>, such as classification, sentiment analysis, and token labeling. BERT is encoder-only model.</p>
+<p>Tasks that only need to <strong>generate</strong> the next tokens autoregressively usually need only a <strong>decoder</strong>, such as language modeling, chat, and text completion. GPT, LLaMA, and Mistral are decoder-only models.</p>
 <h3 class="heading" id="attention-and-its-math">
   Attention and Its Math
   <a class="anchor" href="#attention-and-its-math">#</a>
