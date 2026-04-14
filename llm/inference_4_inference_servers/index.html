@@ -334,8 +334,66 @@ In practice: SGLang wins on prefix-heavy workloads (chat/RAG), while vLLM is mor
   <a class="anchor" href="#from-triton-to-dynamo">#</a>
 </h3>
 <p>Nvidia <strong>Triton</strong> Inference Server is a production framework for serving machine learning and deep learning models through HTTP/REST and gRPC. Instead of building your own model service with something like Flask, you can let Triton handle model loading, batching, and request scheduling. It was originally called TensorRT Inference Server, but later expanded to support many backends rather than only TensorRT. Because the server is decoupled from the backend, it can serve TensorRT, ONNX Runtime, PyTorch, TensorFlow, Python, and custom backends under one framework. Triton runs on CPU, single-GPU, and multi-GPU systems, so it fits many deployment setups. Beyond basic serving, its key features include dynamic batching, concurrent model execution, model repository management, ensemble pipelines, and metrics and health endpoints. <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup></p>
-<p>Nvidia <strong>Dynamo</strong> is the next generation of inference servers than Triton. It supports several backends: TensorRT-LLM, vLLM, and SGLang. One of its main advantages is PD disaggregation, which separates different stages of inference work so the system can schedule them more efficiently. It also uses a prefix-aware router, which sends each request to a worker whose prefix cache is more likely to be useful. This helps improve cache reuse and reduces redundant computation. Another important feature is KV cache offloading, which makes memory usage more flexible under heavy serving load. For KV cache transfer, Dynamo uses NIXL, a high-speed communication library that can automatically choose between NVLink and RDMA depending on the hardware path. <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup> <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup></p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 691; --h: 874;">
+            <img loading="lazy" alt="Nvidia Triton Inference Server" src="/llm/inference_4_inference_servers/images/triton-inference-server.jpg" width="691" height="874">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
+<p>Nvidia <strong>Dynamo</strong> is the next generation of inference servers than Triton. It supports several backends: TensorRT-LLM, vLLM, and SGLang. One of its main advantages is PD disaggregation, which separates different stages of inference work so the system can schedule them more efficiently. It also uses a prefix-aware router, which sends each request to a worker whose prefix cache is more likely to be useful. This helps improve cache reuse and reduces redundant computation. Another important feature is KV cache offloading, which makes memory usage more flexible under heavy serving load. For KV cache transfer, Dynamo uses <strong>NIXL</strong>, a high-speed communication library that can automatically choose between NVLink and RDMA depending on the hardware path. <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup> <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup></p>
 <p>Its implementation in Rust is also notable, because Rust generally offers better memory management than C++ and better performance characteristics than Python, which fits the broader industry trend toward safer high-performance systems.</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container">
+            <img loading="lazy" alt="Nvidia Dynamo" src="/llm/inference_4_inference_servers/images/dynamo.svg">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
+<h3 class="heading" id="mooncake">
+  Mooncake
+  <a class="anchor" href="#mooncake">#</a>
+</h3>
+<p><a href="https://zhuanlan.zhihu.com/p/705754254">https://zhuanlan.zhihu.com/p/705754254</a>
+<a href="https://zhuanlan.zhihu.com/p/706097807">https://zhuanlan.zhihu.com/p/706097807</a></p>
 <div class="footnotes" role="doc-endnotes">
 <hr>
 <ol>
