@@ -357,8 +357,8 @@ $$
 
 <p>Parameters:</p>
 <ul>
+<li>$n$ is the number of query tokens, $m$ is the number of key/value tokens, $d_k$ is the query/key feature dimension, and $d_v$ is the value dimension.</li>
 <li>$Q \in \mathbb{R}^{n \times d_k}$ is the query matrix, $K \in \mathbb{R}^{m \times d_k}$ is the key matrix, and $V \in \mathbb{R}^{m \times d_v}$ is the value matrix. In self-attention, $m = n$.</li>
-<li>$n$ is the number of query tokens, $m$ is the number of key/value tokens, and $d_k$ is the query/key feature dimension.</li>
 </ul>
 <p>Breaking down the equation:</p>
 <ul>
@@ -407,7 +407,7 @@ $$
 </figure>
 </p>
 <p><strong>Multi-Head Attention (MHA)</strong></p>
-<p>Multi-head attention means using several attention heads in parallel. Each head can learn a different type of relation, such as syntax, local dependency, or long-range dependency. This is loosely similar to how different CNN channels can capture different patterns.</p>
+<p>Multi-head attention runs several attention heads in parallel. Instead of computing a single attention pattern, the model computes multiple attention patterns at the same time. Different heads can learn different relationships, such as local context, long-range dependencies, or syntactic structure.</p>
 <p>
 
 
@@ -434,6 +434,12 @@ $$
     
 </figure>
 </p>
+<p>Conceptually, each head has its own query, key, and value projections. In implementation, however, we usually do not build separate linear layers for every head. Instead, we use one large projection/matrix for <code>Q</code>, one for <code>K</code>, and one for <code>V</code>, then reshape the result into multiple heads. In other words, the projected features are <em>logically</em> partitioned by head, even though they are stored in one tensor. This lets all heads be computed with a small number of large matrix operations rather than many small ones, which is much more efficient.</p>
+<p>If the embedding size is <code>d_model</code> and the number of heads is <code>h</code>, then each head typically uses:</p>
+<p>$$
+d_k = d_{model} / h
+$$</p>
+<p>You can learn more about the dimensions of each matrix in this blog post.<sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup></p>
 <p>Here is the Pytorch code for a simple MHA block:</p>
 <div class="code-block">
   <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">class</span> <span style="color:#666;font-weight:bold;font-style:italic">MultiHeadAttentionBlock</span>(nn.Module):
@@ -529,7 +535,7 @@ $$
 \hat{x} = \frac{x - \mu}{\sigma + \epsilon}
 $$</p>
 <p><strong>Batch normalization</strong> computes statistics across the batch. Its behavior depends on the distribution of examples inside the mini-batch. This works well in many vision settings, but it is less suitable for sequence models when sequence lengths vary a lot, token distributions change across positions, or batch statistics become unstable or less meaningful. In the equation above, $\mu$ and $\sigma$ are computed across the batch dimension for each feature channel.</p>
-<p><strong>Layer normalization</strong> computes statistics within each individual token representation. It does not depend on other examples in the batch, which makes it more stable for variable-length sequence modeling.<sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup> In the equation above, $\mu$ and $\sigma$ are computed from the features of one sample/token.</p>
+<p><strong>Layer normalization</strong> computes statistics within each individual token representation. It does not depend on other examples in the batch, which makes it more stable for variable-length sequence modeling.<sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup> In the equation above, $\mu$ and $\sigma$ are computed from the features of one sample/token.</p>
 <figure><img src="/llm/attention_1_transformer_basics/images/layer_batch_norm.png"
     alt="layer norm v.s. batch norm" width="500">
 </figure>
@@ -590,7 +596,7 @@ $$
 $$
 
 
-<p>, where $pos$ is token position in the sequence and $i$ is the index of the sine-cosine pair inside the embedding dimension. Here is an illustration of how the positional encoding matrix is calculated <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>:</p>
+<p>, where $pos$ is token position in the sequence and $i$ is the index of the sine-cosine pair inside the embedding dimension. Here is an illustration of how the positional encoding matrix is calculated <sup id="fnref:6"><a href="#fn:6" class="footnote-ref" role="doc-noteref">6</a></sup>:</p>
 <figure><img src="/llm/attention_1_transformer_basics/images/pos_encoding.png"
     alt="Positional Encoding" width="650">
 </figure>
@@ -687,7 +693,7 @@ $$</p>
   Residual Connection
   <a class="anchor" href="#residual-connection">#</a>
 </h3>
-<p>Residual connection helps mitigate vanishing gradients and degradation in deep models. The red arrows in the images below are residual connections <sup id="fnref:6"><a href="#fn:6" class="footnote-ref" role="doc-noteref">6</a></sup>.</p>
+<p>Residual connection helps mitigate vanishing gradients and degradation in deep models. The red arrows in the images below are residual connections <sup id="fnref:7"><a href="#fn:7" class="footnote-ref" role="doc-noteref">7</a></sup>.</p>
 <figure><img src="/llm/attention_1_transformer_basics/images/residual_connection.png"
     alt="Residual connections" width="800">
 </figure>
@@ -858,13 +864,16 @@ $$</p>
 <p>Transformer模型详解（图解最完整版）. 初识CV, Zhihu. <a href="https://zhuanlan.zhihu.com/p/338817680">https://zhuanlan.zhihu.com/p/338817680</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:4">
-<p>Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E. Hinton. Layer Normalization. arXiv, July 21, 2016. <a href="https://arxiv.org/abs/1607.06450">https://arxiv.org/abs/1607.06450</a>&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Ketan Doshi. Transformers Explained Visually, Part 3: Multi-Head Attention Deep Dive. Towards Data Science. <a href="https://towardsdatascience.com/transformers-explained-visually-part-3-multi-head-attention-deep-dive-1c1ff1024853/">https://towardsdatascience.com/transformers-explained-visually-part-3-multi-head-attention-deep-dive-1c1ff1024853/</a>&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:5">
-<p>Mehreen Saeed. A Gentle Introduction to Positional Encoding in Transformer Models, Part 1. Machine Learning Mastery, January 6, 2023. <a href="https://machinelearningmastery.com/a-gentle-introduction-to-positional-encoding-in-transformer-models-part-1/">https://machinelearningmastery.com/a-gentle-introduction-to-positional-encoding-in-transformer-models-part-1/</a>&#160;<a href="#fnref:5" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E. Hinton. Layer Normalization. arXiv, July 21, 2016. <a href="https://arxiv.org/abs/1607.06450">https://arxiv.org/abs/1607.06450</a>&#160;<a href="#fnref:5" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:6">
-<p>M Javadnejadi. “Transformer is All You Need”. AI Advances, April 30, 2024. <a href="https://ai.gopubby.com/transformer-is-all-you-need-fbb1d1e4d9b0">https://ai.gopubby.com/transformer-is-all-you-need-fbb1d1e4d9b0</a>&#160;<a href="#fnref:6" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Mehreen Saeed. A Gentle Introduction to Positional Encoding in Transformer Models, Part 1. Machine Learning Mastery, January 6, 2023. <a href="https://machinelearningmastery.com/a-gentle-introduction-to-positional-encoding-in-transformer-models-part-1/">https://machinelearningmastery.com/a-gentle-introduction-to-positional-encoding-in-transformer-models-part-1/</a>&#160;<a href="#fnref:6" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:7">
+<p>M Javadnejadi. “Transformer is All You Need”. AI Advances, April 30, 2024. <a href="https://ai.gopubby.com/transformer-is-all-you-need-fbb1d1e4d9b0">https://ai.gopubby.com/transformer-is-all-you-need-fbb1d1e4d9b0</a>&#160;<a href="#fnref:7" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 </ol>
 </div>
