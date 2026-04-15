@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    Collective Operations | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/collective_operations/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/collective_operations/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="Collective Operations">
+  <meta property="og:description" content="Collective operations are the basic communication primitives used in distributed training. They define how tensors are reduced, replicated, partitioned, and exchanged across ranks. Below are some of the most common collective operations in distributed training 1.
+Reduce # A Reduce operation combines values from all ranks and writes the result to one destination rank. If each rank holds n bytes and there are p ranks, the total communication volume is about (p - 1) * n bytes.">
+  <meta property="og:locale" content="en">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2023-05-14T00:00:00+00:00">
+    <meta property="article:modified_time" content="2023-05-14T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Distributed-Training">
+    <meta property="article:tag" content="Nccl">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.49b6ff94a9420792033557a871a8ef9868a409da75a3a6ce35af19aec5f475fe.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/system/" >
+                /System
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/collective_operations/">Collective Operations</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">Collective Operations</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2023-05-14T00:00:00&#43;00:00">May 14, 2023</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <p>Collective operations are the basic communication primitives used in distributed training. They define how tensors are reduced, replicated, partitioned, and exchanged across ranks. Below are some of the most common collective operations in distributed training <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>.</p>
+<h3 class="heading" id="reduce">
+  Reduce
+  <a class="anchor" href="#reduce">#</a>
+</h3>
+<p>A <code>Reduce</code> operation combines values from all ranks and writes the result to one destination rank.
+If each rank holds <code>n</code> bytes and there are <code>p</code> ranks, the total communication volume is about <code>(p - 1) * n</code> bytes.</p>
+<figure><img src="/llm/collective_operations/images/reduce.png">
+</figure>
+
+<h3 class="heading" id="broadcast">
+  Broadcast
+  <a class="anchor" href="#broadcast">#</a>
+</h3>
+<p>A <code>Broadcast</code> operation copies data from one source rank to all ranks.
+If the source tensor has size <code>n</code> bytes and there are <code>p</code> ranks, the total communication volume is about <code>(p - 1) * n</code> bytes.</p>
+<figure><img src="/llm/collective_operations/images/broadcast.png">
+</figure>
+
+<h3 class="heading" id="scatter">
+  Scatter
+  <a class="anchor" href="#scatter">#</a>
+</h3>
+<p>A <code>Scatter</code> operation splits data on one rank and sends one shard to each rank.
+If the full tensor on the source rank has size <code>n</code> bytes and there are <code>p</code> ranks, the total communication volume is about <code>(p - 1) * n / p</code> bytes.</p>
+<figure><img src="/llm/collective_operations/images/scatter.png">
+</figure>
+
+<h3 class="heading" id="gather">
+  Gather
+  <a class="anchor" href="#gather">#</a>
+</h3>
+<p>A <code>Gather</code> operation collects shards from all ranks and places the combined result on one destination rank.
+If the final gathered tensor has size <code>n</code> bytes and there are <code>p</code> ranks, the total communication volume is about <code>(p - 1) * n / p</code> bytes.</p>
+<figure><img src="/llm/collective_operations/images/gather.png">
+</figure>
+
+<h3 class="heading" id="allgather">
+  AllGather
+  <a class="anchor" href="#allgather">#</a>
+</h3>
+<p>An <code>AllGather</code> operation collects shards from all ranks and places the full concatenated result on every rank.
+If each rank starts with <code>n</code> bytes and there are <code>p</code> ranks, each rank receives <code>(p - 1) * n</code> bytes, so the total communication volume is about <code>p * (p - 1) * n</code> bytes.</p>
+<figure><img src="/llm/collective_operations/images/all-gather.png">
+</figure>
+
+<h3 class="heading" id="reducescatter">
+  ReduceScatter
+  <a class="anchor" href="#reducescatter">#</a>
+</h3>
+<p>A <code>ReduceScatter</code> operation first reduces values across ranks and then scatters one reduced shard to each rank.
+If the reduced output on each rank has size <code>n / p</code> bytes, the total communication volume is about <code>(p - 1) * n</code> bytes.</p>
+<figure><img src="/llm/collective_operations/images/reduce-scatter.png">
+</figure>
+
+<h3 class="heading" id="allreduce">
+  AllReduce
+  <a class="anchor" href="#allreduce">#</a>
+</h3>
+<p>An <code>AllReduce</code> operation reduces values across all ranks and returns the same reduced result to every rank.</p>
+<figure><img src="/llm/collective_operations/images/all-reduce.png">
+</figure>
+
+<p><strong>AllReduce = ReduceScatter + AllGather</strong></p>
+<p><code>AllReduce</code> can be implemented as a <code>ReduceScatter</code> followed by an <code>AllGather</code>.</p>
+<figure><img src="/llm/collective_operations/images/all-reduce-composition.png">
+</figure>
+
+<p>In FSDP, see <a href="/llm/distributed_training_3_zero_fsdp/">Distributed Training: ZeRO and FSDP</a> for a concrete use of all-reduce-related collectives such as <code>all_gather</code> and <code>reduce_scatter</code>.</p>
+<figure><img src="/llm/collective_operations/images/fsdp_all_reduce.png"
+    alt="FSDP All Reduce."><figcaption>
+      <p>FSDP All Reduce.</p>
+    </figcaption>
+</figure>
+
+<p><strong>Ring AllReduce</strong></p>
+<p>Ring all-reduce is the standard implementation of <code>AllReduce</code> on many GPU systems <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>. It decomposes <code>AllReduce</code> into a <code>ReduceScatter</code> phase followed by an <code>AllGather</code> phase, with ranks exchanging data in a ring topology. This gives each rank a communication volume of <code>2 * (p - 1) * n / p</code> bytes.</p>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>Collective Operations. CS 168 Textbook. <a href="https://textbook.cs168.io/beyond-client-server/collective-operations.html">https://textbook.cs168.io/beyond-client-server/collective-operations.html</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p>Bringing HPC Techniques to Deep Learning. arXiv, February 20, 2017. <a href="https://arxiv.org/abs/1702.06299">https://arxiv.org/abs/1702.06299</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:3">
+<p>小窗幽记xxy, &ldquo;一文搞懂ring all reduce和bucketing机制.&rdquo; Zhihu. <a href="https://zhuanlan.zhihu.com/p/504957661">https://zhuanlan.zhihu.com/p/504957661</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/llm/ml_fundamentals/">
+                        ML Fundementals
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+            <div class="single-pagination-container-next">
+                <div class="single-pagination-text">
+                    <a href="/llm/attention_1_transformer_basics/">
+                        Transformer: Basics
+                    </a>
+                </div>
+                <div class="single-pagination-text">→</div>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+

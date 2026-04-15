@@ -718,9 +718,63 @@
             
                 
             
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
         
         
-        <p class="line-summary"> Why Model Parallelism? Data parallelism works well when the full model can still fit on each GPU. But once a model becomes too large, simply replicating it across devices is no longer practical....</p>
+        <p class="line-summary">Contents Why Model Parallelism? Tensor Parallelism Pipeline Parallelism Sequence Parallelism Expert Parallelism Automatic Parallelism Comparing the Strategies Hybrid Parallelism Why Model Parallelism? Data parallelism works well when the full model can still fit on each GPU....</p>
         
     </div>
 </div>
@@ -861,9 +915,37 @@
             
                 
             
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
         
         
-        <p class="line-summary"> ZeRo 1 In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out. As a result, memory often becomes the main bottleneck in data-parallel training. Microsoft proposed a highly influential algorithm called Zero Redundancy Optimizer (ZeRO) to address the memory limitations of data-parallel training, and later built the distributed training framework DeepSpeed on top of PyTorch around it....</p>
+        <p class="line-summary">Conventional data parallelism replicates the full model state on every GPU, so memory does not decrease as the cluster scales out. ZeRO and FSDP address this by sharding optimizer states, gradients, and parameters across devices, allowing much larger models to be trained under the same memory budget. ZeRo 1 In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out....</p>
         
     </div>
 </div>
@@ -1282,6 +1364,121 @@
         
         
         <p class="line-summary"> Why Parallelism? As training datasets grow, training takes longer. At the same time, models are getting larger, and some no longer fit on a single device without running out of memory....</p>
+        
+    </div>
+</div>
+
+    
+
+    
+
+    
+    <div class="post-line">
+
+    
+
+    
+        <p class="line-date">14 May 2023 </p>
+    
+
+    <div>
+        <p class="line-title">
+            <a href="/llm/collective_operations/">
+                Collective Operations
+            </a>
+        </p>
+
+        
+        
+        
+        
+        
+        
+        
+            
+        
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+        
+        
+        <p class="line-summary">Collective operations are the basic communication primitives used in distributed training. They define how tensors are reduced, replicated, partitioned, and exchanged across ranks. Below are some of the most common collective operations in distributed training 1....</p>
         
     </div>
 </div>

@@ -41,8 +41,8 @@
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/distributed_training_3_zero_fsdp/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Distributed Training: ZeRO and FSDP">
-  <meta property="og:description" content="ZeRo 1 # In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out. As a result, memory often becomes the main bottleneck in data-parallel training.
-Microsoft proposed a highly influential algorithm called Zero Redundancy Optimizer (ZeRO) to address the memory limitations of data-parallel training, and later built the distributed training framework DeepSpeed on top of PyTorch around it. Its core idea ZeRO-DP is to partition model states (optimizer states, gradients, and parameters) evenly across GPUs, so the memory usage on each GPU becomes inversely proportional to the degree of data parallelism, while communication efficiency remains largely unaffected. Besides model state, the remaining memory called residual states are used by activation, temporary buffers, and unusable fragmented memory. ZeRO-R is to optimize these residual memory. This section of the blog focuses on ZeRO-DP.">
+  <meta property="og:description" content="Conventional data parallelism replicates the full model state on every GPU, so memory does not decrease as the cluster scales out. ZeRO and FSDP address this by sharding optimizer states, gradients, and parameters across devices, allowing much larger models to be trained under the same memory budget.
+ZeRo 1 # In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out. As a result, memory often becomes the main bottleneck in data-parallel training.">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -243,7 +243,8 @@ Microsoft proposed a highly influential algorithm called Zero Redundancy Optimiz
     </header>
     
     <div class="single-content">
-      <h3 class="heading" id="zero">
+      <p>Conventional data parallelism replicates the full model state on every GPU, so memory does not decrease as the cluster scales out. ZeRO and FSDP address this by sharding optimizer states, gradients, and parameters across devices, allowing much larger models to be trained under the same memory budget.</p>
+<h3 class="heading" id="zero">
   ZeRo <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>
   <a class="anchor" href="#zero">#</a>
 </h3>
@@ -288,7 +289,7 @@ Microsoft proposed a highly influential algorithm called Zero Redundancy Optimiz
     </figcaption>
 </figure>
 
-<p><strong>Memory Reduction</strong></p>
+<p><strong>Memory Usage Reduction</strong></p>
 <p>In mixed-precision training, the model parameters are stored in <code>float16</code>, the model gradients are stored in <code>float16</code>, and the Adam states are stored in <code>float32</code>, including the master copy of the model parameters, the momentum, and the variance. Let the total number of model parameters be $\Phi$. Then the total memory required is</p>
 <p>$$
 2\Phi + 2\Phi + (4\Phi + 4\Phi + 4\Phi) = 4\Phi + 12\Phi = 16\Phi \text{ bytes}.
@@ -308,6 +309,12 @@ $$</p>
 M_{\text{ZeRO-3}} = \frac{2\Phi}{N_d} + \frac{2\Phi}{N_d} + \frac{12\Phi}{N_d} = \frac{16\Phi}{N_d}.
 $$</p>
 <p>Compared with conventional data parallelism, the per-GPU memory usage can therefore be reduced by up to $4\times$, $8\times$, and $N_d\times$ for ZeRO-1, ZeRO-2, and ZeRO-3, respectively.</p>
+<p><strong>Communication Volumn/ Data Movements</strong></p>
+<p>In conventional data parallel training, gradients are synchronized across all data-parallel ranks at the end of backward propagation before the optimizer update. This is typically implemented with <strong>all-reduce</strong>, which can be viewed as a <strong>reduce-scatter</strong> followed by an <strong>all-gather</strong>. Let $Ψ$ denote the total number of gradient elements in the model. Under ring all-reduce, the per-rank communication is approximately $2Ψ$ elements.</p>
+<p>ZeRO-2 keeps this communication volume roughly unchanged. Instead of all-reducing the full gradient tensor, it performs a <strong>reduce-scatter</strong> on gradients so that each rank receives only the reduced shard it owns, then applies the optimizer update locally, and finally runs an <strong>all-gather</strong> on the updated parameters. The total communication is therefore still about $Ψ + Ψ = 2Ψ$ elements per step.</p>
+<p>ZeRO-3 adds extra communication because parameters are also sharded. It still needs about $Ψ$ elements for gradient <strong>reduce-scatter</strong> and about $Ψ$ elements for parameter <strong>all-gather</strong> after the optimizer step, but it must also gather model parameter shards for computation via an additional <strong>all-gather</strong> because no rank stores the full parameter set locally. Under this simplified accounting, the total communication becomes about $3Ψ$ elements per step.</p>
+<p>See <a href="/llm/collective_operations/">Collective Operations</a> for the detailed communication-volume breakdown and calculation of each operation.</p>
+<p>The conclusion is that ZeRO-1 and ZeRO-2 have the same communication volume as conventional data parallelism, while ZeRO-3 increases communication volume.</p>
 <h3 class="heading" id="fsdp">
   FSDP <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>
   <a class="anchor" href="#fsdp">#</a>

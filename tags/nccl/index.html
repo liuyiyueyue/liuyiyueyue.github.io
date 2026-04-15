@@ -26,22 +26,22 @@
 <link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
 
-<link rel="alternate" type="application/rss+xml" href="https://liuyiyueyue.github.io/tags/zero/index.xml" title="Yiyue Liu's Blog">
+<link rel="alternate" type="application/rss+xml" href="https://liuyiyueyue.github.io/tags/nccl/index.xml" title="Yiyue Liu's Blog">
 <meta name="description" content=""/>
 
 
 
 <title>
     
-    Zero | Yiyue Liu&#39;s Blog
+    Nccl | Yiyue Liu&#39;s Blog
     
 </title>
 
-<link rel="canonical" href="https://liuyiyueyue.github.io/tags/zero/"/>
+<link rel="canonical" href="https://liuyiyueyue.github.io/tags/nccl/"/>
 
-<meta property="og:url" content="https://liuyiyueyue.github.io/tags/zero/">
+<meta property="og:url" content="https://liuyiyueyue.github.io/tags/nccl/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="Zero">
+  <meta property="og:title" content="Nccl">
   <meta property="og:description" content="A Tech Blog">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="website">
@@ -213,9 +213,9 @@
 <div class="list-container">
 
     <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/tags/">Tags</a><span class="breadcrumbs-separator">/</span>
-        <a href="/tags/zero/">Zero</a></div>
+        <a href="/tags/nccl/">Nccl</a></div>
 
-    <h1>Zero</h1>
+    <h1>Nccl</h1>
     
 
     
@@ -235,13 +235,13 @@
     
 
     
-        <p class="line-date">15 Dec 2025 </p>
+        <p class="line-date">14 May 2023 </p>
     
 
     <div>
         <p class="line-title">
-            <a href="/llm/distributed_training_3_zero_fsdp/">
-                Distributed Training: ZeRO and FSDP
+            <a href="/llm/collective_operations/">
+                Collective Operations
             </a>
         </p>
 
@@ -333,65 +333,9 @@
             
                 
             
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
         
         
-        <p class="line-summary">Conventional data parallelism replicates the full model state on every GPU, so memory does not decrease as the cluster scales out. ZeRO and FSDP address this by sharding optimizer states, gradients, and parameters across devices, allowing much larger models to be trained under the same memory budget. ZeRo 1 In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out....</p>
+        <p class="line-summary">Collective operations are the basic communication primitives used in distributed training. They define how tensors are reduced, replicated, partitioned, and exchanged across ranks. Below are some of the most common collective operations in distributed training 1....</p>
         
     </div>
 </div>

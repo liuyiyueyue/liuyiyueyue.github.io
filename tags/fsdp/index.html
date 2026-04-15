@@ -361,9 +361,37 @@
             
                 
             
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
         
         
-        <p class="line-summary"> ZeRo 1 In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out. As a result, memory often becomes the main bottleneck in data-parallel training. Microsoft proposed a highly influential algorithm called Zero Redundancy Optimizer (ZeRO) to address the memory limitations of data-parallel training, and later built the distributed training framework DeepSpeed on top of PyTorch around it....</p>
+        <p class="line-summary">Conventional data parallelism replicates the full model state on every GPU, so memory does not decrease as the cluster scales out. ZeRO and FSDP address this by sharding optimizer states, gradients, and parameters across devices, allowing much larger models to be trained under the same memory budget. ZeRo 1 In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out....</p>
         
     </div>
 </div>

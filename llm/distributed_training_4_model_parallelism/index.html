@@ -41,7 +41,8 @@
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/distributed_training_4_model_parallelism/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Distributed Training: Model Parallelism">
-  <meta property="og:description" content="Why Model Parallelism? # Data parallelism works well when the full model can still fit on each GPU. But once a model becomes too large, simply replicating it across devices is no longer practical.
+  <meta property="og:description" content="Contents
+Why Model Parallelism? Tensor Parallelism Pipeline Parallelism Sequence Parallelism Expert Parallelism Automatic Parallelism Comparing the Strategies Hybrid Parallelism Why Model Parallelism? # Data parallelism works well when the full model can still fit on each GPU. But once a model becomes too large, simply replicating it across devices is no longer practical.
 Model parallelism solves this by partitioning the model itself across multiple GPUs. Instead of every rank storing all weights, each rank stores and computes only part of the model. The tradeoff is that memory usage goes down, but communication and scheduling complexity go up.">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
@@ -242,7 +243,18 @@ Model parallelism solves this by partitioning the model itself across multiple G
     </header>
     
     <div class="single-content">
-      <h3 class="heading" id="why-model-parallelism">
+      <p><strong>Contents</strong></p>
+<ul>
+<li><a href="/llm/distributed_training_4_model_parallelism/#why-model-parallelism">Why Model Parallelism?</a></li>
+<li><a href="/llm/distributed_training_4_model_parallelism/#tensor-parallelism">Tensor Parallelism</a></li>
+<li><a href="/llm/distributed_training_4_model_parallelism/#pipeline-parallelism">Pipeline Parallelism</a></li>
+<li><a href="/llm/distributed_training_4_model_parallelism/#sequence-parallelism">Sequence Parallelism</a></li>
+<li><a href="/llm/distributed_training_4_model_parallelism/#expert-parallelism">Expert Parallelism</a></li>
+<li><a href="/llm/distributed_training_4_model_parallelism/#automatic-parallelism">Automatic Parallelism</a></li>
+<li><a href="/llm/distributed_training_4_model_parallelism/#comparing-the-strategies">Comparing the Strategies</a></li>
+<li><a href="/llm/distributed_training_4_model_parallelism/#hybrid-parallelism">Hybrid Parallelism</a></li>
+</ul>
+<h3 class="heading" id="why-model-parallelism">
   Why Model Parallelism?
   <a class="anchor" href="#why-model-parallelism">#</a>
 </h3>
@@ -258,7 +270,7 @@ Model parallelism solves this by partitioning the model itself across multiple G
 <li><strong>Column parallelism</strong>: split the output dimension, so each GPU computes a subset of output columns.</li>
 <li><strong>Row parallelism</strong>: split the input dimension, so each GPU computes a partial result and then sums across GPUs.</li>
 </ul>
-<p>TP reduces peak GPU memory usage and speeds up computation, but the communication costs between GPUs are significant.</p>
+<p>TP has good memory efficiency, reduces peak GPU memory usage, and speeds up computation. Each worker only stores the tensor shard it is responsible for, so the memory overhead per worker decreases linearly as the number of workers increases. However, TP has relatively high communication overhead between GPUs, because the forward or backward computation of each layer requires collective communication, such as All-Gather or All-Reduce.</p>
 <h3 class="heading" id="pipeline-parallelism">
   Pipeline Parallelism
   <a class="anchor" href="#pipeline-parallelism">#</a>
@@ -266,11 +278,12 @@ Model parallelism solves this by partitioning the model itself across multiple G
 <p><strong>Pipeline parallelism (PP)</strong> splits the model by layers, partitioning several consecutive layers into one group, called a <strong>stage</strong>. Different stages are then assigned to different devices, so each GPU only computes a portion of the network’s layers.</p>
 <p>For example, in a 12-layer transformer:</p>
 <ul>
-<li>GPU 0 may hold layers 1-3</li>
-<li>GPU 1 may hold layers 4-6</li>
-<li>GPU 2 may hold layers 7-9</li>
-<li>GPU 3 may hold layers 10-12</li>
+<li>GPU 0 may hold layers 1-4</li>
+<li>GPU 1 may hold layers 5-9</li>
+<li>GPU 2 may hold layers 10-12</li>
 </ul>
+<p>After a batch arrives, the first stage begins the forward pass, then sends its output activations to the next stage, which continues the computation, and this process repeats until the last stage finishes. Backward propagation then starts from the last stage, and gradients are passed back stage by stage until the first stage completes its computation.</p>
+<p>PP has good memory efficiency: each worker only stores the parameters of the stage it is responsible for, so the memory overhead per worker decreases linearly as the number of workers increases. In addition, PP has relatively low communication overhead, because it only needs to communicate activations and gradients between adjacent stages. The main challenge of PP is balancing the computation across stages so that idle time is minimized, as explained next.</p>
 <p>A naive implementation of pipeline parallelism leaves many <strong>pipeline bubble</strong>, i.e. some devices sit idle at the beginning and end of each step while waiting for other stages. Hence, research on pipeline parallelism mainly focuses on:</p>
 <ol>
 <li>reducing pipeline bubbles to improve overall system throughput</li>
@@ -445,7 +458,44 @@ tokens during one all-to-all exchange. The factor <code>(total_ep_ranks - 1) / t
             </tr>
         </tbody>
     </table>
-</div><div class="footnotes" role="doc-endnotes">
+</div><h3 class="heading" id="hybrid-parallelism">
+  Hybrid Parallelism
+  <a class="anchor" href="#hybrid-parallelism">#</a>
+</h3>
+<p><strong>3D Parallelism: TP+PP+DP</strong></p>
+<p>The <a href="/llm/distributed_training_4_model_parallelism/#pipeline-parallelism">Pipeline Parallelism</a>, <a href="/llm/distributed_training_4_model_parallelism/#tensor-parallelism">Tensor Parallelism</a>, and <a href="/llm/distributed_training_3_zero_fsdp/">Data Parallel</a> posts summarize the main memory and communication tradeoffs. We choose the parallelism dimensions in the order of their practical constraints. As a recap, TP is the most constrained, because its high communication cost usually prevents it from scaling efficiently across nodes. PP comes next, because its theoretical upper bound is limited by the number of layers in the model, and in practice each stage also cannot be made too small without hurting efficiency. DP is the least constrained, because in principle it can scale much further, and is mainly limited by batch size and communication efficiency at very large scale.</p>
+<p>Now let&rsquo;s run through an example. Suppose the model has 512B parameters.</p>
+<p>First, we apply PP, by partitioning the model into 4 stages, so each stage contains 128B parameters. Assign each stage to one 4-GPU node. We call it PP=4 or 4-way PP.</p>
+<p>Next, we apply TP. Within each node, the stage is split into 4 shards, each holding 32B parameters. We call it TP=4 or 4-way TP.</p>
+<p>Finally, we apply DP with one identical copies of the same 4-way PP + 4-way TP layout. Denote the first replica as $G_0^0, G_1^0, &hellip;, G_15^0$, and the second replica as $G_0^1, G_1^1, &hellip;, G_15^1$. Because DP can only be applied across GPUs that hold the same parameter shard, $G_0^0$ and $G_0^1$ form one DP group, $G_1^0$ and $G_1^1$ form another, and so on. In total, this creates 16 DP groups. Within each DP group, one can further apply ZeRO to improve memory efficiency.</p>
+<p>Overall, for our 4-way TP + 4-way PP + 2-way DP case, we need 4 × 4 × 2 = 32 GPUs.</p>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+      
+        <div class="img-container" style="--w: 1536; --h: 923;">
+            <img loading="lazy" alt="3D parallelism: 4-way TP &#43; 4-way PP &#43; 2-way DP" src="/llm/distributed_training_4_model_parallelism/images/3d_parallelism.png" width="1536" height="923">
+        </div>
+      
+    
+
+    
+</figure>
+</p>
+<div class="footnotes" role="doc-endnotes">
 <hr>
 <ol>
 <li id="fn:1">
