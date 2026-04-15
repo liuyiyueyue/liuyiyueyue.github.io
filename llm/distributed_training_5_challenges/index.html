@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    Distributed Training: Challenges | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/distributed_training_5_challenges/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/distributed_training_5_challenges/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="Distributed Training: Challenges">
+  <meta property="og:description" content="Large-scale training is not a single optimization problem. It is a coupled system spanning hardware reliability, network communication, numerical stability, data engineering, and post-training optimization. Each component is difficult in isolation; the practical challenge is that they must operate together for long-duration runs without throughput collapse or training divergence.
+Hardware # At small scale, hardware faults are infrequent enough to feel exceptional. At the scale of thousands or tens of thousands of GPUs, they become part of the steady-state operating environment. The system must therefore be designed under the assumption that some component will be degraded, disconnected, or silently producing incorrect results at any given time.">
+  <meta property="og:locale" content="en">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2026-04-14T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-04-14T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Distributed-Training">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.49b6ff94a9420792033557a871a8ef9868a409da75a3a6ce35af19aec5f475fe.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/system/" >
+                /System
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/distributed_training_5_challenges/">Distributed Training: Challenges</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">Distributed Training: Challenges</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2026-04-14T00:00:00&#43;00:00">April 14, 2026</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <p>Large-scale training is not a single optimization problem. It is a coupled system spanning hardware reliability, network communication, numerical stability, data engineering, and post-training optimization. Each component is difficult in isolation; the practical challenge is that they must operate together for long-duration runs without throughput collapse or training divergence.</p>
+<h3 class="heading" id="hardware">
+  Hardware
+  <a class="anchor" href="#hardware">#</a>
+</h3>
+<p>At small scale, hardware faults are infrequent enough to feel exceptional. At the scale of thousands or tens of thousands of GPUs, they become part of the steady-state operating environment. The system must therefore be designed under the assumption that some component will be degraded, disconnected, or silently producing incorrect results at any given time.</p>
+<p>The most difficult failures are often not explicit crashes, but <strong>Silent Data Corruption</strong>. A partially degraded HBM region, an unstable link, or a kernel-level fault may occasionally inject a <code>NaN</code> or an anomalously large value into the computation. By the time monitoring reports a <code>NaN</code> loss, the root cause may be several layers removed from the visible failure. In practice, this is why production training stacks need aggressive fault detection, health checks, retry logic, and communication guards. Megatron-LM is a useful reference not only because of its parallelism support, but also because it contains a substantial amount of engineering for fault tolerance and async checkpointing at scale.</p>
+<h3 class="heading" id="networking">
+  Networking
+  <a class="anchor" href="#networking">#</a>
+</h3>
+<p>Communication topology is equally important. MoE is a representative example: it scales parameter count efficiently, but introduces substantial <code>all-to-all</code> traffic. Sustaining high MFU requires combining tensor parallelism, pipeline parallelism, sequence parallelism, and expert parallelism in a topology-aware way. This depends on understanding locality across GPUs within a node, nodes within a switch domain, and links across racks or data centers, because the communication pattern that is acceptable at one level of the hierarchy may become a hard bottleneck at another.</p>
+<h3 class="heading" id="numerical-stability">
+  Numerical Stability
+  <a class="anchor" href="#numerical-stability">#</a>
+</h3>
+<p>Distributed training is also constrained by numerical behavior. As model size increases, training increasingly relies on lower-precision formats to reduce memory footprint and improve throughput. The tradeoff is reduced numerical margin: gradients may overflow or underflow, and intermediate activations may drift into unstable ranges before the failure becomes externally visible.</p>
+<p>This failure mode is one reason long training runs can remain apparently stable for a large fraction of training and then diverge abruptly. The loss curve may look well-behaved for hundreds of billions of tokens, after which some internal activations begin to spike and the run becomes unstable. Once that happens, debugging is difficult because the observed divergence may be the result of an interaction among low-precision arithmetic, fused kernels, optimizer state evolution, and distributed communication.</p>
+<h3 class="heading" id="data">
+  Data
+  <a class="anchor" href="#data">#</a>
+</h3>
+<p>Data quality is another first-order constraint. For modern foundation models, the data pipeline is often comparable in complexity to the training pipeline itself. Web-scale raw data contains duplication, contamination, formatting noise, inconsistent distributions, and large volumes of low-value content. Scaling the model does not compensate for poor input quality; it often amplifies it.</p>
+<p>In practice, this means the system depends on filtering, deduplication, quality scoring, mixture construction, and ongoing validation. The objective is not only to build a large corpus, but to maintain a distribution that is useful, stable, and consistent with the downstream training objective.</p>
+<h3 class="heading" id="reinforcement-learning-and-post-training">
+  Reinforcement Learning and Post-Training
+  <a class="anchor" href="#reinforcement-learning-and-post-training">#</a>
+</h3>
+<p>Post-training adds another layer of systems complexity. In RLHF and related methods, optimization is no longer performed only on a static supervised dataset. The system must also run large-scale inference to generate rollouts, which are then scored and used for policy updates.</p>
+<p>This creates both systems and optimization challenges. On the systems side, the policy model, value model, reward model, and reference model may all need to coexist within the same memory budget. On the optimization side, reinforcement learning is well known to be unstable. If the reward model contains exploitable flaws, the policy may optimize for reward without improving the intended behavior. This is the standard <strong>reward hacking</strong> failure mode.</p>
+<p>Taken together, these issues explain why distributed training is not merely a question of fitting a model across more GPUs. The real problem is constructing a training system that remains efficient, numerically stable, and operationally robust at extreme scale.</p>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/llm/pytorch_101/">
+                        PyTorch 101
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+

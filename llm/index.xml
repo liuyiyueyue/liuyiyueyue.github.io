@@ -6,8 +6,15 @@
     <description>Recent content in LLM on Yiyue Liu&#39;s Blog</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Mon, 13 Apr 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 14 Apr 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://liuyiyueyue.github.io/llm/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Distributed Training: Challenges</title>
+      <link>https://liuyiyueyue.github.io/llm/distributed_training_5_challenges/</link>
+      <pubDate>Tue, 14 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/distributed_training_5_challenges/</guid>
+      <description>&lt;p&gt;Large-scale training is not a single optimization problem. It is a coupled system spanning hardware reliability, network communication, numerical stability, data engineering, and post-training optimization. Each component is difficult in isolation; the practical challenge is that they must operate together for long-duration runs without throughput collapse or training divergence.&lt;/p&gt;&#xA;&lt;h3 class=&#34;heading&#34; id=&#34;hardware&#34;&gt;&#xA;  Hardware&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#hardware&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;At small scale, hardware faults are infrequent enough to feel exceptional. At the scale of thousands or tens of thousands of GPUs, they become part of the steady-state operating environment. The system must therefore be designed under the assumption that some component will be degraded, disconnected, or silently producing incorrect results at any given time.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>PyTorch 101</title>
       <link>https://liuyiyueyue.github.io/llm/pytorch_101/</link>
