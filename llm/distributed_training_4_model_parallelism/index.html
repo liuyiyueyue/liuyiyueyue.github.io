@@ -32,7 +32,7 @@
 
 <title>
     
-    Distributed Training: Model Parallelism | Yiyue Liu&#39;s Blog
+    Distributed Training: Model Parallelism (TP, PP, SP, EP, 3D) | Yiyue Liu&#39;s Blog
     
 </title>
 
@@ -40,7 +40,7 @@
 
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/distributed_training_4_model_parallelism/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="Distributed Training: Model Parallelism">
+  <meta property="og:title" content="Distributed Training: Model Parallelism (TP, PP, SP, EP, 3D)">
   <meta property="og:description" content="Contents
 Why Model Parallelism? Tensor Parallelism Pipeline Parallelism Sequence Parallelism Expert Parallelism Automatic Parallelism Comparing the Strategies Hybrid Parallelism Why Model Parallelism? # Data parallelism works well when the full model can still fit on each GPU. But once a model becomes too large, simply replicating it across devices is no longer practical.
 Model parallelism solves this by partitioning the model itself across multiple GPUs. Instead of every rank storing all weights, each rank stores and computes only part of the model. The tradeoff is that memory usage goes down, but communication and scheduling complexity go up.">
@@ -221,14 +221,14 @@ Model parallelism solves this by partitioning the model itself across multiple G
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/distributed_training_4_model_parallelism/">Distributed Training: Model Parallelism</a></div>
+        <a href="/llm/distributed_training_4_model_parallelism/">Distributed Training: Model Parallelism (TP, PP, SP, EP, 3D)</a></div>
 
 
 <div >
   <article>
     <header class="single-intro-container">
         
-        <h1 class="single-title">Distributed Training: Model Parallelism</h1>
+        <h1 class="single-title">Distributed Training: Model Parallelism (TP, PP, SP, EP, 3D)</h1>
         
         <div class="single-subsummary">
           
@@ -567,7 +567,7 @@ tokens during one all-to-all exchange. The factor <code>(total_ep_ranks - 1) / t
                 <div class="single-pagination-text">←</div>
                 <div class="single-pagination-text">
                     <a href="/llm/distributed_training_3_zero_fsdp/">
-                        Distributed Training: ZeRO and FSDP
+                        Distributed Training: Data Parallelism (ZeRO and FSDP)
                     </a>
                 </div>
             </div>
