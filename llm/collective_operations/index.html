@@ -42,7 +42,7 @@
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Collective Operations">
   <meta property="og:description" content="Collective operations are the basic communication primitives used in distributed training. They define how tensors are reduced, replicated, partitioned, and exchanged across ranks. Below are some of the most common collective operations in distributed training 1.
-P2P # A P2P operation is point-to-point communication between exactly two ranks, typically implemented as send and recv. If one rank sends a tensor of size n bytes to another rank, the communication volume is n bytes.">
+Table of Contents # P2P Reduce Broadcast Scatter Gather AllGather ReduceScatter AllReduce PyTorch Examples P2P # A P2P operation is point-to-point communication between exactly two ranks, typically implemented as send and recv. If one rank sends a tensor of size n bytes to another rank, the communication volume is n bytes.">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -243,6 +243,21 @@ P2P # A P2P operation is point-to-point communication between exactly two ranks,
     
     <div class="single-content">
       <p>Collective operations are the basic communication primitives used in distributed training. They define how tensors are reduced, replicated, partitioned, and exchanged across ranks. Below are some of the most common collective operations in distributed training <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>.</p>
+<h3 class="heading" id="table-of-contents">
+  Table of Contents
+  <a class="anchor" href="#table-of-contents">#</a>
+</h3>
+<ul>
+<li><a href="/llm/collective_operations/#p2p">P2P</a></li>
+<li><a href="/llm/collective_operations/#reduce">Reduce</a></li>
+<li><a href="/llm/collective_operations/#broadcast">Broadcast</a></li>
+<li><a href="/llm/collective_operations/#scatter">Scatter</a></li>
+<li><a href="/llm/collective_operations/#gather">Gather</a></li>
+<li><a href="/llm/collective_operations/#allgather">AllGather</a></li>
+<li><a href="/llm/collective_operations/#reducescatter">ReduceScatter</a></li>
+<li><a href="/llm/collective_operations/#allreduce">AllReduce</a></li>
+<li><a href="/llm/collective_operations/#pytorch-examples">PyTorch Examples</a></li>
+</ul>
 <h3 class="heading" id="p2p">
   P2P
   <a class="anchor" href="#p2p">#</a>
