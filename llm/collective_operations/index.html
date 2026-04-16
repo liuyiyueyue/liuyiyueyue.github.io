@@ -42,7 +42,7 @@
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Collective Operations">
   <meta property="og:description" content="Collective operations are the basic communication primitives used in distributed training. They define how tensors are reduced, replicated, partitioned, and exchanged across ranks. Below are some of the most common collective operations in distributed training 1.
-Reduce # A Reduce operation combines values from all ranks and writes the result to one destination rank. If each rank holds n bytes and there are p ranks, the total communication volume is about (p - 1) * n bytes.">
+P2P # A P2P operation is point-to-point communication between exactly two ranks, typically implemented as send and recv. If one rank sends a tensor of size n bytes to another rank, the communication volume is n bytes.">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -243,6 +243,11 @@ Reduce # A Reduce operation combines values from all ranks and writes the result
     
     <div class="single-content">
       <p>Collective operations are the basic communication primitives used in distributed training. They define how tensors are reduced, replicated, partitioned, and exchanged across ranks. Below are some of the most common collective operations in distributed training <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>.</p>
+<h3 class="heading" id="p2p">
+  P2P
+  <a class="anchor" href="#p2p">#</a>
+</h3>
+<p>A <code>P2P</code> operation is point-to-point communication between exactly two ranks, typically implemented as <code>send</code> and <code>recv</code>. If one rank sends a tensor of size <code>n</code> bytes to another rank, the communication volume is <code>n</code> bytes.</p>
 <h3 class="heading" id="reduce">
   Reduce
   <a class="anchor" href="#reduce">#</a>
@@ -319,6 +324,184 @@ If the reduced output on each rank has size <code>n / p</code> bytes, the total 
 
 <p><strong>Ring AllReduce</strong></p>
 <p>Ring all-reduce is the standard implementation of <code>AllReduce</code> on many GPU systems <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>. It decomposes <code>AllReduce</code> into a <code>ReduceScatter</code> phase followed by an <code>AllGather</code> phase, with ranks exchanging data in a ring topology. This gives each rank a communication volume of <code>2 * (p - 1) * n / p</code> bytes.</p>
+<h3 class="heading" id="pytorch-examples">
+  PyTorch Examples
+  <a class="anchor" href="#pytorch-examples">#</a>
+</h3>
+<p>Here are PyTorch examples based on <code>torch.distributed</code> collective functions <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup> <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">os</span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">torch</span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">torch.distributed</span> <span style="font-weight:bold;text-decoration:underline">as</span> <span style="color:#666;font-weight:bold;font-style:italic">dist</span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">torch.multiprocessing</span> <span style="font-weight:bold;text-decoration:underline">as</span> <span style="color:#666;font-weight:bold;font-style:italic">mp</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">init_process</span>(rank, world_size, fn, backend=<span style="color:#666;font-style:italic">&#39;nccl&#39;</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    Initialize the distributed environment for each process, enable communication between them, and call fn.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    os.environ[<span style="color:#666;font-style:italic">&#39;MASTER_ADDR&#39;</span>] = <span style="color:#666;font-style:italic">&#39;127.0.0.1&#39;</span>
+</span></span><span style="display:flex;"><span>    os.environ[<span style="color:#666;font-style:italic">&#39;MASTER_PORT&#39;</span>] = <span style="color:#666;font-style:italic">&#39;29500&#39;</span>
+</span></span><span style="display:flex;"><span>    dist.init_process_group(backend, rank=rank, world_size=world_size)
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">try</span>:
+</span></span><span style="display:flex;"><span>        fn(rank, world_size)
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">finally</span>:
+</span></span><span style="display:flex;"><span>        dist.destroy_process_group()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">run</span>(world_size, func):
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    Launch world_size processes and execute func.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    ctx = mp.get_context(<span style="color:#666;font-style:italic">&#34;spawn&#34;</span>)
+</span></span><span style="display:flex;"><span>    processes = []
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span> rank <span style="font-weight:bold">in</span> <span style="font-weight:bold;font-style:italic">range</span>(world_size):
+</span></span><span style="display:flex;"><span>        p = ctx.Process(target=init_process, args=(rank, world_size, func))
+</span></span><span style="display:flex;"><span>        p.start()
+</span></span><span style="display:flex;"><span>        processes.append(p)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span> p <span style="font-weight:bold">in</span> processes:
+</span></span><span style="display:flex;"><span>        p.join()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">p2p_block_func</span>(rank, world_size):
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    Send the tensor on rank src to rank dst (blocking).
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    src_rank = 0
+</span></span><span style="display:flex;"><span>    dst_rank = 1
+</span></span><span style="display:flex;"><span>    group = dist.new_group(<span style="font-weight:bold;font-style:italic">list</span>(<span style="font-weight:bold;font-style:italic">range</span>(world_size)))
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># On rank src, this tensor is used for sending.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># On rank dst, this tensor is used for receiving.</span>
+</span></span><span style="display:flex;"><span>    tensor = torch.zeros(1).to(torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, rank))
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span> rank == src_rank:
+</span></span><span style="display:flex;"><span>        tensor += 1
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Send tensor([1.]).</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># group defines the set of processes visible to this operation; by default it is the entire world.</span>
+</span></span><span style="display:flex;"><span>        dist.send(tensor=tensor, dst=dst_rank, group=group)
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">elif</span> rank == dst_rank:
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># The tensor on rank dst starts as tensor([0.]) and becomes tensor([1.]) after receiving.</span>
+</span></span><span style="display:flex;"><span>        dist.recv(tensor=tensor, src=src_rank, group=group)
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">f</span><span style="color:#666;font-style:italic">&#34;P2P Block: Rank </span><span style="color:#666;font-style:italic">{</span>rank<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic"> has data </span><span style="color:#666;font-style:italic">{</span>tensor<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">p2p_unblock_func</span>(rank, world_size):
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    Send the tensor on rank src to rank dst (non-blocking).
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    src_rank = 0
+</span></span><span style="display:flex;"><span>    dst_rank = 1
+</span></span><span style="display:flex;"><span>    group = dist.new_group(<span style="font-weight:bold;font-style:italic">list</span>(<span style="font-weight:bold;font-style:italic">range</span>(world_size)))
+</span></span><span style="display:flex;"><span>    tensor = torch.zeros(1).to(torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, rank))
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span> rank == src_rank:
+</span></span><span style="display:flex;"><span>        tensor += 1
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Non-blocking send via isend.</span>
+</span></span><span style="display:flex;"><span>        req = dist.isend(tensor=tensor, dst=dst_rank, group=group)
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">f</span><span style="color:#666;font-style:italic">&#34;P2P Unblock: Rank </span><span style="color:#666;font-style:italic">{</span>rank<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic"> started sending&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">elif</span> rank == dst_rank:
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Non-blocking receive.</span>
+</span></span><span style="display:flex;"><span>        req = dist.irecv(tensor=tensor, src=src_rank, group=group)
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">f</span><span style="color:#666;font-style:italic">&#34;P2P Unblock: Rank </span><span style="color:#666;font-style:italic">{</span>rank<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic"> started receiving&#34;</span>)
+</span></span><span style="display:flex;"><span>    req.wait() <span style="color:#888;font-style:italic"># Non-blocking send/recv must call wait() before reusing the tensor.</span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">f</span><span style="color:#666;font-style:italic">&#34;P2P Unblock: Rank </span><span style="color:#666;font-style:italic">{</span>rank<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic"> has data </span><span style="color:#666;font-style:italic">{</span>tensor<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">broadcast_func</span>(rank, world_size):
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#39;&#39;&#39;Broadcast tensor([1.]) from rank 0 to all ranks.&#39;&#39;&#39;</span>
+</span></span><span style="display:flex;"><span>    src_rank = 0
+</span></span><span style="display:flex;"><span>    group = dist.new_group(<span style="font-weight:bold;font-style:italic">list</span>(<span style="font-weight:bold;font-style:italic">range</span>(world_size)))
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span> rank == src_rank:
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># On rank src, initialize tensor([1.]).</span>
+</span></span><span style="display:flex;"><span>        tensor = torch.zeros(1).to(torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, rank)) + 1
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">else</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># On non-src ranks, initialize tensor([0.]).</span>
+</span></span><span style="display:flex;"><span>        tensor = torch.zeros(1).to(torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, rank))
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># On rank src, broadcast sends; on all other ranks, it receives.</span>
+</span></span><span style="display:flex;"><span>    dist.broadcast(tensor=tensor, src=src_rank, group=group)
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">f</span><span style="color:#666;font-style:italic">&#34;Broadcast: Rank </span><span style="color:#666;font-style:italic">{</span>rank<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic"> has data </span><span style="color:#666;font-style:italic">{</span>tensor<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce_func</span>(rank, world_size):
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#39;&#39;&#39;Aggregate tensors from all ranks in the group and send the result to rank dst.&#39;&#39;&#39;</span>
+</span></span><span style="display:flex;"><span>    dst_rank = 1
+</span></span><span style="display:flex;"><span>    group = dist.new_group(<span style="font-weight:bold;font-style:italic">list</span>(<span style="font-weight:bold;font-style:italic">range</span>(world_size)))
+</span></span><span style="display:flex;"><span>    tensor = torch.ones(1).to(torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, rank))
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Every rank sends, but only dst receives the summed result.</span>
+</span></span><span style="display:flex;"><span>    dist.reduce(tensor, dst=dst_rank, op=dist.ReduceOp.SUM, group=group)
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">f</span><span style="color:#666;font-style:italic">&#34;Reduce: Rank </span><span style="color:#666;font-style:italic">{</span>rank<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic"> has data </span><span style="color:#666;font-style:italic">{</span>tensor<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">allreduce_func</span>(rank, world_size):
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#39;&#39;&#39;Aggregate tensors from all ranks in the group and send the result to every rank in the group.&#39;&#39;&#39;</span>
+</span></span><span style="display:flex;"><span>    group = dist.new_group(<span style="font-weight:bold;font-style:italic">list</span>(<span style="font-weight:bold;font-style:italic">range</span>(world_size)))
+</span></span><span style="display:flex;"><span>    tensor = torch.ones(1).to(torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, rank))
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># tensor is used for both sending and receiving.</span>
+</span></span><span style="display:flex;"><span>    dist.all_reduce(tensor, op=dist.ReduceOp.SUM, group=group)
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">f</span><span style="color:#666;font-style:italic">&#34;Allreduce: Rank </span><span style="color:#666;font-style:italic">{</span>rank<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic"> has data </span><span style="color:#666;font-style:italic">{</span>tensor<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">gather_func</span>(rank, world_size):
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#39;&#39;&#39;Collect tensors from all ranks in the group and send them to rank dst.&#39;&#39;&#39;</span>
+</span></span><span style="display:flex;"><span>    dst_rank = 1
+</span></span><span style="display:flex;"><span>    group = dist.new_group(<span style="font-weight:bold;font-style:italic">list</span>(<span style="font-weight:bold;font-style:italic">range</span>(world_size)))
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># This tensor is used for sending.</span>
+</span></span><span style="display:flex;"><span>    tensor = torch.zeros(1).to(torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, rank)) + rank
+</span></span><span style="display:flex;"><span>    gather_list = []
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span> rank == dst_rank:
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># gather_list should contain world_size tensors to receive tensors sent from other ranks.</span>
+</span></span><span style="display:flex;"><span>        gather_list = [torch.zeros(1).to(torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, dst_rank)) <span style="font-weight:bold;text-decoration:underline">for</span> _ <span style="font-weight:bold">in</span> <span style="font-weight:bold;font-style:italic">range</span>(world_size)]
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Only rank dst needs to provide gather_list.</span>
+</span></span><span style="display:flex;"><span>        dist.gather(tensor, gather_list=gather_list, dst=dst_rank, group=group)
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">else</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Non-dst ranks simply send their tensor.</span>
+</span></span><span style="display:flex;"><span>        dist.gather(tensor, dst=dst_rank, group=group)
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">f</span><span style="color:#666;font-style:italic">&#34;Gather: Rank </span><span style="color:#666;font-style:italic">{</span>rank<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic"> has data </span><span style="color:#666;font-style:italic">{</span>gather_list<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">allgather_func</span>(rank, world_size):
+</span></span><span style="display:flex;"><span>    group = dist.new_group(<span style="font-weight:bold;font-style:italic">list</span>(<span style="font-weight:bold;font-style:italic">range</span>(world_size)))
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># This tensor is used for sending.</span>
+</span></span><span style="display:flex;"><span>    tensor = torch.zeros(1).to(torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, rank)) + rank
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># gather_list is used to receive tensors sent from each rank.</span>
+</span></span><span style="display:flex;"><span>    gather_list = [torch.zeros(1).to(torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, rank)) <span style="font-weight:bold;text-decoration:underline">for</span> _ <span style="font-weight:bold">in</span> <span style="font-weight:bold;font-style:italic">range</span>(world_size)]
+</span></span><span style="display:flex;"><span>    dist.all_gather(gather_list, tensor, group=group)
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Every rank ends up with the same gather_list.</span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">f</span><span style="color:#666;font-style:italic">&#34;Allgather: Rank </span><span style="color:#666;font-style:italic">{</span>rank<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic"> has data </span><span style="color:#666;font-style:italic">{</span>gather_list<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">scatter_func</span>(rank, world_size):
+</span></span><span style="display:flex;"><span>    src = 0
+</span></span><span style="display:flex;"><span>    group = dist.new_group(<span style="font-weight:bold;font-style:italic">list</span>(<span style="font-weight:bold;font-style:italic">range</span>(world_size)))
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># The tensor each rank uses for receiving.</span>
+</span></span><span style="display:flex;"><span>    tensor = torch.empty(1).to(torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, rank))
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">if</span> rank == src:
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># On rank src, distribute tensors in tensor_list to different ranks.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># tensor_list: [tensor([1.]), tensor([2.])]</span>
+</span></span><span style="display:flex;"><span>        tensor_list = [torch.tensor([i + 1], dtype=torch.float32).to(torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, rank)) <span style="font-weight:bold;text-decoration:underline">for</span> i <span style="font-weight:bold">in</span> <span style="font-weight:bold;font-style:italic">range</span>(world_size)]
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Send tensor_list to all ranks.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Receive the portion that belongs to rank src.</span>
+</span></span><span style="display:flex;"><span>        dist.scatter(tensor, scatter_list=tensor_list, src=0, group=group)
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">else</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Receive the tensor assigned to the current rank.</span>
+</span></span><span style="display:flex;"><span>        dist.scatter(tensor, scatter_list=[], src=0, group=group)
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Each rank gets one tensor from tensor_list.</span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">f</span><span style="color:#666;font-style:italic">&#34;Scatter: Rank </span><span style="color:#666;font-style:italic">{</span>rank<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic"> has data </span><span style="color:#666;font-style:italic">{</span>tensor<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">reduce_scatter_func</span>(rank, world_size):
+</span></span><span style="display:flex;"><span>    group = dist.new_group(<span style="font-weight:bold;font-style:italic">list</span>(<span style="font-weight:bold;font-style:italic">range</span>(world_size)))
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Tensor used for receiving.</span>
+</span></span><span style="display:flex;"><span>    tensor = torch.empty(1).to(torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, rank))
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># List of tensors used for sending.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># On each rank, tensor_list = [tensor([0.]), tensor([1.])].</span>
+</span></span><span style="display:flex;"><span>    tensor_list = [torch.Tensor([i]).to(torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span>, rank)) <span style="font-weight:bold;text-decoration:underline">for</span> i <span style="font-weight:bold">in</span> <span style="font-weight:bold;font-style:italic">range</span>(world_size)]
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Step 1: reduce produces the tensor list [tensor([0.]), tensor([2.])].</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Step 2: the tensor list [tensor([0.]), tensor([2.])] is scattered across ranks.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Rank 0 gets tensor([0.]), and rank 1 gets tensor([2.]).</span>
+</span></span><span style="display:flex;"><span>    dist.reduce_scatter(tensor, tensor_list, op=dist.ReduceOp.SUM, group=group)
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">f</span><span style="color:#666;font-style:italic">&#34;Reduce Scatter: Rank </span><span style="color:#666;font-style:italic">{</span>rank<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic"> has data </span><span style="color:#666;font-style:italic">{</span>tensor<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">if</span> <span style="color:#666;font-weight:bold;font-style:italic">__name__</span> == <span style="color:#666;font-style:italic">&#34;__main__&#34;</span>:
+</span></span><span style="display:flex;"><span>    run(2, p2p_block_func)
+</span></span><span style="display:flex;"><span>    run(2, p2p_unblock_func)
+</span></span><span style="display:flex;"><span>    run(2, broadcast_func)
+</span></span><span style="display:flex;"><span>    run(2, reduce_func)
+</span></span><span style="display:flex;"><span>    run(2, allreduce_func)
+</span></span><span style="display:flex;"><span>    run(2, gather_func)
+</span></span><span style="display:flex;"><span>    run(2, allgather_func)
+</span></span><span style="display:flex;"><span>    run(2, scatter_func)
+</span></span><span style="display:flex;"><span>    run(2, reduce_scatter_func)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
 <div class="footnotes" role="doc-endnotes">
 <hr>
 <ol>
@@ -330,6 +513,12 @@ If the reduced output on each rank has size <code>n / p</code> bytes, the total 
 </li>
 <li id="fn:3">
 <p>小窗幽记xxy, &ldquo;一文搞懂ring all reduce和bucketing机制.&rdquo; Zhihu. <a href="https://zhuanlan.zhihu.com/p/504957661">https://zhuanlan.zhihu.com/p/504957661</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:4">
+<p>【深度学习】【分布式训练】Collective通信操作及Pytorch示例 - 白强伟的文章 - 知乎 <a href="https://zhuanlan.zhihu.com/p/607605729">https://zhuanlan.zhihu.com/p/607605729</a>&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:5">
+<p>Distributed communication package - torch.distributed. PyTorch documentation. <a href="https://docs.pytorch.org/docs/stable/distributed.html#collective-functions">https://docs.pytorch.org/docs/stable/distributed.html#collective-functions</a>&#160;<a href="#fnref:5" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 </ol>
 </div>
