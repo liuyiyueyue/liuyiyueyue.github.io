@@ -42,7 +42,7 @@
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="ML Fundementals">
   <meta property="og:description" content="This post is a compact set of notes on the math and statistics foundations behind machine learning and deep learning, which I collected over the past few years.
-Table of Contents # Basic Terms Training Workflow Inference Workflow Basic ML Algorithms Chain Rule, Backpropagation, and Forward/Backward Passes Evaluation Metrics Overfitting and Regularization Bias, Variance, and Cross-Validation Loss and Optimizater Activation Functions Normalization Probability and Statistics for Machine Learning Uncategorized Basic Terms # Machine learning usually starts with a model, a loss function, gradients, and an optimizer.">
+Table of Contents # Basic Terms Training Workflow Inference Workflow Basic ML Algorithms Chain Rule, Backpropagation, and Forward/Backward Passes Evaluation Metrics Overfitting and Regularization Bias, Variance, and Cross-Validation Loss and Optimizer Activation Functions Normalization Probability and Statistics for Machine Learning Uncategorized Basic Terms # Machine learning usually starts with a model, a loss function, gradients, and an optimizer.">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -257,7 +257,7 @@ Table of Contents # Basic Terms Training Workflow Inference Workflow Basic ML Al
 <li><a href="/llm/ml_fundamentals/#evaluation-metrics">Evaluation Metrics</a></li>
 <li><a href="/llm/ml_fundamentals/#overfitting-and-regularization">Overfitting and Regularization</a></li>
 <li><a href="/llm/ml_fundamentals/#bias-variance-and-cross-validation">Bias, Variance, and Cross-Validation</a></li>
-<li><a href="/llm/ml_fundamentals/#loss-and-optimizer">Loss and Optimizater</a></li>
+<li><a href="/llm/ml_fundamentals/#loss-and-optimizer">Loss and Optimizer</a></li>
 <li><a href="/llm/ml_fundamentals/#activation-functions">Activation Functions</a></li>
 <li><a href="/llm/ml_fundamentals/#normalization">Normalization</a></li>
 <li><a href="/llm/ml_fundamentals/#probability-and-statistics-for-machine-learning">Probability and Statistics for Machine Learning</a></li>
@@ -818,9 +818,9 @@ $$</p>
 <li><strong>stratified k-fold</strong> for classification</li>
 <li><strong>leave-one-out</strong></li>
 </ul>
-<h3 class="heading" id="loss-and-optimizater">
-  Loss and Optimizater
-  <a class="anchor" href="#loss-and-optimizater">#</a>
+<h3 class="heading" id="loss-and-optimizer">
+  Loss and Optimizer
+  <a class="anchor" href="#loss-and-optimizer">#</a>
 </h3>
 <p>All optimizers aim to minimize a loss function by adjusting parameters:</p>
 <p>$$
