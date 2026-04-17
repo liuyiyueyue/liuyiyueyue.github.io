@@ -338,57 +338,54 @@ Table of Contents # Basic Terms Training Workflow Inference Workflow Basic ML Al
 </li>
 <li>Repeat the above over many epochs.</li>
 </ol>
-<p>Typical dataset split:</p>
-<ul>
-<li>training set: 70-80%</li>
-<li>validation set: 10-15%</li>
-<li>test set: 10-15%</li>
-</ul>
+<p>Typical dataset split: training set: 70-80%; validation set: 10-15%; test set: 10-15%.</p>
 <p>A sample PyTorch code:</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Set the model to training mode. Enables behaviors like dropout and batch normalization updates.</span>
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">torch</span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">torch.nn</span> <span style="font-weight:bold;text-decoration:underline">as</span> <span style="color:#666;font-weight:bold;font-style:italic">nn</span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">from</span> <span style="color:#666;font-weight:bold;font-style:italic">torch.utils.data</span> <span style="font-weight:bold;text-decoration:underline">import</span> DataLoader, TensorDataset
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>device = torch.device(<span style="color:#666;font-style:italic">&#34;cuda&#34;</span> <span style="font-weight:bold;text-decoration:underline">if</span> torch.cuda.is_available() <span style="font-weight:bold;text-decoration:underline">else</span> <span style="color:#666;font-style:italic">&#34;cpu&#34;</span>)
+</span></span><span style="display:flex;"><span>train_data = torch.randn(256, 1, 28, 28)
+</span></span><span style="display:flex;"><span>train_labels = torch.randint(0, 10, (256,))
+</span></span><span style="display:flex;"><span>train_loader = DataLoader(TensorDataset(train_data, train_labels), batch_size=32, shuffle=<span style="font-weight:bold;text-decoration:underline">True</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>model = nn.Sequential(
+</span></span><span style="display:flex;"><span>    nn.Flatten(),
+</span></span><span style="display:flex;"><span>    nn.Linear(28 * 28, 128),
+</span></span><span style="display:flex;"><span>    nn.ReLU(),  <span style="color:#888;font-style:italic"># Activation function</span>
+</span></span><span style="display:flex;"><span>    nn.Linear(128, 10),
+</span></span><span style="display:flex;"><span>).to(device)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>loss_fn = nn.CrossEntropyLoss() <span style="color:#888;font-style:italic"># loss function</span>
+</span></span><span style="display:flex;"><span>optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+</span></span><span style="display:flex;"><span>num_epochs = 3
+</span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>model.train()
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">for</span> epoch <span style="font-weight:bold">in</span> <span style="font-weight:bold;font-style:italic">range</span>(num_epochs):
-</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Loop over the dataset multiple times (one full pass = one epoch)</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Accumulate total loss for this epoch (for logging / averaging)</span>
 </span></span><span style="display:flex;"><span>    total_loss = 0
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span> images, labels <span style="font-weight:bold">in</span> train_loader:
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Iterate over mini-batches from the dataset</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Move data to target device (CPU / GPU / accelerator)</span>
 </span></span><span style="display:flex;"><span>        images, labels = images.to(device), labels.to(device)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Forward pass:</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Input → model → predictions (logits)</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Also builds computation graph for autograd</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Forward pass: </span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic">#               compute predictions; activations happen inside model(...)</span>
 </span></span><span style="display:flex;"><span>        outputs = model(images)
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic">#               compute loss and compare predictions with labels</span>
+</span></span><span style="display:flex;"><span>        loss = loss_fn(outputs, labels)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Compute scalar loss (e.g., cross-entropy)</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># This connects outputs to ground truth and becomes the root for backprop</span>
-</span></span><span style="display:flex;"><span>        loss = criterion(outputs, labels)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Clear previous gradients stored in model parameters</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># PyTorch accumulates gradients by default, so must reset each step</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Backward pass: </span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic">#               clear old gradients, then compute new gradients</span>
 </span></span><span style="display:flex;"><span>        optimizer.zero_grad()
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Backward pass:</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Compute gradients via backpropagation</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Autograd traverses computation graph and computes d(loss)/d(param)</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Results stored in param.grad</span>
 </span></span><span style="display:flex;"><span>        loss.backward()
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Update model parameters using computed gradients</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Optimizer to update weights</span>
 </span></span><span style="display:flex;"><span>        optimizer.step()
-</span></span><span style="display:flex;"><span>        
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Convert loss tensor to Python scalar and accumulate</span>
-</span></span><span style="display:flex;"><span>        total_loss += loss.item()
-</span></span><span style="display:flex;"><span>        
-</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Compute average loss across all batches in this epoch</span>
-</span></span><span style="display:flex;"><span>    avg_loss = total_loss / <span style="font-weight:bold;font-style:italic">len</span>(train_loader)
 </span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        total_loss += loss.item()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    avg_loss = total_loss / <span style="font-weight:bold;font-style:italic">len</span>(train_loader)
 </span></span><span style="display:flex;"><span>    <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">f</span><span style="color:#666;font-style:italic">&#34;Epoch </span><span style="color:#666;font-style:italic">{</span>epoch+1<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic">/</span><span style="color:#666;font-style:italic">{</span>num_epochs<span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic">, Loss: </span><span style="color:#666;font-style:italic">{</span>avg_loss<span style="color:#666;font-style:italic">:</span><span style="color:#666;font-style:italic">.4f</span><span style="color:#666;font-style:italic">}</span><span style="color:#666;font-style:italic">&#34;</span>)</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
@@ -406,22 +403,21 @@ Table of Contents # Basic Terms Training Workflow Inference Workflow Basic ML Al
 </ol>
 <p>A sample PyTorch code:</p>
 <div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Set model to evaluation mode (disable dropout, fix batchnorm behavior)</span>
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#888;font-style:italic"># (Reuse the trained model and device from the training example above)</span>
+</span></span><span style="display:flex;"><span>test_data = torch.randn(64, 1, 28, 28)
+</span></span><span style="display:flex;"><span>test_loader = DataLoader(TensorDataset(test_data), batch_size=32)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Inference: switch to evaluation mode</span>
 </span></span><span style="display:flex;"><span>model.eval()
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Disable gradient computation to save memory and speed up inference</span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Inference: no backward pass or weight updates</span>
 </span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">with</span> torch.no_grad():
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Iterate over batches of input data (no labels needed for pure inference)</span>
-</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span> images <span style="font-weight:bold">in</span> test_loader:
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Move input data to the same device as the model (CPU/GPU)</span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">for</span> (images,) <span style="font-weight:bold">in</span> test_loader:
 </span></span><span style="display:flex;"><span>        images = images.to(device)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Run forward pass to get model outputs (logits)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Forward pass: compute predictions</span>
 </span></span><span style="display:flex;"><span>        outputs = model(images)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Convert logits to predicted class indices</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Postprocess: convert logits to predicted classes</span>
 </span></span><span style="display:flex;"><span>        predictions = torch.argmax(outputs, dim=1)</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
@@ -822,9 +818,9 @@ $$</p>
 <li><strong>stratified k-fold</strong> for classification</li>
 <li><strong>leave-one-out</strong></li>
 </ul>
-<h3 class="heading" id="loss-and-optimization">
-  Loss and Optimization
-  <a class="anchor" href="#loss-and-optimization">#</a>
+<h3 class="heading" id="loss-and-optimizater">
+  Loss and Optimizater
+  <a class="anchor" href="#loss-and-optimizater">#</a>
 </h3>
 <p>All optimizers aim to minimize a loss function by adjusting parameters:</p>
 <p>$$
