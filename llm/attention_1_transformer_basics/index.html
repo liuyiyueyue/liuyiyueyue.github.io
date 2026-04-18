@@ -61,7 +61,7 @@
 
 
 
-<link rel="stylesheet" href="/assets/combined.min.49b6ff94a9420792033557a871a8ef9868a409da75a3a6ce35af19aec5f475fe.css" media="all">
+<link rel="stylesheet" href="/assets/combined.min.da995059aaa19e7eba2eae597603238eb3c4c67987c6cb5ef60a985e20168e7a.css" media="all">
 
 
 
@@ -434,7 +434,7 @@ $$
     
 </figure>
 </p>
-<p>Conceptually, each head has its own query, key, and value projections. In implementation, however, we usually do not build separate linear layers for every head. Instead, we use one large projection/matrix for <code>Q</code>, one for <code>K</code>, and one for <code>V</code>, then reshape the result into multiple heads. In other words, the projected features are <em>logically</em> partitioned by head, even though they are stored in one tensor. This lets all heads be computed with a small number of large matrix operations rather than many small ones, which is much more efficient.</p>
+<p>Conceptually, each head has its own query, key, and value projections. In implementation, however, we usually do not build separate linear layers for every head. Instead, we use one large projection/matrix for <code>Q</code>, one for <code>K</code>, and one for <code>V</code>, then reshape the result into multiple heads. In other words, the projected features are <em>logically</em> partitioned by head, even though they are stored in one tensor. This lets all heads be computed with a small number of large matrix operations rather than many small ones, which is much more efficient. 我觉得可以粗略理解为：把投影后的 hidden dimension 分成 h 块，每一块对应一个 attention head。</p>
 <p>If the embedding size is <code>d_model</code> and the number of heads is <code>h</code>, then each head typically uses:</p>
 <p>$$
 d_k = d_{model} / h
@@ -511,18 +511,21 @@ $$</p>
 </span></span><span style="display:flex;"><span>        value = <span style="font-weight:bold;font-style:italic">self</span>.w_v(v)  <span style="color:#888;font-style:italic"># (batch, seq_len, dim) --&gt; (batch, seq_len, dim)</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Split dim into n_head smaller subspaces, one for each head.</span>
-</span></span><span style="display:flex;"><span>		<span style="color:#888;font-style:italic"># (batch, seq_len, dim) --&gt; (batch, seq_len, n_head, d_k) --&gt; (batch, n_head, seq_len, d_k)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># (batch, seq_len, dim) --&gt; (batch, seq_len, n_head, d_k) --&gt; (batch, n_head, seq_len, d_k)</span>
 </span></span><span style="display:flex;"><span>        query = query.view(query.shape[0], query.shape[1], <span style="font-weight:bold;font-style:italic">self</span>.n_head, <span style="font-weight:bold;font-style:italic">self</span>.d_k).transpose(1, 2)
 </span></span><span style="display:flex;"><span>        key = key.view(key.shape[0], key.shape[1], <span style="font-weight:bold;font-style:italic">self</span>.n_head, <span style="font-weight:bold;font-style:italic">self</span>.d_k).transpose(1, 2)
 </span></span><span style="display:flex;"><span>        value = value.view(value.shape[0], value.shape[1], <span style="font-weight:bold;font-style:italic">self</span>.n_head, <span style="font-weight:bold;font-style:italic">self</span>.d_k).transpose(1, 2)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Apply scaled dot-product attention independently in each head.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Q K V are all (batch, n_head, seq_len, d_k) --&gt; (batch, n_head, seq_len, d_k)</span>
 </span></span><span style="display:flex;"><span>        x, <span style="font-weight:bold;font-style:italic">self</span>.attention_scores = MultiHeadAttentionBlock.attention(query, key, value, mask)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Concatenate all head outputs back into the full model dimension.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># (batch, n_head, seq_len, d_k) --&gt; (batch, seq_len, n_head, d_k) --&gt; (batch, seq_len, dim)</span>
 </span></span><span style="display:flex;"><span>        x = x.transpose(1, 2).contiguous().view(x.shape[0], -1, <span style="font-weight:bold;font-style:italic">self</span>.n_head * <span style="font-weight:bold;font-style:italic">self</span>.d_k)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Final linear projection output after merging the heads.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># (batch, seq_len, dim) --&gt; (batch, seq_len, dim)</span>
 </span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">return</span> <span style="font-weight:bold;font-style:italic">self</span>.w_o(x)</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
