@@ -780,23 +780,22 @@ Common ways to address overfitting include:</p>
 <li>adding a <strong>regularization</strong> term.</li>
 </ol>
 <p><strong>Regularization</strong></p>
-<p>Regularization adds a penalty to discourage overly complex models.</p>
-<p>For L2 regularization:</p>
+<p>Regularization adds a penalty to discourage overly complex models. Common regularization methods include L1, L2 (or weight decay), and dropout.</p>
+<p><strong>L2</strong> regularization, or <strong>Ridge</strong> regularization:</p>
 <p>$$
 L_{\text{total}} = L_{\text{data}} + \lambda |w|_2^2
 $$</p>
-<p>This is also called <strong>Ridge</strong> regularization.</p>
-<p>For L1 regularization:</p>
+<p><strong>L1</strong> regularization, or <strong>Lasso</strong> regularization:</p>
 <p>$$
 L_{\text{total}} = L_{\text{data}} + \lambda |w|_1
 $$</p>
-<p>This is also called <strong>Lasso</strong> regularization.</p>
 <p>Useful intuition:</p>
 <ul>
 <li>Both L1 and L2 help reduce overfitting.</li>
 <li>L1 tends to produce <strong>sparse</strong> solutions, so it can be useful for feature selection.</li>
 <li>L2 is smoother and easier to optimize with gradient-based methods.</li>
 </ul>
+<p><strong>Dropout</strong> is another regularization technique that randomly sets some activations to zero during training. This reduces co-adaptation between neurons and makes the model rely less on any single path through the network. During inference, dropout is turned off, and the full network is used.</p>
 <h3 class="heading" id="bias-variance-and-cross-validation">
   Bias, Variance, and Cross-Validation
   <a class="anchor" href="#bias-variance-and-cross-validation">#</a>
@@ -1266,6 +1265,15 @@ $$</p>
 </li>
 <li>
 <p><strong>Auto-regressive</strong>: A modeling setup where the model predicts the next token using only the previous tokens. During generation, it produces output one token at a time and feeds each new token back in to predict the next one.</p>
+</li>
+<li>
+<p><strong>Token</strong>: One individual item from that vocabulary, usually represented by an integer ID.</p>
+</li>
+<li>
+<p><strong>Vocab size</strong>: How many distinct tokens the tokenizer knows about.</p>
+</li>
+<li>
+<p><strong>Embedding</strong>: The dense vector looked up for a token ID so the model can work with it numerically.</p>
 </li>
 </ul>
 

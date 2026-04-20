@@ -41,7 +41,9 @@
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/pytorch_101/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="PyTorch 101">
-  <meta property="og:description" content="A Tech Blog">
+  <meta property="og:description" content="Tensor
+PyTorch represents data with Tensors, its n-dimensional array type. A tensor has a shape, a data type, and storage placed on a device such as the CPU or GPU. Many tensor operations create new values, while simple view operations such as reshape or split can reuse the same underlying storage without copying data.
+A simple way to create a tensor is with torch.arange(), which generates evenly spaced values over a range. For example, torch.arange(0, 8, 2, dtype=torch.float) creates a 1D tensor with values [0., 2., 4., 6.], starting at 0, stopping before 8, and stepping by 2.">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -240,7 +242,32 @@
     </header>
     
     <div class="single-content">
-      
+      <p><strong><code>Tensor</code></strong></p>
+<p>PyTorch represents data with <code>Tensor</code>s, its n-dimensional array type. A tensor has a shape, a data type, and storage placed on a device such as the CPU or GPU. Many tensor operations create new values, while simple view operations such as <code>reshape</code> or <code>split</code> can reuse the same underlying storage without copying data.</p>
+<p>A simple way to create a tensor is with <code>torch.arange()</code>, which generates evenly spaced values over a range. For example, <code>torch.arange(0, 8, 2, dtype=torch.float)</code> creates a 1D tensor with values <code>[0., 2., 4., 6.]</code>, starting at <code>0</code>, stopping before <code>8</code>, and stepping by <code>2</code>.</p>
+<p><code>unsqueeze()</code> adds a dimension of size <code>1</code> to a tensor, while <code>squeeze()</code> removes a dimension of size <code>1</code>. For example, if <code>x.shape == (8, 512)</code>, then <code>x.unsqueeze(0)</code> gives <code>(1, 8, 512)</code>, and if <code>y.shape == (1, 8, 512)</code>, then <code>y.squeeze(0)</code> gives <code>(8, 512)</code>. These operations are often used to make tensor shapes line up for batching or broadcasting.</p>
+<p><code>tensor.view()</code> reshapes a tensor without changing its underlying data, as long as the new shape is compatible with the number of elements. For example, if <code>x = torch.arange(12)</code>, then <code>x.view(3, 4)</code> reshapes it from shape <code>(12,)</code> to <code>(3, 4)</code>. This is commonly used to reorganize tensor dimensions before operations such as matrix multiplication or attention.</p>
+<p><strong><code>Module</code></strong></p>
+<p>A <code>Module</code> packages a computation from inputs to outputs. Its behavior is defined by the <code>forward</code> method, and it can own parameter tensors that are updated during training.</p>
+<p><code>nn.Linear(in_dim, out_dim, bias=False)</code> contains a weight and an optional bias, and its forward pass applies them to the input to produce the output.</p>
+<p>To build your own module, inherit from <code>nn.Module</code>, define an <code>__init__()</code> method to create and register the layers you need, call <code>super().__init__()</code>, and then define a <code>forward()</code> method that describes how the input flows through those layers. For example, a custom attention block could use the following skeleton:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">class</span> <span style="color:#666;font-weight:bold;font-style:italic">MultiHeadAttentionBlock</span>(nn.Module):
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">__init__</span>(<span style="font-weight:bold;font-style:italic">self</span>, dim: <span style="font-weight:bold;font-style:italic">int</span>, num_heads: <span style="font-weight:bold;font-style:italic">int</span>, dropout: <span style="font-weight:bold;font-style:italic">float</span>) -&gt; <span style="font-weight:bold;text-decoration:underline">None</span>:
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">super</span>().<span style="color:#666;font-weight:bold;font-style:italic">__init__</span>()
+</span></span><span style="display:flex;"><span>		<span style="color:#888;font-style:italic"># Define and register child modules here.</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">forward</span>(<span style="font-weight:bold;font-style:italic">self</span>, q, k, v, mask=<span style="font-weight:bold;text-decoration:underline">None</span>):
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Describe how inputs move through the module here.</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">return</span> output</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>If a module needs to store several repeated child modules, PyTorch provides <code>nn.ModuleList</code>, which registers each child module so its parameters are tracked correctly. For example:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;font-style:italic">self</span>.residual_connections = nn.ModuleList([ResidualConnection(dim, dropout) <span style="font-weight:bold;text-decoration:underline">for</span> _ <span style="font-weight:bold">in</span> <span style="font-weight:bold;font-style:italic">range</span>(2)])</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+
     </div>
   </article>
 
