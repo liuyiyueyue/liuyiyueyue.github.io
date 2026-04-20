@@ -42,7 +42,8 @@
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Distributed Training: Data Parallelism (ZeRO and FSDP)">
   <meta property="og:description" content="Conventional data parallelism replicates the full model state on every GPU, so memory does not decrease as the cluster scales out. ZeRO and FSDP address this by sharding optimizer states, gradients, and parameters across devices, allowing much larger models to be trained under the same memory budget.
-ZeRo 1 # In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out. As a result, memory often becomes the main bottleneck in data-parallel training.">
+这篇文章的重点有两个：
+哪些 tensor 可以长期以分片形式保存，哪些 tensor 需要在 forward、backward 和 optimizer step 中进行通信，以及为什么这样的分片方式不会破坏训练语义。 这种分片策略分别能节省多少 memory 和 communication。 ZeRo 1 # In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out. As a result, memory often becomes the main bottleneck in data-parallel training.">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -244,12 +245,17 @@ ZeRo 1 # In conventional data-parallel training, every machine still has to hold
     
     <div class="single-content">
       <p>Conventional data parallelism replicates the full model state on every GPU, so memory does not decrease as the cluster scales out. ZeRO and FSDP address this by sharding optimizer states, gradients, and parameters across devices, allowing much larger models to be trained under the same memory budget.</p>
+<p>这篇文章的重点有两个：</p>
+<ol>
+<li>哪些 tensor 可以长期以分片形式保存，哪些 tensor 需要在 forward、backward 和 optimizer step 中进行通信，以及为什么这样的分片方式不会破坏训练语义。</li>
+<li>这种分片策略分别能节省多少 memory 和 communication。</li>
+</ol>
 <h3 class="heading" id="zero">
   ZeRo <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>
   <a class="anchor" href="#zero">#</a>
 </h3>
 <p>In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out. As a result, memory often becomes the main bottleneck in data-parallel training.</p>
-<p>Microsoft proposed a highly influential algorithm called <strong>Zero Redundancy Optimizer (ZeRO)</strong> to address the memory limitations of data-parallel training, and later built the distributed training framework <strong>DeepSpeed</strong> on top of PyTorch around it. Its core idea <strong>ZeRO-DP</strong> is to partition <strong>model states</strong> (optimizer states, gradients, and parameters) evenly across GPUs, so the memory usage on each GPU becomes inversely proportional to the degree of data parallelism, while communication efficiency remains largely unaffected. Besides model state, the remaining memory called <strong>residual states</strong> are used by activation, temporary buffers, and unusable fragmented memory. <strong>ZeRO-R</strong> is to optimize these residual memory. This section of the blog focuses on ZeRO-DP.</p>
+<p>Microsoft proposed a highly influential algorithm called <strong>Zero Redundancy Optimizer (ZeRO)</strong> to address the memory limitations of data-parallel training, and later built the distributed training framework <strong>DeepSpeed</strong> on top of PyTorch around it. Its core idea <strong>ZeRO-DP</strong> is to partition <strong>model states (optimizer states, gradients, and parameters)</strong> evenly across GPUs, so the memory usage on each GPU becomes inversely proportional to the degree of data parallelism, while communication efficiency remains largely unaffected. Besides model state, the remaining memory called <strong>residual states</strong> are used by activation, temporary buffers, and unusable fragmented memory. <strong>ZeRO-R</strong> is to optimize these residual memory. This section of the blog focuses on ZeRO-DP.</p>
 <p>ZeRO-DP has three main optimization stages: $P_{OS}$ refers to ZeRO-1, $P_{OS+g}$ refers to ZeRO-2, and $P_{OS+g+p}$ refers to ZeRO-3.</p>
 
 <div class="table-outer">
@@ -289,6 +295,58 @@ ZeRo 1 # In conventional data-parallel training, every machine still has to hold
     </figcaption>
 </figure>
 
+<p><strong>Training Step</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Stage</th>
+                <th>Need parameter</th>
+                <th>Need gradient</th>
+                <th>Need optimizer states</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Forward</td>
+                <td>Yes</td>
+                <td>No</td>
+                <td>No</td>
+            </tr>
+            <tr>
+                <td>Backward</td>
+                <td>Yes</td>
+                <td>Yes (layerwise)</td>
+                <td>No</td>
+            </tr>
+            <tr>
+                <td>Optimizer step</td>
+                <td>Yes</td>
+                <td>Yes</td>
+                <td>Yes</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p>In a standard training iteration:</p>
+<ul>
+<li>The <strong>forward pass</strong> uses the current parameters to compute activations.</li>
+<li>The <strong>backward pass</strong> again depends on those parameters and produces gradients.</li>
+<li>The <strong>optimizer step</strong> uses the parameters, gradients, and optimizer states to update the parameters.</li>
+<li>In the <strong>next iteration</strong>, the model enters the forward pass again using the updated parameters.</li>
+</ul>
+<p>ZeRO-3&rsquo;s training iteration is:</p>
+<ul>
+<li>During the <strong>forward pass</strong>, each GPU persistently stores only its own parameter shard. When a layer is about to run, the ranks <strong>all-gather</strong> that layer&rsquo;s full <strong>parameter</strong> tensor, use it for computation, and then release the temporary full copy after the layer finishes.
+-During the <strong>backward pass</strong>, the ranks again need the full <strong>parameter</strong> values for the current layer, so they perform another <strong>all-gather</strong>. They then compute gradients, after which the <strong>gradients</strong> are <strong>reduce-scattered</strong> across ranks so that each rank keeps only the gradient shard corresponding to its local parameter shard.</li>
+<li>During the <strong>optimizer step</strong>, each rank updates only its local parameter shard using its local shard of the parameters, gradients, and optimizer states.</li>
+</ul>
+<p>This also explains why different tensors are communicated differently in ZeRO-3:</p>
+<ul>
+<li><strong>Optimizer states</strong> do not need to be replicated across all ranks. For Adam, the momentum <code>m</code> and variance <code>v</code> remain sharded, and each rank updates only its own shard locally.</li>
+<li><strong>Gradients</strong> need communication, because each rank computes gradients from a different mini-batch shard. ZeRO-3 therefore uses <strong>reduce-scatter</strong> so that each rank receives the reduced gradient shard it owns. In conventional DDP, this synchronization is usually done with <strong>all-reduce</strong>.</li>
+<li><strong>Parameters</strong> need temporary <strong>all-gather</strong> communication in ZeRO-3, because the forward and backward computation for a layer requires the full weight tensor even though no rank stores that full tensor persistently.</li>
+</ul>
 <p><strong>Memory Usage Reduction</strong></p>
 <p>In mixed-precision training, the model parameters are stored in <code>float16</code>, the model gradients are stored in <code>float16</code>, and the Adam states are stored in <code>float32</code>, including the master copy of the model parameters, the momentum, and the variance. Let the total number of model parameters be $\Phi$. Then the total memory required is</p>
 <p>$$

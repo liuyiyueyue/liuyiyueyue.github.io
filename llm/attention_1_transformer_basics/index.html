@@ -774,6 +774,7 @@ $$</p>
   Complete PyTorch Code
   <a class="anchor" href="#complete-pytorch-code">#</a>
 </h3>
+<p>In Transformer code, several dimension names often refer to the same thing. If a tensor has shape <code>(batch, seq_len, dim)</code>, then <code>dim</code> is the size of each token vector, and people may call it the <code>model dimension</code>, <code>hidden dimension</code>, <code>feature dimension</code>, <code>embedding dimension</code>, or <code>d_model</code>.</p>
 <div class="code-block">
   <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">class</span> <span style="color:#666;font-weight:bold;font-style:italic">EncoderBlock</span>(nn.Module):
 </span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#34;&#34;&#34;

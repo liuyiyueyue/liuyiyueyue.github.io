@@ -389,9 +389,39 @@
             
                 
             
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
+                
+            
         
         
-        <p class="line-summary">Conventional data parallelism replicates the full model state on every GPU, so memory does not decrease as the cluster scales out. ZeRO and FSDP address this by sharding optimizer states, gradients, and parameters across devices, allowing much larger models to be trained under the same memory budget. ZeRo 1 In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out....</p>
+        <p class="line-summary">Conventional data parallelism replicates the full model state on every GPU, so memory does not decrease as the cluster scales out. ZeRO and FSDP address this by sharding optimizer states, gradients, and parameters across devices, allowing much larger models to be trained under the same memory budget. 这篇文章的重点有两个： 哪些 tensor 可以长期以分片形式保存，哪些 tensor 需要在 forward、backward 和 optimizer step 中进行通信，以及为什么这样的分片方式不会破坏训练语义。 这种分片策略分别能节省多少 memory 和 communication。 ZeRo 1 In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out....</p>
         
     </div>
 </div>

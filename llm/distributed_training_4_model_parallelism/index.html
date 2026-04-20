@@ -265,17 +265,133 @@ Model parallelism solves this by partitioning the model itself across multiple G
   Tensor Parallelism
   <a class="anchor" href="#tensor-parallelism">#</a>
 </h3>
-<p><strong>Tensor parallelism (TP)</strong> splits the computation inside one layer across multiple GPUs. The classic example is a large matrix multiplication in a transformer block in the <strong>Megatron-LM paper</strong> by Nvidia <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>. Megatron shards the weight matrix <code>W</code> across GPUs in two methods:</p>
+<p>Tensor parallelism (TP) splits the computation inside one layer across multiple GPUs. TP has good memory efficiency, reduces peak GPU memory usage, and speeds up computation. Each worker only stores the tensor shard it is responsible for, so the memory overhead per worker decreases linearly as the number of workers increases. However, TP has relatively high communication overhead between GPUs, because the forward or backward computation of each layer requires collective communication, such as All-Gather or All-Reduce.</p>
+<p><strong>Megatron-LM</strong> <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup></p>
+<p>Megatron shards the weight matrix across GPUs in two methods:</p>
 <ul>
 <li><strong>Column parallelism</strong>: split the output dimension, so each GPU computes a subset of output columns.</li>
 <li><strong>Row parallelism</strong>: split the input dimension, so each GPU computes a partial result and then sums across GPUs.</li>
 </ul>
-<p>TP has good memory efficiency, reduces peak GPU memory usage, and speeds up computation. Each worker only stores the tensor shard it is responsible for, so the memory overhead per worker decreases linearly as the number of workers increases. However, TP has relatively high communication overhead between GPUs, because the forward or backward computation of each layer requires collective communication, such as All-Gather or All-Reduce.</p>
+<p>Now let&rsquo;s walk through an example using transformer encoder, which consists of one self-attention block and on MLP block. We define $b$ as the batch size, $s$ as the sequence length, $h$ as the hidden dimension, $n$ as the number of heads, and $p$ as the number of partitions. Tensor shapes are denoted using square brackets; for example, $[b, s, h]$ represents the standard input to a Transformer encoder.</p>
+<p>Self-attention uses a column-parallel QKV projection and a row-parallel output projection:</p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Step</th>
+                <th>Without Megatron</th>
+                <th>With Megatron</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>QKV projection (input * weight)</td>
+                <td>$[b, s, h] \times [h, h] = [b, s, h]$</td>
+                <td>$[b, s, h] \times [h, h/p] = [b, s, h/p]$ (column parallel)</td>
+            </tr>
+            <tr>
+                <td>Split into heads</td>
+                <td>For each of Q, K, and V, we have $n$ tensors of shape $[b, s, h/n]$</td>
+                <td>For each of Q, K, and V, we have $n/p$ tensors of shape $[b, s, h/n]$</td>
+            </tr>
+            <tr>
+                <td>Attention scores</td>
+                <td>$n$ computations of $QK^T$, each producing $[b, s, s]$</td>
+                <td>$n/p$ computations of $QK^T$, each producing $[b, s, s]$</td>
+            </tr>
+            <tr>
+                <td>Apply values</td>
+                <td>$n$ outputs of shape $[b, s, h/n]$</td>
+                <td>$n/p$ outputs of shape $[b, s, h/n]$</td>
+            </tr>
+            <tr>
+                <td>Concatenate heads</td>
+                <td>$[b, s, h]$</td>
+                <td>Local result is $[b, s, h/p]$</td>
+            </tr>
+            <tr>
+                <td>Output projection</td>
+                <td>$[b, s, h] \times [h, h] = [b, s, h]$</td>
+                <td>$[b, s, h/p] \times [h/p, h] = [b, s, h]$ (row parallel)</td>
+            </tr>
+            <tr>
+                <td>Communication</td>
+                <td>None</td>
+                <td>All-reduce across $p$ GPUs</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p>The learnable parameters in self-attention are:</p>
+<ul>
+<li>QKV projection: $[h, h] \to [h, h/p]$ under tensor parallelism, which is <strong>column parallelism</strong></li>
+<li>Output projection: $[h, h] \to [h/p, h]$, which is <strong>row parallelism</strong></li>
+</ul>
+<p>The MLP uses a column-parallel up projection and a row-parallel down projection:</p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Step</th>
+                <th>Without Megatron</th>
+                <th>With Megatron</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Up projection</td>
+                <td>$[b, s, h] \times [h, 4h] = [b, s, 4h]$</td>
+                <td>$[b, s, h] \times [h, 4h/p] = [b, s, 4h/p]$ (column parallel)</td>
+            </tr>
+            <tr>
+                <td>Down projection</td>
+                <td>$[b, s, 4h] \times [4h, h] = [b, s, h]$</td>
+                <td>$[b, s, 4h/p] \times [4h/p, h] = [b, s, h]$ (row parallel)</td>
+            </tr>
+            <tr>
+                <td>Communication</td>
+                <td>None</td>
+                <td>All-reduce across $p$ GPUs</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p>The learnable parameters in the MLP are:</p>
+<ul>
+<li>Up projection: $[h, 4h] \to [h, 4h/p]$, which is <strong>column parallelism</strong></li>
+<li>Down projection: $[4h, h] \to [4h/p, h]$, which is <strong>row parallelism</strong></li>
+</ul>
+<p>The shardings on the matrices are valid given the split of matmul is valid:</p>
+<div class="code-block">
+  <pre tabindex="0"><code>           |B1|
+|A1, A2| x |B2| = A1 x B1 + A2 x B2</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+<figure class="">
+
+    
+    
+
+    
+</figure>
+</p>
 <h3 class="heading" id="pipeline-parallelism">
   Pipeline Parallelism
   <a class="anchor" href="#pipeline-parallelism">#</a>
 </h3>
-<p><strong>Pipeline parallelism (PP)</strong> splits the model by layers, partitioning several consecutive layers into one group, called a <strong>stage</strong>. Different stages are then assigned to different devices, so each GPU only computes a portion of the network’s layers.</p>
+<p>Pipeline parallelism (PP) splits the model by layers, partitioning several consecutive layers into one group, called a <strong>stage</strong>. Different stages are then assigned to different devices, so each GPU only computes a portion of the network’s layers.</p>
 <p>For example, in a 12-layer transformer:</p>
 <ul>
 <li>GPU 0 may hold layers 1-4</li>
@@ -652,6 +768,27 @@ tokens during one all-to-all exchange. The factor <code>(total_ep_ranks - 1) / t
 
   </footer>
 
+  
+  <link rel="stylesheet" 
+  href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  
+<script defer 
+  src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+
+<script defer
+  src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body);"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    renderMathInElement(document.body, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false }
+      ]
+    });
+  });
+</script>
   
 </body>
 

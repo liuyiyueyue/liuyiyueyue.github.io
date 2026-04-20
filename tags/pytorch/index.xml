@@ -6,15 +6,8 @@
     <description>Recent content in Pytorch on Yiyue Liu&#39;s Blog</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Mon, 13 Apr 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 19 Feb 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://liuyiyueyue.github.io/tags/pytorch/index.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>PyTorch 101</title>
-      <link>https://liuyiyueyue.github.io/llm/pytorch_101/</link>
-      <pubDate>Mon, 13 Apr 2026 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyueyue.github.io/llm/pytorch_101/</guid>
-      <description>&lt;p&gt;&lt;strong&gt;&lt;code&gt;Tensor&lt;/code&gt;&lt;/strong&gt;&lt;/p&gt;&#xA;&lt;p&gt;PyTorch represents data with &lt;code&gt;Tensor&lt;/code&gt;s, its n-dimensional array type. A tensor has a shape, a data type, and storage placed on a device such as the CPU or GPU. Many tensor operations create new values, while simple view operations such as &lt;code&gt;reshape&lt;/code&gt; or &lt;code&gt;split&lt;/code&gt; can reuse the same underlying storage without copying data.&lt;/p&gt;&#xA;&lt;p&gt;A simple way to create a tensor is with &lt;code&gt;torch.arange()&lt;/code&gt;, which generates evenly spaced values over a range. For example, &lt;code&gt;torch.arange(0, 8, 2, dtype=torch.float)&lt;/code&gt; creates a 1D tensor with values &lt;code&gt;[0., 2., 4., 6.]&lt;/code&gt;, starting at &lt;code&gt;0&lt;/code&gt;, stopping before &lt;code&gt;8&lt;/code&gt;, and stepping by &lt;code&gt;2&lt;/code&gt;.&lt;/p&gt;</description>
-    </item>
     <item>
       <title>[4/4] CPU-GPU Optimization: PyTorch</title>
       <link>https://liuyiyueyue.github.io/llm/cpu_gpu_optimizations_4_torch/</link>
@@ -28,6 +21,13 @@
       <pubDate>Sun, 07 Dec 2025 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/llm/distributed_training_2_ddp/</guid>
       <description>&lt;h2 class=&#34;heading&#34; id=&#34;nndataparallel-dp&#34;&gt;&#xA;  nn.DataParallel (DP)&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#nndataparallel-dp&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h2&gt;&#xA;&lt;p&gt;DP is a single-node, multi-GPU parallelization method (单机多卡).&lt;/p&gt;&#xA;&lt;h4 class=&#34;heading&#34; id=&#34;how-it-works&#34;&gt;&#xA;  How It Works&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#how-it-works&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h4&gt;&#xA;&lt;p&gt;PyTorch&amp;rsquo;s &lt;code&gt;DataParallel&lt;/code&gt;, or &lt;code&gt;DP&lt;/code&gt;, uses a parameter-server architecture and runs in a single process. During training, one GPU acts as the &lt;strong&gt;server&lt;/strong&gt; and the remaining GPUs act as &lt;strong&gt;workers&lt;/strong&gt;. Each GPU keeps a replica of the model for computation. The input data is first split across GPUs, each worker computes on its own shard, and the gradients are then gathered on the server GPU. The server updates the model parameters and synchronizes the updated model back to the other GPUs.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>PyTorch 101</title>
+      <link>https://liuyiyueyue.github.io/llm/pytorch_101/</link>
+      <pubDate>Tue, 13 Dec 2022 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/pytorch_101/</guid>
+      <description>&lt;h3 class=&#34;heading&#34; id=&#34;tensor&#34;&gt;&#xA;  &lt;code&gt;Tensor&lt;/code&gt;&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#tensor&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;PyTorch represents data with &lt;code&gt;Tensor&lt;/code&gt;s, its n-dimensional array type. A tensor has a shape, a data type, and storage placed on a device such as the CPU or GPU. Many tensor operations create new values, while simple view operations such as &lt;code&gt;reshape&lt;/code&gt; or &lt;code&gt;split&lt;/code&gt; can reuse the same underlying storage without copying data.&lt;/p&gt;&#xA;&lt;p&gt;&lt;strong&gt;Init&lt;/strong&gt;&lt;/p&gt;&#xA;&lt;p&gt;A simple way to create a tensor is with &lt;code&gt;torch.arange()&lt;/code&gt;, which generates evenly spaced values over a range. For example, &lt;code&gt;torch.arange(0, 8, 2, dtype=torch.float)&lt;/code&gt; creates a 1D tensor with values &lt;code&gt;[0., 2., 4., 6.]&lt;/code&gt;, starting at &lt;code&gt;0&lt;/code&gt;, stopping before &lt;code&gt;8&lt;/code&gt;, and stepping by &lt;code&gt;2&lt;/code&gt;.&lt;/p&gt;</description>
     </item>
   </channel>
 </rss>
