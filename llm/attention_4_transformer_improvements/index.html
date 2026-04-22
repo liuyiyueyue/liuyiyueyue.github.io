@@ -42,7 +42,7 @@
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Transformer: Improvements">
   <meta property="og:description" content="This post continues the Transformer series and focuses on the changes that made the original architecture work better for large language models. The core idea of attention is still the same, but several parts of the 2017 design are now commonly replaced:
-encoder-decoder –&gt; decoder-only post-norm –&gt; pre-norm LayerNorm –&gt; RMSNorm absolute positional encoding –&gt; RoPE MHA –&gt; GQA or MQA GELU –&gt; gated MLP such as SwiGLU As a refresher, the below is the original transformer architecture:">
+Decoder-Only Instead of Encoder-Decoder Pre-Norm Instead of Post-Norm RMSNorm Instead of LayerNorm RoPE Instead of Absolute Positional Encoding GQA, MQA, and MLA Instead of MHA GLU instead of GELU in FFN/MLP As a refresher, the below is the original transformer architecture:">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -244,12 +244,12 @@ encoder-decoder –&gt; decoder-only post-norm –&gt; pre-norm LayerNorm –&gt
     <div class="single-content">
       <p>This post continues the Transformer series and focuses on the changes that made the original architecture work better for large language models. The core idea of attention is still the same, but several parts of the 2017 design are now commonly replaced:</p>
 <ul>
-<li>encoder-decoder &ndash;&gt; decoder-only</li>
-<li>post-norm &ndash;&gt; pre-norm</li>
-<li>LayerNorm &ndash;&gt; RMSNorm</li>
-<li>absolute positional encoding &ndash;&gt; RoPE</li>
-<li>MHA &ndash;&gt; GQA or MQA</li>
-<li>GELU &ndash;&gt; gated MLP such as SwiGLU</li>
+<li><a href="/llm/attention_4_transformer_improvements/#decoder-only-instead-of-encoder-decoder">Decoder-Only Instead of Encoder-Decoder</a></li>
+<li><a href="/llm/attention_4_transformer_improvements/#pre-norm-instead-of-post-norm">Pre-Norm Instead of Post-Norm</a></li>
+<li><a href="/llm/attention_4_transformer_improvements/#rmsnorm-instead-of-layernorm">RMSNorm Instead of LayerNorm</a></li>
+<li><a href="/llm/attention_4_transformer_improvements/#rope-instead-of-absolute-positional-encoding">RoPE Instead of Absolute Positional Encoding</a></li>
+<li><a href="/llm/attention_4_transformer_improvements/#gqa-mqa-and-mla-instead-of-mha">GQA, MQA, and MLA Instead of MHA</a></li>
+<li><a href="/llm/attention_4_transformer_improvements/#glu-instead-of-gelu-in-ffnmlp">GLU instead of GELU in FFN/MLP</a></li>
 </ul>
 <p>As a refresher, the below is the original transformer architecture:</p>
 <figure><img src="/llm/attention_4_transformer_improvements/images/transformer-with-notes.png"
@@ -421,25 +421,146 @@ $$</p>
 </span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">return</span> y.to(dtype)</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
-<p>DeepSeek V3 implements RoPE with <code>precompute_freqs_cis()</code> and <code>apply_rotary_emb()</code> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>. Unlike absolute positional encoding, RoPE is applied to the query and key tensors inside attention rather than added to the input embedding.</p>
-<h3 class="heading" id="gqa-and-mqa-instead-of-mha">
-  GQA and MQA Instead of MHA
-  <a class="anchor" href="#gqa-and-mqa-instead-of-mha">#</a>
+<p>DeepSeek V3 implements RoPE with <code>precompute_freqs_cis()</code> and <code>apply_rotary_emb()</code> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>.</p>
+<h3 class="heading" id="gqa-mqa-and-mla-instead-of-mha">
+  GQA, MQA, and MLA Instead of MHA
+  <a class="anchor" href="#gqa-mqa-and-mla-instead-of-mha">#</a>
 </h3>
 <p>In standard multi-head attention (MHA), every head has its own query, key, and value projections. During inference, the KV cache therefore grows with the number of attention heads. This becomes expensive for large models and long sequences. So if the number of KV heads is smaller than the number of query heads, KV-cache memory becomes smaller:</p>
 <div class="code-block">
   <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>KV cache size = num_layers × seq_len × num_kv_heads × head_dim × 2 × dtype_size</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
-<p>Two common improvements are:</p>
+<p>Common improvements are:</p>
 <ul>
-<li><strong>GQA</strong>: several query heads share one key head and one value head per group <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup>. GQA keeps more modeling flexibility and is often a better quality-efficiency tradeoff</li>
-<li><strong>MQA</strong>: many query heads share one key head and one value head <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>. MQA gives the largest KV-cache reduction.</li>
+<li><strong>GQA</strong> (Group-Query Attention): several query heads share one key head and one value head per group <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup>. GQA keeps more modeling flexibility and is often a better quality-efficiency tradeoff</li>
+<li><strong>MQA</strong> (Multi-Query Attention): many query heads share one key head and one value head <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>. MQA gives the largest KV-cache reduction.</li>
+<li><strong>MLA</strong> (Multi-Head Latent Attention): introduced in DeepSeek-V2 <sup id="fnref1:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>, it compresses attention information (key and value tensors) into a smaller latent representation and caches that compact state. The model then reconstructs the effective keys and values from the latent state during attention.</li>
 </ul>
-<figure><img src="/llm/attention_4_transformer_improvements/images/mha_mqa_gqa.png"
-    alt="Rotary positional embedding illustration" width="750">
+<figure><img src="images/mha_mqa_gqa_mla.png"
+    alt="MHA, GQA, MQA, and MLA" width="1000">
 </figure>
 
+<p>Intuitively, GQA and MQA reduce memory by <strong>sharing</strong> KV heads, while MLA reduces memory by <strong>compressing</strong> KV information into a latent space.</p>
+<p>Below is an example of GQA implementation. You can compare it with the original <a href="/llm/attention_1_transformer_basics/#multi-head-attention-mha">MultiHeadAttentionBlock</a> code. MQA is the special case where <code>n_kv_head = 1</code>:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">class</span> <span style="color:#666;font-weight:bold;font-style:italic">GroupedQueryAttentionBlock</span>(nn.Module):
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    Grouped-query self-attention block.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        dim (int): Input and output dimension of each token representation.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        n_head (int): Number of query heads.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        n_kv_head (int): Number of shared key/value heads.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">__init__</span>(<span style="font-weight:bold;font-style:italic">self</span>, dim: <span style="font-weight:bold;font-style:italic">int</span>, n_head: <span style="font-weight:bold;font-style:italic">int</span>, n_kv_head: <span style="font-weight:bold;font-style:italic">int</span>) -&gt; <span style="font-weight:bold;text-decoration:underline">None</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Initializes the grouped-query attention projections.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            dim (int): Input and output dimension of each token representation.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            n_head (int): Number of query heads.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            n_kv_head (int): Number of shared key/value heads.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">super</span>().<span style="color:#666;font-weight:bold;font-style:italic">__init__</span>()
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.dim = dim
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.n_head = n_head
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.n_kv_head = n_kv_head
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">assert</span> dim % n_head == 0
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">assert</span> n_head % n_kv_head == 0
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.d_k = dim // n_head  <span style="color:#888;font-style:italic"># Per-query-head feature dimension.</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.n_rep = n_head // n_kv_head  <span style="color:#888;font-style:italic"># Number of query heads per KV head.</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.w_q = nn.Linear(dim, dim, bias=<span style="font-weight:bold;text-decoration:underline">False</span>)  <span style="color:#888;font-style:italic"># Wq</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.w_k = nn.Linear(dim, n_kv_head * <span style="font-weight:bold;font-style:italic">self</span>.d_k, bias=<span style="font-weight:bold;text-decoration:underline">False</span>)  <span style="color:#888;font-style:italic"># Wk</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.w_v = nn.Linear(dim, n_kv_head * <span style="font-weight:bold;font-style:italic">self</span>.d_k, bias=<span style="font-weight:bold;text-decoration:underline">False</span>)  <span style="color:#888;font-style:italic"># Wv</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.w_o = nn.Linear(dim, dim, bias=<span style="font-weight:bold;text-decoration:underline">False</span>)  <span style="color:#888;font-style:italic"># Wo</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    @staticmethod
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">repeat_kv</span>(x, n_rep):
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Repeats each KV head so query heads in the same group share it.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            x (torch.Tensor): Tensor of shape (batch, n_kv_head, seq_len, d_k).
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            n_rep (int): Number of query heads that share each KV head.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Returns:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            torch.Tensor: Tensor of shape (batch, n_head, seq_len, d_k).
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span> n_rep == 1:
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;text-decoration:underline">return</span> x
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">return</span> x.repeat_interleave(n_rep, dim=1)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    @staticmethod
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">attention</span>(query, key, value, mask):
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Computes scaled dot-product attention for all query heads.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            query (torch.Tensor): Query tensor of shape (batch, n_head, seq_len, d_k).
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            key (torch.Tensor): Key tensor of shape (batch, n_head, seq_len, d_k).
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            value (torch.Tensor): Value tensor of shape (batch, n_head, seq_len, d_k).
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            mask (torch.Tensor | None): Optional attention mask.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Returns:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            tuple[torch.Tensor, torch.Tensor]: Attention output of shape
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            (batch, n_head, seq_len, d_k) and attention scores of shape
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            (batch, n_head, seq_len, seq_len).
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        d_k = query.shape[-1]
+</span></span><span style="display:flex;"><span>        attention_scores = (query @ key.transpose(-2, -1)) / math.sqrt(d_k)  <span style="color:#888;font-style:italic"># (batch, n_head, seq_len, seq_len)</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">if</span> mask <span style="font-weight:bold">is</span> <span style="font-weight:bold">not</span> <span style="font-weight:bold;text-decoration:underline">None</span>:
+</span></span><span style="display:flex;"><span>            attention_scores.masked_fill_(mask == 0, -1e9)
+</span></span><span style="display:flex;"><span>        attention_scores = attention_scores.softmax(dim=-1)  <span style="color:#888;font-style:italic"># (batch, n_head, seq_len, seq_len)</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">return</span> (attention_scores @ value), attention_scores  <span style="color:#888;font-style:italic"># (batch, n_head, seq_len, d_k)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">forward</span>(<span style="font-weight:bold;font-style:italic">self</span>, q, k, v, mask):
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Forward pass for grouped-query attention.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            q (torch.Tensor): Query tensor of shape (batch, seq_len, dim).
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            k (torch.Tensor): Key tensor of shape (batch, seq_len, dim).
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            v (torch.Tensor): Value tensor of shape (batch, seq_len, dim).
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            mask (torch.Tensor | None): Optional attention mask.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Returns:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            torch.Tensor: Output tensor of shape (batch, seq_len, dim).
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        query = <span style="font-weight:bold;font-style:italic">self</span>.w_q(q)  <span style="color:#888;font-style:italic"># (batch, seq_len, dim) --&gt; (batch, seq_len, dim)</span>
+</span></span><span style="display:flex;"><span>        key = <span style="font-weight:bold;font-style:italic">self</span>.w_k(k)  <span style="color:#888;font-style:italic"># (batch, seq_len, dim) --&gt; (batch, seq_len, n_kv_head * d_k)</span>
+</span></span><span style="display:flex;"><span>        value = <span style="font-weight:bold;font-style:italic">self</span>.w_v(v)  <span style="color:#888;font-style:italic"># (batch, seq_len, dim) --&gt; (batch, seq_len, n_kv_head * d_k)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Split query into n_head smaller subspaces, one for each query head.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># (batch, seq_len, dim) --&gt; (batch, seq_len, n_head, d_k) --&gt; (batch, n_head, seq_len, d_k)</span>
+</span></span><span style="display:flex;"><span>        query = query.view(query.shape[0], query.shape[1], <span style="font-weight:bold;font-style:italic">self</span>.n_head, <span style="font-weight:bold;font-style:italic">self</span>.d_k).transpose(1, 2)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Split key/value into fewer shared KV heads.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># (batch, seq_len, n_kv_head * d_k) --&gt; (batch, seq_len, n_kv_head, d_k) --&gt; (batch, n_kv_head, seq_len, d_k)</span>
+</span></span><span style="display:flex;"><span>        key = key.view(key.shape[0], key.shape[1], <span style="font-weight:bold;font-style:italic">self</span>.n_kv_head, <span style="font-weight:bold;font-style:italic">self</span>.d_k).transpose(1, 2)
+</span></span><span style="display:flex;"><span>        value = value.view(value.shape[0], value.shape[1], <span style="font-weight:bold;font-style:italic">self</span>.n_kv_head, <span style="font-weight:bold;font-style:italic">self</span>.d_k).transpose(1, 2)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Repeat each KV head so all query heads in the same group share it.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># (batch, n_kv_head, seq_len, d_k) --&gt; (batch, n_head, seq_len, d_k)</span>
+</span></span><span style="display:flex;"><span>        key = <span style="font-weight:bold;font-style:italic">self</span>.repeat_kv(key, <span style="font-weight:bold;font-style:italic">self</span>.n_rep)
+</span></span><span style="display:flex;"><span>        value = <span style="font-weight:bold;font-style:italic">self</span>.repeat_kv(value, <span style="font-weight:bold;font-style:italic">self</span>.n_rep)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Apply scaled dot-product attention independently in each query head.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Q K V are all (batch, n_head, seq_len, d_k) --&gt; (batch, n_head, seq_len, d_k)</span>
+</span></span><span style="display:flex;"><span>        x, <span style="font-weight:bold;font-style:italic">self</span>.attention_scores = GroupedQueryAttentionBlock.attention(query, key, value, mask)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Concatenate all query-head outputs back into the full model dimension.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># (batch, n_head, seq_len, d_k) --&gt; (batch, seq_len, n_head, d_k) --&gt; (batch, seq_len, dim)</span>
+</span></span><span style="display:flex;"><span>        x = x.transpose(1, 2).contiguous().view(x.shape[0], -1, <span style="font-weight:bold;font-style:italic">self</span>.n_head * <span style="font-weight:bold;font-style:italic">self</span>.d_k)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># Final linear projection output after merging the heads.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#888;font-style:italic"># (batch, seq_len, dim) --&gt; (batch, seq_len, dim)</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">return</span> <span style="font-weight:bold;font-style:italic">self</span>.w_o(x)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Compared with MHA, the only structural change is that <code>K</code> and <code>V</code> are projected into fewer heads than <code>Q</code>, then shared across groups of query heads. If <code>n_kv_head = n_head</code>, this reduces to standard MHA. If <code>n_kv_head = 1</code>, it becomes MQA.</p>
 <h3 class="heading" id="glu-instead-of-gelu-in-ffnmlp">
   GLU instead of GELU in FFN/MLP
   <a class="anchor" href="#glu-instead-of-gelu-in-ffnmlp">#</a>
@@ -455,25 +576,69 @@ $$</p>
 <p>The gate lets the model control which information should pass through the MLP. In practice, gated MLPs usually improve model quality enough to justify the additional structure.</p>
 <div class="code-block">
   <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">class</span> <span style="color:#666;font-weight:bold;font-style:italic">SwiGLU</span>(nn.Module):
-</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">__init__</span>(<span style="font-weight:bold;font-style:italic">self</span>, d_model, hidden_dim):
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#34;&#34;&#34;SwiGLU activation used in modern Transformer MLP blocks.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    Attributes:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        linear_gate (nn.Module): Linear layer that produces the gate values.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        linear_value (nn.Module): Linear layer that produces the value branch.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">__init__</span>(<span style="font-weight:bold;font-style:italic">self</span>, dim: <span style="font-weight:bold;font-style:italic">int</span>, hidden_dim: <span style="font-weight:bold;font-style:italic">int</span>) -&gt; <span style="font-weight:bold;text-decoration:underline">None</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Initializes the SwiGLU activation.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            dim (int): Input dimensionality.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            hidden_dim (int): Hidden layer dimensionality.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        &#34;&#34;&#34;</span>
 </span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">super</span>().<span style="color:#666;font-weight:bold;font-style:italic">__init__</span>()
-</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.Wa = nn.Linear(d_model, hidden_dim)
-</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.Wb = nn.Linear(d_model, hidden_dim)
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.linear_gate = nn.Linear(dim, hidden_dim)
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.linear_value = nn.Linear(dim, hidden_dim)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">forward</span>(<span style="font-weight:bold;font-style:italic">self</span>, x):
-</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">return</span> <span style="font-weight:bold;font-style:italic">self</span>.Wa(x) * F.silu(<span style="font-weight:bold;font-style:italic">self</span>.Wb(x))
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Forward pass for the SwiGLU activation.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        (batch, seq_len, dim) --&gt; (batch, seq_len, hidden_dim)
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            x (torch.Tensor): Input tensor.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Returns:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            torch.Tensor: Gated hidden representation.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">return</span> F.silu(<span style="font-weight:bold;font-style:italic">self</span>.linear_gate(x)) * <span style="font-weight:bold;font-style:italic">self</span>.linear_value(x)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">class</span> <span style="color:#666;font-weight:bold;font-style:italic">FFN_SwiGLU</span>(nn.Module):
-</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">__init__</span>(<span style="font-weight:bold;font-style:italic">self</span>, d_model, mlp_ratio=3.0):  <span style="color:#888;font-style:italic"># common default in modern LLMs</span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">class</span> <span style="color:#666;font-weight:bold;font-style:italic">FeedForwardSwiGLUBlock</span>(nn.Module):
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#34;&#34;&#34;Two-layer feed-forward block with SwiGLU gating.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    Attributes:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        swiglu (nn.Module): Gated activation block.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        linear_out (nn.Module): Output projection back to model dimension.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">__init__</span>(<span style="font-weight:bold;font-style:italic">self</span>, dim: <span style="font-weight:bold;font-style:italic">int</span>, hidden_dim: <span style="font-weight:bold;font-style:italic">int</span>) -&gt; <span style="font-weight:bold;text-decoration:underline">None</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Initializes the SwiGLU-based FFN layer.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            dim (int): Input and output dimensionality.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            hidden_dim (int): Hidden layer dimensionality.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        &#34;&#34;&#34;</span>
 </span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">super</span>().<span style="color:#666;font-weight:bold;font-style:italic">__init__</span>()
-</span></span><span style="display:flex;"><span>        hidden_dim = <span style="font-weight:bold;font-style:italic">int</span>(mlp_ratio * d_model)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.fc = SwiGLU(d_model, hidden_dim)
-</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.proj = nn.Linear(hidden_dim, d_model)
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.swiglu = SwiGLU(dim, hidden_dim)
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.linear_out = nn.Linear(hidden_dim, dim)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">forward</span>(<span style="font-weight:bold;font-style:italic">self</span>, x):
-</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">return</span> <span style="font-weight:bold;font-style:italic">self</span>.proj(<span style="font-weight:bold;font-style:italic">self</span>.fc(x))</span></span></code></pre></div>
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Forward pass for the SwiGLU-based FFN layer.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        (batch, seq_len, dim) --&gt; (batch, seq_len, hidden_dim) --&gt; (batch, seq_len, dim)
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            x (torch.Tensor): Input tensor.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Returns:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            torch.Tensor: Output tensor after MLP computation.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">return</span> <span style="font-weight:bold;font-style:italic">self</span>.linear_out(<span style="font-weight:bold;font-style:italic">self</span>.swiglu(x))</span></span></code></pre></div>
   <button class="copy-code-button">copy</button>
 </div>
 <div class="footnotes" role="doc-endnotes">
@@ -486,7 +651,7 @@ $$</p>
 <p>Shreyash Shukla. RoPE (Rotary Positional Embeddings). <a href="https://shreyashkar-ml.github.io/posts/rope/">https://shreyashkar-ml.github.io/posts/rope/</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:3">
-<p>DeepSeek-V3 GitHub repository. <a href="https://github.com/deepseek-ai/DeepSeek-V3/blob/main/inference/model.py">https://github.com/deepseek-ai/DeepSeek-V3/blob/main/inference/model.py</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>DeepSeek-AI. DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model. arXiv, June 19, 2024. <a href="https://arxiv.org/abs/2405.04434">https://arxiv.org/abs/2405.04434</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref1:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:4">
 <p>Joshua Ainslie, James Lee-Thorp, Michiel de Jong, Yury Zemlyanskiy, Federico Lebron, and Sumit Sanghai. GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints. arXiv, May 22, 2023. <a href="https://arxiv.org/abs/2305.13245">https://arxiv.org/abs/2305.13245</a>&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
