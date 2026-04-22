@@ -437,7 +437,7 @@ $$</p>
 <li><strong>MQA</strong> (Multi-Query Attention): many query heads share one key head and one value head <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>. MQA gives the largest KV-cache reduction.</li>
 <li><strong>MLA</strong> (Multi-Head Latent Attention): introduced in DeepSeek-V2 <sup id="fnref1:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>, it compresses attention information (key and value tensors) into a smaller latent representation and caches that compact state. The model then reconstructs the effective keys and values from the latent state during attention.</li>
 </ul>
-<figure><img src="images/mha_mqa_gqa_mla.png"
+<figure><img src="/llm/attention_4_transformer_improvements/images/mha_mqa_gqa_mla.png"
     alt="MHA, GQA, MQA, and MLA" width="1000">
 </figure>
 
