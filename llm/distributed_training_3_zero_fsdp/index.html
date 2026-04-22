@@ -41,9 +41,9 @@
 <meta property="og:url" content="https://liuyiyueyue.github.io/llm/distributed_training_3_zero_fsdp/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Distributed Training: Data Parallelism (ZeRO and FSDP)">
-  <meta property="og:description" content="Conventional data parallelism replicates the full model state on every GPU, so memory does not decrease as the cluster scales out. ZeRO and FSDP address this by sharding optimizer states, gradients, and parameters across devices, allowing much larger models to be trained under the same memory budget.
+  <meta property="og:description" content="Conventional data parallelism such as DDP replicates the full model state on every GPU, so memory does not decrease as the cluster scales out. ZeRO and FSDP address this by sharding optimizer states, gradients, and parameters across devices, allowing much larger models to be trained under the same memory budget.
 这篇文章的重点有两个：
-哪些 tensor 可以长期以分片形式保存，哪些 tensor 需要在 forward、backward 和 optimizer step 中进行通信，以及为什么这样的分片方式不会破坏训练语义。 这种分片策略分别能节省多少 memory 和 communication。 ZeRo 1 # In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out. As a result, memory often becomes the main bottleneck in data-parallel training.">
+哪些 tensor 可以长期以分片形式保存，哪些 tensor 分片后需要在 forward、backward 和 optimizer step 中进行通信，什么时候进行通信，以及为什么这样的分片和通信方式不会破坏训练语义。 这种分片策略分别能节省多少 memory 和 communication。 ZeRo 1 # In conventional data-parallel training, every machine still has to hold a full copy of the model state in memory, and that memory cost does not shrink as data parallelism scales out. As a result, memory often becomes the main bottleneck in data-parallel training.">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -244,10 +244,10 @@
     </header>
     
     <div class="single-content">
-      <p>Conventional data parallelism replicates the full model state on every GPU, so memory does not decrease as the cluster scales out. ZeRO and FSDP address this by sharding optimizer states, gradients, and parameters across devices, allowing much larger models to be trained under the same memory budget.</p>
+      <p>Conventional data parallelism such as DDP replicates the full model state on every GPU, so memory does not decrease as the cluster scales out. ZeRO and FSDP address this by sharding optimizer states, gradients, and parameters across devices, allowing much larger models to be trained under the same memory budget.</p>
 <p>这篇文章的重点有两个：</p>
 <ol>
-<li>哪些 tensor 可以长期以分片形式保存，哪些 tensor 需要在 forward、backward 和 optimizer step 中进行通信，以及为什么这样的分片方式不会破坏训练语义。</li>
+<li>哪些 tensor 可以长期以分片形式保存，哪些 tensor 分片后需要在 forward、backward 和 optimizer step 中进行通信，什么时候进行通信，以及为什么这样的分片和通信方式不会破坏训练语义。</li>
 <li>这种分片策略分别能节省多少 memory 和 communication。</li>
 </ol>
 <h3 class="heading" id="zero">
@@ -378,11 +378,7 @@ $$</p>
   <a class="anchor" href="#fsdp">#</a>
 </h3>
 <p>Facebook introduced <strong>FSDP (Fully Sharded Data Parallel)</strong> as PyTorch’s counterpart to Microsoft’s <strong>ZeRO</strong> in DeepSpeed. FSDP can be viewed as an optimized version of <strong>DDP</strong> within PyTorch. It is still a form of data parallelism, but unlike DDP, FSDP uses <strong>parameter sharding</strong>. In other words, model parameters are partitioned across GPUs, whereas in DDP each GPU keeps a full copy of the parameters. This allows FSDP to achieve better training efficiency, both in terms of speed and GPU memory usage.</p>
-<div class="code-block">
-  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fsdp_module = FullyShardedDataParallel(module)</span></span></code></pre></div>
-  <button class="copy-code-button">copy</button>
-</div>
-<figure><img src="/llm/distributed_training_3_zero_fsdp/images/fsdp-graph-2.png"
+<figure><img src="/llm/distributed_training_3_zero_fsdp/images/fsdp.png"
     alt="FSDP execution flow."><figcaption>
       <p>FSDP execution flow.</p>
     </figcaption>
@@ -394,26 +390,70 @@ $$</p>
 </ul>
 <p><strong>Forward pass</strong></p>
 <ol>
-<li>For each FSDP unit, run <code>all_gather</code> to collect parameter shards from all ranks, so each rank temporarily holds the full parameters for the current unit. This is also why FSDP still belongs to data parallelism: although the parameters are sharded for storage, computation still uses the original full parameters rather than computing directly on weight shards as in tensor parallelism.</li>
+<li>For each FSDP unit, run <strong>all_gather</strong> to collect <strong>parameter</strong> shards from all ranks, so each rank temporarily holds the full parameters for the current unit. This is also why FSDP still belongs to data parallelism: although the parameters are sharded for storage, computation still uses the original full parameters rather than computing directly on weight shards as in tensor parallelism.</li>
 <li>Execute the forward computation.</li>
 <li>Reshard the parameters, discard the portions that do not belong to the current rank, and free the corresponding memory.</li>
 </ol>
 <p><strong>Backward pass</strong></p>
 <ol>
-<li>For each FSDP unit, run <code>all_gather</code> again to collect parameter shards from all ranks.</li>
+<li>For each FSDP unit, run <strong>all_gather</strong> again to collect <strong>parameter</strong> shards from all ranks.</li>
 <li>Execute the backward computation.</li>
 <li>Reshard the parameters again, discard the portions that do not belong to the current rank, and free the corresponding memory.</li>
-<li>Run <code>reduce_scatter</code> to synchronize gradients across ranks.</li>
+<li>Run <strong>reduce_scatter</strong> to synchronize <strong>gradients</strong> across ranks.</li>
 </ol>
 <p><strong>Optimizer updates</strong></p>
 <ul>
 <li>Each rank updates the local shard of gradients and parameters that it owns.</li>
 </ul>
+<p><strong>Code</strong></p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># Optional: auto-wrap large layers</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#888;font-style:italic"># If a submodule has parameter count &gt;= threshold, wrap it as its own FSDP unit</span>
+</span></span><span style="display:flex;"><span>    auto_wrap_policy = functools.partial(size_based_auto_wrap_policy, min_num_params=1e6)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    model = FSDP(model, auto_wrap_policy=auto_wrap_policy)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>The full runnable example is in <a href="/llm/distributed_training_3_zero_fsdp/code/basic_fsdp1.py"><code>code/basic_fsdp1.py</code></a>. It initializes distributed execution, wraps the model with <code>FSDP</code>, and then runs a standard forward-backward-optimizer loop. The optional <code>auto_wrap_policy</code> demonstrates how larger submodules can be split into separate FSDP units instead of wrapping the entire model as one flat unit.</p>
 <h4 class="heading" id="fsdp-2">
-  FSDP 2
+  FSDP 2 <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup>
   <a class="anchor" href="#fsdp-2">#</a>
 </h4>
-<p>略 ;-) 写累了</p>
+<p><strong>fully_shard()</strong></p>
+<p>FSDP2 replaces the wrapper-style <code>FSDP(...)</code> API in FSDP1 with the composable <code>fully_shard()</code> API. In practice, <code>fully_shard()</code> is typically applied bottom-up, often together with a device mesh:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">from</span> <span style="color:#666;font-weight:bold;font-style:italic">torch.distributed.fsdp</span> <span style="font-weight:bold;text-decoration:underline">import</span> fully_shard, FSDPModule
+</span></span><span style="display:flex;"><span>model = Transformer()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># apply fully_shard() on each layer first, then the root model</span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">for</span> layer <span style="font-weight:bold">in</span> model.layers:
+</span></span><span style="display:flex;"><span>    fully_shard(layer)
+</span></span><span style="display:flex;"><span>fully_shard(model)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p><strong>DTensor</strong></p>
+<p>After <code>fully_shard(model)</code>, model parameters are represented as <code>DTensor</code>s, which encode sharded parameter layouts directly. In contrast, FSDP1 is mainly wrapper-based and historically relied on internal abstractions such as <code>FlatParameter</code> to manage sharded parameters. In other words, FSDP1 mostly manages sharding through the wrapper, while FSDP2 makes sharding part of the parameter representation itself.</p>
+<p><strong>Streams</strong></p>
+<p>Within all-gather, copy-in refers to copying and packing scattered sharded local parameters into one contiguous all-gather buffer within a single node so that NCCL can transfer them more efficiently. If the copy-in takes a long time, it&rsquo;s worth use a separate stream for it:</p>
+<div class="code-block">
+  <pre tabindex="0"><code>Layer N:   |&lt;- Copy-in -&gt;|&lt;- All-Gather -&gt;|&lt;- Compute -&gt;|
+Layer N+1:               |&lt;- Copy-in -&gt;|&lt;- All-Gather -&gt;|&lt;- Compute -&gt;|
+Layer N+2:                             |&lt;- Copy-in -&gt;|&lt;- All-Gather -&gt;|&lt;- Compute -&gt;|</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>For basic 1D FSDP2, the main communication path only needs the all-gather copy-in stream, the all-gather stream, and the reduce-scatter streams. The extra all-reduce stream exists because the runtime is shared with HSDP and custom all-reduce hooks. Below is a code snippet from pyTorch FSDP2 source code (<a href="https://github.com/pytorch/pytorch/blob/ba15482709c78c86a22524387f31bf6f13468dd2/torch/distributed/fsdp/_fully_shard/_fsdp_param_group.py#L72-L93%29">https://github.com/pytorch/pytorch/blob/ba15482709c78c86a22524387f31bf6f13468dd2/torch/distributed/fsdp/_fully_shard/_fsdp_param_group.py#L72-L93)</a>:</p>
+<div class="code-block">
+  <pre tabindex="0"><code class="language-pytorch" data-lang="pytorch">def lazy_init(self, device: torch.device):
+    ...
+    self.all_gather_copy_in_stream = self.device_handle.Stream(priority=high_priority)
+    self.all_gather_stream = self.device_handle.Stream(priority=high_priority)
+    self.reduce_scatter_stream = self.device_handle.Stream(priority=high_priority)
+    self.all_reduce_stream = self.device_handle.Stream()
+    ...</code></pre>
+  <button class="copy-code-button">copy</button>
+</div>
 <div class="footnotes" role="doc-endnotes">
 <hr>
 <ol>
@@ -425,6 +465,9 @@ $$</p>
 </li>
 <li id="fn:3">
 <p>PyTorch FSDP: Experiences on Scaling Fully Sharded Data Parallel. arXiv, April 21, 2023. <a href="https://arxiv.org/abs/2304.11277">https://arxiv.org/abs/2304.11277</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:4">
+<p>Getting Started with Fully Sharded Data Parallel (FSDP2). PyTorch Tutorials. <a href="https://docs.pytorch.org/tutorials/intermediate/FSDP_tutorial.html">https://docs.pytorch.org/tutorials/intermediate/FSDP_tutorial.html</a>&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 </ol>
 </div>

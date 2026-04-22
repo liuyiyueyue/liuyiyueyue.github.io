@@ -432,7 +432,7 @@ Model parallelism solves this by partitioning the model itself across multiple G
   Sequence Parallelism
   <a class="anchor" href="#sequence-parallelism">#</a>
 </h3>
-<p>Two papers both discuss sequence parallelism but with different goals and methods.</p>
+<p>Two papers both discuss sequence parallelism (also called context parallelism) but with different goals and methods.</p>
 <p><strong>Megatron-LM</strong></p>
 <p>The first paper is Megatron-LM’s third paper, “Reducing Activation Recomputation in Large Transformer Models” <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>. The motivation behind Megatron-LM’s sequence parallelism was to <em>distribute the memory that tensor parallelism could not shard anymore</em>.</p>
 <figure><img src="/llm/distributed_training_4_model_parallelism/images/sequence_parallel_figure5.png"
