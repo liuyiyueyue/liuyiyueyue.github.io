@@ -253,7 +253,7 @@ encoder-decoder –&gt; decoder-only post-norm –&gt; pre-norm LayerNorm –&gt
 </ul>
 <p>As a refresher, the below is the original transformer architecture:</p>
 <figure><img src="/llm/attention_4_transformer_improvements/images/transformer-with-notes.png"
-    alt="Transformer arch with notes" width="650">
+    alt="Transformer arch with notes" width="900">
 </figure>
 
 <h3 class="heading" id="decoder-only-instead-of-encoder-decoder">
@@ -265,20 +265,40 @@ encoder-decoder –&gt; decoder-only post-norm –&gt; pre-norm LayerNorm –&gt
   Pre-Norm Instead of Post-Norm
   <a class="anchor" href="#pre-norm-instead-of-post-norm">#</a>
 </h3>
-<p>The original Transformer applies layer normalization after the residual addition. Many modern LLMs instead use <strong>pre-norm</strong>, where normalization is applied before attention and before the MLP:</p>
-<p>$$
-x = x + \operatorname{Attention}(\operatorname{Norm}(x))
-$$</p>
-<p>$$
-x = x + \operatorname{MLP}(\operatorname{Norm}(x))
-$$</p>
+<p>The original Transformer applies layer normalization after the residual addition:
+
+$$
+\begin{aligned}
+x &= \operatorname{Norm}(x + \operatorname{Attention}(x)) \\
+x &= \operatorname{Norm}(x + \operatorname{MLP}(x))
+\end{aligned}
+$$
+
+</p>
+<p>Many modern LLMs instead use <strong>pre-norm</strong>, where normalization is applied before attention and before the MLP:
+
+$$
+\begin{aligned}
+x &= x + \operatorname{Attention}(\operatorname{Norm}(x)) \\
+x &= x + \operatorname{MLP}(\operatorname{Norm}(x))
+\end{aligned}
+$$
+
+</p>
 <p>This change improves optimization stability in deep networks. In practice, pre-norm makes gradient flow easier and allows models to scale to many more layers without becoming as difficult to train.</p>
+<p>Below is a PyTorch code snippet showing the pre-norm formulation. Note that the implementation in <a href="/llm/attention_1_transformer_basics/#residual-connection">Residual Connection</a> section already uses pre-norm.</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">class</span> <span style="color:#666;font-weight:bold;font-style:italic">ResidualConnection</span>(nn.Module):
+</span></span><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">forward</span>(<span style="font-weight:bold;font-style:italic">self</span>, x, sublayer):
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">return</span> x + <span style="font-weight:bold;font-style:italic">self</span>.dropout(sublayer(<span style="font-weight:bold;font-style:italic">self</span>.norm(x)))</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
 <h3 class="heading" id="rmsnorm-instead-of-layernorm">
   RMSNorm Instead of LayerNorm
   <a class="anchor" href="#rmsnorm-instead-of-layernorm">#</a>
 </h3>
-<p>Many modern language models replace LayerNorm with <strong>RMSNorm</strong>. RMSNorm is a simplified variant that normalizes by the <strong>root mean square</strong> of the activations and does not subtract the mean. This reduces computation while usually preserving similar model quality. In practice, RMSNorm is often preferred because it can effectively mitigate the vanishing-gradient problem in deep networks while maintaining fast training convergence.</p>
-<p>The corresponding formulas are:</p>
+<p>Many modern language models replace LayerNorm with <strong>RMSNorm</strong> (Root Mean Square Layer Normalization). RMSNorm is a simplified variant that normalizes by the <strong>root mean square</strong> of the activations and does not subtract the mean. The RMSNorm formula is:</p>
 
 $$
 \hat{x}_{\mathrm{RMSNorm}} = \frac{x}{\operatorname{RMS}(x) + \epsilon},
@@ -287,6 +307,20 @@ $$
 $$
 
 
+<p>This reduces computation while usually preserving similar model quality. In practice, RMSNorm is often preferred because it can effectively mitigate the vanishing-gradient problem in deep networks while maintaining fast training convergence.</p>
+<p>Below is a PyTorch code snippet for RMSNorm. This is the RMSNorm counterpart to the <a href="/llm/attention_1_transformer_basics/#batch-norm-and-layer-norm">Layer Norm</a> example in the original Transformer basics post.</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">class</span> <span style="color:#666;font-weight:bold;font-style:italic">RMSNorm</span>(nn.Module):
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">__init__</span>(<span style="font-weight:bold;font-style:italic">self</span>, dim: <span style="font-weight:bold;font-style:italic">int</span>, eps: <span style="font-weight:bold;font-style:italic">float</span> = 1e-6) -&gt; <span style="font-weight:bold;text-decoration:underline">None</span>:
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">super</span>().<span style="color:#666;font-weight:bold;font-style:italic">__init__</span>()
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.eps = eps
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.weight = nn.Parameter(torch.ones(dim))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">forward</span>(<span style="font-weight:bold;font-style:italic">self</span>, x):
+</span></span><span style="display:flex;"><span>        rms = x.pow(2).mean(dim=-1, keepdim=<span style="font-weight:bold;text-decoration:underline">True</span>).sqrt()
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">return</span> <span style="font-weight:bold;font-style:italic">self</span>.weight * x / (rms + <span style="font-weight:bold;font-style:italic">self</span>.eps)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
 <h3 class="heading" id="rope-instead-of-absolute-positional-encoding">
   RoPE Instead of Absolute Positional Encoding
   <a class="anchor" href="#rope-instead-of-absolute-positional-encoding">#</a>
@@ -295,13 +329,14 @@ $$
 <p>In the original Transformer, the positional encoding vector is defined by alternating sine and cosine functions:</p>
 
 $$
-\operatorname{PE}(pos, 2i) = \sin\left(\frac{pos}{10000^{2i/d_{\mathrm{model}}}}\right)
-$$
+\begin{aligned}
+\operatorname{PE}(pos, 2i) &= \sin\left(\frac{pos}{10000^{2i/d_{\mathrm{model}}}}\right) &= \sin(pos\,\theta_i) \\
+\operatorname{PE}(pos, 2i+1) &= \cos\left(\frac{pos}{10000^{2i/d_{\mathrm{model}}}}\right) &= \cos(pos\,\theta_i)
+\end{aligned}
 
+\qquad
 
-
-$$
-\operatorname{PE}(pos, 2i+1) = \cos\left(\frac{pos}{10000^{2i/d_{\mathrm{model}}}}\right)
+\text{, where } \theta_i = 10000^{-2i/d_{\mathrm{model}}}
 $$
 
 
@@ -309,13 +344,12 @@ $$
 <p>$$
 x_{pos} = e_{pos} + \operatorname{PE}(pos)
 $$</p>
-<p>where $e_{pos}$ is the token embedding.</p>
-<p>At a high level, RoPE has two practical advantages:</p>
+<p>where $e_{pos}$ is the token embedding. This works, but the position signal is injected by addition at the input, rather than directly in the attention computation.</p>
+<p>RoPE takes a different approach. Instead of adding a positional vector to the token embedding, it rotates the query and key vectors in a position-dependent way before computing attention. In practice, this gives two useful properties:</p>
 <ul>
-<li>it encodes <strong>relative position information</strong> naturally inside attention</li>
-<li>it usually extrapolates to longer sequence lengths better than fixed learned absolute embeddings</li>
+<li>position information is encoded directly inside the attention dot product</li>
+<li>the resulting attention depends naturally on relative position differences</li>
 </ul>
-<p>RoPE does not simply add a position vector to the hidden state. Instead, it rotates the query and key vectors in a position-dependent way before attention is computed. This means position information is injected directly into the attention dot product.</p>
 <p>For each 2D pair of features, RoPE applies a rotation matrix that depends on the token position $m$:</p>
 
 $$
@@ -335,7 +369,7 @@ $$</p>
 <p>$$
 \operatorname{score}(m,n) = \sum_i \tilde{q}_i^\top \tilde{k}_i
 $$</p>
-<p>The important property is that the inner product depends on the position difference $n-m$ <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>:</p>
+<p>The key property is that this inner product depends on the position difference $n-m$ rather than on two unrelated absolute positions <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>:</p>
 <p>$$
 \tilde{q}_i^\top \tilde{k}_i = q_i^\top R((n-m)\theta_i) k_i
 $$</p>
@@ -343,7 +377,51 @@ $$</p>
     alt="Rotary positional embedding illustration" width="750">
 </figure>
 
-<p>So RoPE turns absolute positions into a form that naturally expresses <strong>relative position</strong> inside attention. That is the main reason it works so well for causal language models.</p>
+<p>The main implementation difference is that absolute positional encoding is added to the input embeddings, while RoPE is applied directly to the query and key vectors inside attention. As a result, absolute encoding injects position information indirectly through the input representation, whereas RoPE encodes position directly in the attention computation and naturally captures relative position differences.</p>
+<p>Here is a PyTorch counterpart to the original <a href="/llm/attention_1_transformer_basics/#positional-encoding">PositionalEncoding</a> module.</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">class</span> <span style="color:#666;font-weight:bold;font-style:italic">RoPE</span>(nn.Module):
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    Rotary positional embedding for attention query and key tensors.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">__init__</span>(<span style="font-weight:bold;font-style:italic">self</span>, dim: <span style="font-weight:bold;font-style:italic">int</span>, seq_len: <span style="font-weight:bold;font-style:italic">int</span>, base: <span style="font-weight:bold;font-style:italic">float</span> = 10000.0) -&gt; <span style="font-weight:bold;text-decoration:underline">None</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Precomputes the complex rotation factors for each position.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        cis(theta) = cos(theta) + i sin(theta)
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            dim (int): Per-head dimension. Must be even.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            seq_len (int): Maximum sequence length supported by the embedding.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            base (float): Base used to compute angular frequencies.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">super</span>().<span style="color:#666;font-weight:bold;font-style:italic">__init__</span>()
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">assert</span> dim % 2 == 0
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        position = torch.arange(seq_len, dtype=torch.float32)  <span style="color:#888;font-style:italic"># (seq_len,)</span>
+</span></span><span style="display:flex;"><span>        theta = base ** (-torch.arange(0, dim, 2, dtype=torch.float32) / dim)  <span style="color:#888;font-style:italic"># (dim // 2,)</span>
+</span></span><span style="display:flex;"><span>        freqs = torch.outer(position, theta)  <span style="color:#888;font-style:italic"># (seq_len, dim // 2)</span>
+</span></span><span style="display:flex;"><span>        freqs_cis = torch.polar(torch.ones_like(freqs), freqs)  <span style="color:#888;font-style:italic"># (seq_len, dim // 2)</span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.register_buffer(<span style="color:#666;font-style:italic">&#34;freqs_cis&#34;</span>, freqs_cis, persistent=<span style="font-weight:bold;text-decoration:underline">False</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">forward</span>(<span style="font-weight:bold;font-style:italic">self</span>, x: torch.Tensor) -&gt; torch.Tensor:
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-style:italic">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Applies RoPE to a tensor of shape (batch, n_head, seq_len, dim).
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            x (torch.Tensor): Query or key tensor.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        Returns:
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">            torch.Tensor: Tensor with rotary positional embedding applied.
+</span></span></span><span style="display:flex;"><span><span style="color:#666;font-style:italic">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        dtype = x.dtype
+</span></span><span style="display:flex;"><span>        x = torch.view_as_complex(x.float().reshape(*x.shape[:-1], -1, 2))
+</span></span><span style="display:flex;"><span>        freqs_cis = <span style="font-weight:bold;font-style:italic">self</span>.freqs_cis[:x.shape[-2]].view(1, 1, x.shape[-2], x.shape[-1])
+</span></span><span style="display:flex;"><span>        y = torch.view_as_real(x * freqs_cis).flatten(-2)
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">return</span> y.to(dtype)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>DeepSeek V3 implements RoPE with <code>precompute_freqs_cis()</code> and <code>apply_rotary_emb()</code> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>. Unlike absolute positional encoding, RoPE is applied to the query and key tensors inside attention rather than added to the input embedding.</p>
 <h3 class="heading" id="gqa-and-mqa-instead-of-mha">
   GQA and MQA Instead of MHA
   <a class="anchor" href="#gqa-and-mqa-instead-of-mha">#</a>
@@ -355,8 +433,8 @@ $$</p>
 </div>
 <p>Two common improvements are:</p>
 <ul>
-<li><strong>GQA</strong>: several query heads share one key head and one value head per group <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>. GQA keeps more modeling flexibility and is often a better quality-efficiency tradeoff</li>
-<li><strong>MQA</strong>: many query heads share one key head and one value head <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup>. MQA gives the largest KV-cache reduction.</li>
+<li><strong>GQA</strong>: several query heads share one key head and one value head per group <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup>. GQA keeps more modeling flexibility and is often a better quality-efficiency tradeoff</li>
+<li><strong>MQA</strong>: many query heads share one key head and one value head <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>. MQA gives the largest KV-cache reduction.</li>
 </ul>
 <figure><img src="/llm/attention_4_transformer_improvements/images/mha_mqa_gqa.png"
     alt="Rotary positional embedding illustration" width="750">
@@ -408,10 +486,13 @@ $$</p>
 <p>Shreyash Shukla. RoPE (Rotary Positional Embeddings). <a href="https://shreyashkar-ml.github.io/posts/rope/">https://shreyashkar-ml.github.io/posts/rope/</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:3">
-<p>Joshua Ainslie, James Lee-Thorp, Michiel de Jong, Yury Zemlyanskiy, Federico Lebron, and Sumit Sanghai. GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints. arXiv, May 22, 2023. <a href="https://arxiv.org/abs/2305.13245">https://arxiv.org/abs/2305.13245</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>DeepSeek-V3 GitHub repository. <a href="https://github.com/deepseek-ai/DeepSeek-V3/blob/main/inference/model.py">https://github.com/deepseek-ai/DeepSeek-V3/blob/main/inference/model.py</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:4">
-<p>Noam Shazeer. Fast Transformer Decoding: One Write-Head Is All You Need. arXiv, November 6, 2019. <a href="https://arxiv.org/abs/1911.02150">https://arxiv.org/abs/1911.02150</a>&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Joshua Ainslie, James Lee-Thorp, Michiel de Jong, Yury Zemlyanskiy, Federico Lebron, and Sumit Sanghai. GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints. arXiv, May 22, 2023. <a href="https://arxiv.org/abs/2305.13245">https://arxiv.org/abs/2305.13245</a>&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:5">
+<p>Noam Shazeer. Fast Transformer Decoding: One Write-Head Is All You Need. arXiv, November 6, 2019. <a href="https://arxiv.org/abs/1911.02150">https://arxiv.org/abs/1911.02150</a>&#160;<a href="#fnref:5" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 </ol>
 </div>
