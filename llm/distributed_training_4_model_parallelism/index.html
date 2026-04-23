@@ -416,13 +416,13 @@ Model parallelism solves this by partitioning the model itself across multiple G
 <p><strong>PipeDream</strong></p>
 <p>The PipeDream family was proposed by Microsoft&rsquo;s MSR Fiddle team <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup>. The core idea is to futher reduce pipeline bubbles. If multiple training iterations are in flight at the same time, each node can work on a different iteration at any given moment. This avoids waiting in place on strict step-by-step data dependencies and keeps the devices busy.</p>
 <figure><img src="/llm/distributed_training_4_model_parallelism/images/pipedream_model_parallel_4_machines.png"
-    alt="Figure 3: Model parallel training with 4 machines. Numbers indicate minibatch ID. For simplicity, here we assume that forward and backward work in every stage takes one time unit, and communicating activations across machines has no overhead."><figcaption>
+    alt="Figure 3: Model parallel training with 4 machines. Numbers indicate minibatch ID. For simplicity, here we assume that forward and backward work in every stage takes one time unit, and communicating activations across machines has no overhead." width="600"><figcaption>
       <p>Figure 3: Model parallel training with 4 machines. Numbers indicate minibatch ID. For simplicity, here we assume that forward and backward work in every stage takes one time unit, and communicating activations across machines has no overhead.</p>
     </figcaption>
 </figure>
 
 <figure><img src="/llm/distributed_training_4_model_parallelism/images/pipedream_pipeline_4_machines.png"
-    alt="Figure 8: An example pipeline with 4 machines, showing startup and steady states."><figcaption>
+    alt="Figure 8: An example pipeline with 4 machines, showing startup and steady states." width="600"><figcaption>
       <p>Figure 8: An example pipeline with 4 machines, showing startup and steady states.</p>
     </figcaption>
 </figure>
@@ -474,38 +474,26 @@ Model parallelism solves this by partitioning the model itself across multiple G
     </figcaption>
 </figure>
 
-<p><strong>Communication Overhead</strong></p>
-<p>Let the local token tensor have shape <code>[b, s, h]</code>. In the MoE routing step it is common to reshape them to <code>[b * s, h]</code>, so each row in <code>[b * s, h]</code> is one token. After routing, each token is duplicated across its selected experts, so the routed tensor has shape <code>[b * s * top-k, h]</code>. If tokens are evenly distributed, each EP rank sends and receives about
-<code>b * s * top-k * (total_ep_ranks - 1) / total_ep_ranks</code>
-tokens during one all-to-all exchange. The factor <code>(total_ep_ranks - 1) / total_ep_ranks</code> is the probability that a routed token needs to go to another GPU, so in practice the communication volume is on the order of <code>b * s * top-k</code>. With half-precision activations, the communication cost per phase is roughly <code>2 * b * s * top-k * h</code> bytes. Since EP has both a dispatch phase and a combine phase, the total communication is about <code>4 * b * s * top-k * h</code> bytes <sup id="fnref:8"><a href="#fn:8" class="footnote-ref" role="doc-noteref">8</a></sup>.</p>
+<ol>
+<li>Communication Overhead</li>
+</ol>
+<p>Let the local token tensor have shape $[b, s, h]$. In the MoE routing step, it is common to reshape it to $[b \cdot s, h]$, so each row corresponds to one token. After routing, each token is duplicated across its selected experts, so the routed tensor has shape $[b \cdot s \cdot \mathrm{top}\text{-}k, h]$.</p>
+<p>If tokens are evenly distributed across $E$ EP ranks, the expected number of tokens that one rank sends or receives in a single all-to-all exchange is $\frac{b \cdot s \cdot \mathrm{top}\text{-}k \cdot (E - 1)}{E}$. Here, $\frac{E - 1}{E}$ is the probability that a routed token must be transferred to a different GPU, so the communication volume per phase is asymptotically $\mathcal{O}(b \cdot s \cdot \mathrm{top}\text{-}k)$. With half-precision activations, each element uses 2 bytes, so the communication cost per phase is approximately $2 \cdot b \cdot s \cdot \mathrm{top}\text{-}k \cdot h$ bytes. Since EP includes both a dispatch phase and a combine phase, the total communication is approximately $4 \cdot b \cdot s \cdot \mathrm{top}\text{-}k \cdot h$ bytes <sup id="fnref:8"><a href="#fn:8" class="footnote-ref" role="doc-noteref">8</a></sup>.</p>
+<ol start="2">
+<li>Compute Efficiency</li>
+</ol>
+<p>EP and TP have similar total FLOPs for expert computation, but EP tends to form fewer, larger GEMMs because tokens for the same local expert are gathered onto the rank that owns that expert, while TP shards each expert across ranks and therefore tends to form more, smaller GEMMs.</p>
+<p>Overall, EP has an advantage over TP for expert computation: each kernel launch carries a larger workload, and the total number of kernel launches is lower.</p>
+<ol start="3">
+<li>Memory Usage</li>
+</ol>
+<p>Under load imbalance, one rank may receive too many tokens, causing its activation memory usage to spike and potentially trigger an out-of-memory error. From a memory perspective, TP has a clear advantage: its memory usage is lower and more stable.</p>
 <p><strong>GShard</strong></p>
 <p>The GShard paper consists of two parts: one talks about the APIs (&ldquo;GShard is a module composed of a set of lightweight annotation APIs and an extension to the XLA compiler.&rdquo;); the other discusses MoE. We focus on the second part here. GShard was the first work to extend the MoE idea to Transformers. Specifically, it replaced every other FFN layer in the Transformer encoder and decoder with a position-wise MoE layer, using a Top-2 gating network throughout <sup id="fnref1:7"><a href="#fn:7" class="footnote-ref" role="doc-noteref">7</a></sup>.</p>
-<p>
-
-
-
-
-
-
-
-
-
-
-
-<figure class="">
-
-    
-    
-      
-        <div class="img-container" style="--w: 811; --h: 649;">
-            <img loading="lazy" alt="GShard expert parallelism" src="/llm/distributed_training_4_model_parallelism/images/gshard_expert_parallelism.png" width="811" height="649">
-        </div>
-      
-    
-
-    
+<figure><img src="/llm/distributed_training_4_model_parallelism/images/gshard_expert_parallelism.png"
+    alt="GShard expert parallelism" width="1000">
 </figure>
-</p>
+
 <p><strong>DeepEP</strong></p>
 <p>DeepSeek&rsquo;s DeepEP is a communication library designed specifically for MoE models and Expert Parallelism. It provides high-throughput, low-latency <strong>all-to-all</strong> CUDA kernels via NVLink and RDMA, aka MoE <strong>dispatch</strong> and <strong>combine</strong>. The library also supports low-precision operations, including FP8.</p>
 <p>Megatron’s alltoall dispatcher has a relatively clean implementation, but it may suffer from communication redundancy. There are two levels of redundancy:</p>
@@ -514,10 +502,7 @@ tokens during one all-to-all exchange. The factor <code>(total_ep_ranks - 1) / t
 <li>The same token may be dispatched to different devices on the same host.</li>
 </ol>
 <p>Overall, DeepEP reduces this redundancy through hierarchical dispatch and combine: two communication levels, inter-host and intra-host, plus three levels of permute and unpermute, across hosts, across devices within a host, and across experts within a device.</p>
-<p>What suprises me is that the DeepEP&rsquo;s optimizations go very deep. This library uses <strong>a custom PTX instruction</strong>, <code>ld.global.nc.l1::no_allocate.l2::256b</code>, to improve global memory access by avoiding L1 cache allocation, reducing eviction, and taking advantage of 256-byte L2 cache transfers. DeepEP documents this optimization as an undefined-behavior technique and notes it can be disabled with DISABLE_AGGRESSIVE_PTX_INSTRS=1 on unsupported platforms <sup id="fnref:9"><a href="#fn:9" class="footnote-ref" role="doc-noteref">9</a></sup>.</p>
-<blockquote>
-<p>PTX (&ldquo;pee-tex&rdquo;) is NVIDIA&rsquo;s low-level parallel-thread execution virtual machine, exposing the GPU as a parallel compute device and serving as the intermediate instruction set generated by high-level compilers like CUDA C++. Those PTX instructions are then translated into SASS, the native assembly that actually runs on NVIDIA GPU hardware <sup id="fnref:10"><a href="#fn:10" class="footnote-ref" role="doc-noteref">10</a></sup>.</p>
-</blockquote>
+<p>What suprises me is that the DeepEP&rsquo;s optimizations go very deep. This library uses <strong>a custom PTX instruction</strong>, <code>ld.global.nc.l1::no_allocate.l2::256b</code>, to improve global memory access by avoiding L1 cache allocation, reducing eviction, and taking advantage of 256-byte L2 cache transfers. DeepEP documents this optimization as an undefined-behavior technique and notes it can be disabled with DISABLE_AGGRESSIVE_PTX_INSTRS=1 on unsupported platforms <sup id="fnref:9"><a href="#fn:9" class="footnote-ref" role="doc-noteref">9</a></sup> <sup id="fnref:10"><a href="#fn:10" class="footnote-ref" role="doc-noteref">10</a></sup>.</p>
 <h3 class="heading" id="automatic-parallelism">
   Automatic Parallelism
   <a class="anchor" href="#automatic-parallelism">#</a>

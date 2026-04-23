@@ -250,7 +250,7 @@ Static and Dynamic Memory # We refer to the memory used by model parameters as s
 </h3>
 <p>We refer to the memory used by model parameters as <strong>static memory</strong>, meaning its lifetime is effectively unbounded and it must always occupy HBM. The optimizer states, model parameters, and usually gradients are static memory, since they must persist across training steps rather than being freed immediately after one operator finishes.</p>
 <p>We refer to <strong>activation</strong> memory as <strong>dynamic memory</strong>, meaning its lifetime is short and its memory can be reused. Activations have dynamic memory since they are created during forward pass and released or recomputed after backward.</p>
-<figure><img src="/llm/distributed_training_3_zero_fsdp/images/static_dynamic_memory.jpg"
+<figure><img src="/llm/gpu_memory_usage/images/static_dynamic_memory.jpg"
     alt="Static memory vs. dynamic memory in training."><figcaption>
       <p>Static memory vs. dynamic memory in training.</p>
     </figcaption>
