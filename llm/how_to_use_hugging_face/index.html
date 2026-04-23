@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    How to Use Hugging Face | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/how_to_use_hugging_face/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/how_to_use_hugging_face/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="How to Use Hugging Face">
+  <meta property="og:description" content="Hugging Face is a higher-level library built on top of frameworks such as PyTorch, TensorFlow, and JAX. It provides rich pretrained models and fine-tuning support, with the goal of simplifying the development and use of Transformer models. The three core parts of Hugging Face are: Transformers, Tokenizer, and Datasets.
+Transformers # Import the model library from transformers, for example from transformers import AutoModelForCausalLM
+Want representations → AutoModel Want generation / loss → AutoModelForCausalLM Want classification → AutoModelForSequenceClassification Want seq2seq → AutoModelForSeq2SeqLM To specify which model to download and run from Hugging Face Hub, you need to provide the model repository name in your code, e.g. model_id = &#34;gpt2&#34;">
+  <meta property="og:locale" content="en">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="llm">
+    <meta property="article:published_time" content="2022-07-23T00:00:00+00:00">
+    <meta property="article:modified_time" content="2022-07-23T00:00:00+00:00">
+    <meta property="article:tag" content="Llm">
+    <meta property="article:tag" content="Hugging-Face">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.da995059aaa19e7eba2eae597603238eb3c4c67987c6cb5ef60a985e20168e7a.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/system/" >
+                /System
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
+        <a href="/llm/how_to_use_hugging_face/">How to Use Hugging Face</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">How to Use Hugging Face</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2022-07-23T00:00:00&#43;00:00">July 23, 2022</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <p>Hugging Face is a higher-level library built on top of frameworks such as PyTorch, TensorFlow, and JAX. It provides rich pretrained models and fine-tuning support, with the goal of simplifying the development and use of Transformer models.
+The three core parts of Hugging Face are: Transformers, Tokenizer, and Datasets.</p>
+<h3 class="heading" id="transformers">
+  Transformers
+  <a class="anchor" href="#transformers">#</a>
+</h3>
+<p>Import the model library from <code>transformers</code>, for example <code>from transformers import AutoModelForCausalLM</code></p>
+<ul>
+<li>Want representations → AutoModel</li>
+<li>Want generation / loss → AutoModelForCausalLM</li>
+<li>Want classification → AutoModelForSequenceClassification</li>
+<li>Want seq2seq → AutoModelForSeq2SeqLM</li>
+</ul>
+<p>To specify which model to download and run from Hugging Face Hub, you need to provide the model repository name in your code, e.g. <code>model_id = &quot;gpt2&quot;</code></p>
+<h3 class="heading" id="tokenizer">
+  Tokenizer
+  <a class="anchor" href="#tokenizer">#</a>
+</h3>
+<p>A tokenizer splits text into tokens and maps them to input IDs. In practice, you import <code>AutoTokenizer</code>, load it with a model ID, tokenize a prompt, and pass the result to the model for generation.</p>
+<h3 class="heading" id="examples">
+  Examples
+  <a class="anchor" href="#examples">#</a>
+</h3>
+<p>To run inference:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">from</span> <span style="color:#666;font-weight:bold;font-style:italic">transformers</span> <span style="font-weight:bold;text-decoration:underline">import</span> AutoTokenizer, AutoModelForCausalLM
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>model_name = <span style="color:#666;font-style:italic">&#34;gpt2&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>tokenizer = AutoTokenizer.from_pretrained(model_name)
+</span></span><span style="display:flex;"><span>model = AutoModelForCausalLM.from_pretrained(model_name)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>prompt = <span style="color:#666;font-style:italic">&#34;Once upon a time&#34;</span>
+</span></span><span style="display:flex;"><span>inputs = tokenizer(prompt, return_tensors=<span style="color:#666;font-style:italic">&#34;pt&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>outputs = model.generate(**inputs, max_length=50)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;font-style:italic">print</span>(tokenizer.decode(outputs[0]))</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Or if you want to run training:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">torch</span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">from</span> <span style="color:#666;font-weight:bold;font-style:italic">datasets</span> <span style="font-weight:bold;text-decoration:underline">import</span> Dataset
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">from</span> <span style="color:#666;font-weight:bold;font-style:italic">transformers</span> <span style="font-weight:bold;text-decoration:underline">import</span> (
+</span></span><span style="display:flex;"><span>    AutoTokenizer,
+</span></span><span style="display:flex;"><span>    AutoModelForCausalLM,
+</span></span><span style="display:flex;"><span>    Trainer,
+</span></span><span style="display:flex;"><span>    TrainingArguments
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>model_name = <span style="color:#666;font-style:italic">&#34;gpt2&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>tokenizer = AutoTokenizer.from_pretrained(model_name)
+</span></span><span style="display:flex;"><span>tokenizer.pad_token = tokenizer.eos_token  <span style="color:#888;font-style:italic"># GPT2 has no pad by default</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>model = AutoModelForCausalLM.from_pretrained(model_name)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># Dummy training data</span>
+</span></span><span style="display:flex;"><span>texts = [
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#34;Hello, this is a test&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#34;Hugging Face makes transformers easy&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#666;font-style:italic">&#34;We are training GPT-2&#34;</span>
+</span></span><span style="display:flex;"><span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>dataset = Dataset.from_dict({<span style="color:#666;font-style:italic">&#34;text&#34;</span>: texts})
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">preprocess</span>(examples):
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">return</span> tokenizer(examples[<span style="color:#666;font-style:italic">&#34;text&#34;</span>], truncation=<span style="font-weight:bold;text-decoration:underline">True</span>, padding=<span style="color:#666;font-style:italic">&#34;max_length&#34;</span>, max_length=64)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>dataset = dataset.map(preprocess, batched=<span style="font-weight:bold;text-decoration:underline">True</span>, remove_columns=[<span style="color:#666;font-style:italic">&#34;text&#34;</span>])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#888;font-style:italic"># labels = input_ids (causal LM)</span>
+</span></span><span style="display:flex;"><span>dataset = dataset.map(<span style="font-weight:bold;text-decoration:underline">lambda</span> x: {<span style="color:#666;font-style:italic">&#34;labels&#34;</span>: x[<span style="color:#666;font-style:italic">&#34;input_ids&#34;</span>]})
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>training_args = TrainingArguments(
+</span></span><span style="display:flex;"><span>    output_dir=<span style="color:#666;font-style:italic">&#34;./gpt2-continued-pretrain&#34;</span>,
+</span></span><span style="display:flex;"><span>    per_device_train_batch_size=2,
+</span></span><span style="display:flex;"><span>    num_train_epochs=3,
+</span></span><span style="display:flex;"><span>    logging_steps=1,
+</span></span><span style="display:flex;"><span>    save_steps=10,
+</span></span><span style="display:flex;"><span>    fp16=torch.cuda.is_available(),
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>trainer = Trainer(model=model, args=training_args, train_dataset=dataset)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>trainer.train()</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/llm/ml_fundamentals/">
+                        ML Fundementals
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+            <div class="single-pagination-container-next">
+                <div class="single-pagination-text">
+                    <a href="/llm/pytorch_101/">
+                        PyTorch 101
+                    </a>
+                </div>
+                <div class="single-pagination-text">→</div>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+
