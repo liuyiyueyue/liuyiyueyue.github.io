@@ -280,7 +280,40 @@
 </figure>
 
 <p>Conceptually, one SM can be viewed as four smaller execution partitions that share on-chip resources such as registers, shared memory, and cache. Each partition has its own warp scheduler and dispatch logic. Within a partition, the <strong>warp scheduler</strong> can often issue two instructions per cycle from the same warp: one compute instruction, such as INT32, FP32, or Tensor Core work, and one memory instruction, such as a load or store. This is why the scheduler is described as <strong>dual-issue</strong>. The Special Function Unit (SFU) sits alongside these pipelines and handles transcendental operations such as sine, cosine, reciprocal, and square root, but it is separate from the usual compute-plus-memory dual-issue pairing.</p>
-<h3 class="heading" id="threads-warps-blocks-and-grids">
+<p><strong>Comparison with GPU</strong></p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>GPU</th>
+                <th>TPU</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>SM (streaming multiprocessor)</td>
+                <td>Tensor Core</td>
+            </tr>
+            <tr>
+                <td>Warp Scheduler</td>
+                <td>VPU slots</td>
+            </tr>
+            <tr>
+                <td>SMEM (L1 cache)</td>
+                <td>VMEM</td>
+            </tr>
+            <tr>
+                <td>Registers</td>
+                <td>Vector Registers (VRegs)</td>
+            </tr>
+            <tr>
+                <td>Tensor Core</td>
+                <td>MXU</td>
+            </tr>
+        </tbody>
+    </table>
+</div><h3 class="heading" id="threads-warps-blocks-and-grids">
   Threads, Warps, Blocks, and Grids
   <a class="anchor" href="#threads-warps-blocks-and-grids">#</a>
 </h3>

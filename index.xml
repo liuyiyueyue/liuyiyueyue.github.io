@@ -6,8 +6,15 @@
     <description>Recent content in Home on Yiyue Liu&#39;s Blog</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Tue, 14 Apr 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 24 Apr 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://liuyiyueyue.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Concurrency in Python</title>
+      <link>https://liuyiyueyue.github.io/system/concurrency/</link>
+      <pubDate>Fri, 24 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/system/concurrency/</guid>
+      <description>&lt;p&gt;Python concurrency is mostly about choosing the right execution model and understanding the synchronization primitives behind it. In practice, the first distinction is between threads and processes.&lt;/p&gt;&#xA;&lt;h3 class=&#34;heading&#34; id=&#34;process-vs-thread&#34;&gt;&#xA;  Process vs Thread&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#process-vs-thread&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;Threads in the same process share memory. Processes do not. That difference affects synchronization, communication, and whether CPU work can run in parallel.&lt;/p&gt;&#xA;&lt;table&gt;&#xA;  &lt;thead&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;th&gt;Feature&lt;/th&gt;&#xA;          &lt;th&gt;Thread&lt;/th&gt;&#xA;          &lt;th&gt;Process&lt;/th&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/thead&gt;&#xA;  &lt;tbody&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;td&gt;Memory&lt;/td&gt;&#xA;          &lt;td&gt;Shared&lt;/td&gt;&#xA;          &lt;td&gt;Separate&lt;/td&gt;&#xA;      &lt;/tr&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;td&gt;GIL&lt;/td&gt;&#xA;          &lt;td&gt;Shared&lt;/td&gt;&#xA;          &lt;td&gt;Separate&lt;/td&gt;&#xA;      &lt;/tr&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;td&gt;True CPU parallelism&lt;/td&gt;&#xA;          &lt;td&gt;No&lt;/td&gt;&#xA;          &lt;td&gt;Yes&lt;/td&gt;&#xA;      &lt;/tr&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;td&gt;IPC required&lt;/td&gt;&#xA;          &lt;td&gt;No&lt;/td&gt;&#xA;          &lt;td&gt;Yes&lt;/td&gt;&#xA;      &lt;/tr&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;td&gt;Overhead&lt;/td&gt;&#xA;          &lt;td&gt;Lower&lt;/td&gt;&#xA;          &lt;td&gt;Higher&lt;/td&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/tbody&gt;&#xA;&lt;/table&gt;&#xA;&lt;p&gt;In CPython, threads share one Global Interpreter Lock (GIL), so only one thread executes Python bytecode at a time. As a result:&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Distributed Training: Challenges</title>
       <link>https://liuyiyueyue.github.io/llm/distributed_training_5_challenges/</link>

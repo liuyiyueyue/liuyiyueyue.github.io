@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://liuyiyueyue.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://liuyiyueyue.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://liuyiyueyue.github.io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    Concurrency in Python | Yiyue Liu&#39;s Blog
+    
+</title>
+
+<link rel="canonical" href="https://liuyiyueyue.github.io/system/concurrency/"/>
+
+<meta property="og:url" content="https://liuyiyueyue.github.io/system/concurrency/">
+  <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
+  <meta property="og:title" content="Concurrency in Python">
+  <meta property="og:description" content="Python concurrency is mostly about choosing the right execution model and understanding the synchronization primitives behind it. In practice, the first distinction is between threads and processes.
+Process vs Thread # Threads in the same process share memory. Processes do not. That difference affects synchronization, communication, and whether CPU work can run in parallel.
+Feature Thread Process Memory Shared Separate GIL Shared Separate True CPU parallelism No Yes IPC required No Yes Overhead Lower Higher In CPython, threads share one Global Interpreter Lock (GIL), so only one thread executes Python bytecode at a time. As a result:">
+  <meta property="og:locale" content="en">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="system">
+    <meta property="article:published_time" content="2026-04-24T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-04-24T00:00:00+00:00">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.da995059aaa19e7eba2eae597603238eb3c4c67987c6cb5ef60a985e20168e7a.css" media="all">
+
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script>
+        var doNotTrack = false;
+        if ( true ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-xxxxxxxxx');
+        }
+      </script>
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+  
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header style="position: relative;">
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="/">Yiyue Liu&#39;s Blog</a>
+    </h1>
+
+    <div class="header-menu">
+        
+        
+
+        
+        
+        
+        <p class="small ">
+            <a href="/" >
+                /Home
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/archives/" >
+                /Archive
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/software_engineering/" >
+                /Software Engineering
+            </a>
+        </p>
+        
+        
+        <p class="small ">
+            <a href="/llm/" >
+                /LLM
+            </a>
+        </p>
+        
+        
+        <p class="small  bold ">
+            <a href="/system/" >
+                /System
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+
+      
+      <div class="lang-switch">
+        
+          
+
+          
+            <span class="active">English</span>
+          
+
+          
+            |
+          
+        
+          
+
+          
+            
+
+            
+            
+
+            
+            
+              
+                
+              
+                
+                  
+                
+              
+            
+
+            <a href="/zh/">中文</a>
+          
+
+          
+        
+      </div>
+      
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/system/">System</a><span class="breadcrumbs-separator">/</span>
+        <a href="/system/concurrency/">Concurrency in Python</a></div>
+
+
+<div >
+  <article>
+    <header class="single-intro-container">
+        
+        <h1 class="single-title">Concurrency in Python</h1>
+        
+        <div class="single-subsummary">
+          
+          <div>
+            
+            <p class="single-date">
+              <time datetime="2026-04-24T00:00:00&#43;00:00">April 24, 2026</time>
+            </p>
+          </div>
+        </div>
+        
+    </header>
+    
+    <div class="single-content">
+      <p>Python concurrency is mostly about choosing the right execution model and understanding the synchronization primitives behind it. In practice, the first distinction is between threads and processes.</p>
+<h3 class="heading" id="process-vs-thread">
+  Process vs Thread
+  <a class="anchor" href="#process-vs-thread">#</a>
+</h3>
+<p>Threads in the same process share memory. Processes do not. That difference affects synchronization, communication, and whether CPU work can run in parallel.</p>
+
+<div class="table-outer">
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Thread</th>
+                <th>Process</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Memory</td>
+                <td>Shared</td>
+                <td>Separate</td>
+            </tr>
+            <tr>
+                <td>GIL</td>
+                <td>Shared</td>
+                <td>Separate</td>
+            </tr>
+            <tr>
+                <td>True CPU parallelism</td>
+                <td>No</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td>IPC required</td>
+                <td>No</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td>Overhead</td>
+                <td>Lower</td>
+                <td>Higher</td>
+            </tr>
+        </tbody>
+    </table>
+</div><p>In CPython, threads share one Global Interpreter Lock (GIL), so only one thread executes Python bytecode at a time. As a result:</p>
+<ul>
+<li>threads are usually a good fit for I/O-bound work</li>
+<li>processes are a better fit for CPU-bound work</li>
+</ul>
+<h3 class="heading" id="multiprocessing">
+  Multiprocessing
+  <a class="anchor" href="#multiprocessing">#</a>
+</h3>
+<p><code>multiprocessing</code> gives each worker its own Python interpreter and memory space. This avoids the GIL for CPU-heavy tasks, but communication becomes more expensive because data must cross process boundaries.</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">from</span> <span style="color:#666;font-weight:bold;font-style:italic">multiprocessing</span> <span style="font-weight:bold;text-decoration:underline">import</span> Process, Queue, Lock
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">worker</span>(lock, q):
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">with</span> lock:
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">&#34;critical section&#34;</span>)
+</span></span><span style="display:flex;"><span>    item = q.get()
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;font-style:italic">print</span>(item)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">if</span> <span style="color:#666;font-weight:bold;font-style:italic">__name__</span> == <span style="color:#666;font-style:italic">&#34;__main__&#34;</span>:
+</span></span><span style="display:flex;"><span>    q = Queue(maxsize=2)
+</span></span><span style="display:flex;"><span>    q.put(<span style="color:#666;font-style:italic">&#34;A&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    lock = Lock()
+</span></span><span style="display:flex;"><span>    p = Process(target=worker, args=(lock, q))
+</span></span><span style="display:flex;"><span>    p.start()
+</span></span><span style="display:flex;"><span>    p.join()</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Key points:</p>
+<ul>
+<li><code>Queue</code> is process-safe and supports blocking <code>put()</code> and <code>get()</code>.</li>
+<li><code>Lock</code> can coordinate access across processes.</li>
+<li>Process isolation improves parallelism, but startup and IPC cost more than threads.</li>
+</ul>
+<h3 class="heading" id="threading">
+  Threading
+  <a class="anchor" href="#threading">#</a>
+</h3>
+<p><code>threading</code> is lighter weight than <code>multiprocessing</code>, but all Python threads in one process share the same GIL in CPython.</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">threading</span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">time</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">worker</span>():
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">&#34;start&#34;</span>)
+</span></span><span style="display:flex;"><span>    time.sleep(1)
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;font-style:italic">print</span>(<span style="color:#666;font-style:italic">&#34;end&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>t = threading.Thread(target=worker)
+</span></span><span style="display:flex;"><span>t.start()
+</span></span><span style="display:flex;"><span>t.join()</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Each thread can also have its own thread-local state:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">threading</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>local_data = threading.local()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">worker</span>():
+</span></span><span style="display:flex;"><span>    local_data.x = 1</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<h3 class="heading" id="locks-and-conditions">
+  Locks and Conditions
+  <a class="anchor" href="#locks-and-conditions">#</a>
+</h3>
+<p>A <code>Lock</code> protects a critical section:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">threading</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>lock = threading.Lock()
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">with</span> lock:
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">pass</span></span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>This does not mean threads busy-wait in user code. If a lock is unavailable, the waiting thread blocks until it can acquire it.</p>
+<p>A <code>Condition</code> is used when a thread must wait for a state change, not just mutual exclusion:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">threading</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>lock = threading.Lock()
+</span></span><span style="display:flex;"><span>cond = threading.Condition(lock)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">with</span> cond:
+</span></span><span style="display:flex;"><span>    cond.wait()
+</span></span><span style="display:flex;"><span>    cond.notify()</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>The usual pattern is:</p>
+<ul>
+<li>hold the lock</li>
+<li>check a predicate in a <code>while</code> loop</li>
+<li>call <code>wait()</code> if the predicate is false</li>
+<li>call <code>notify()</code> or <code>notify_all()</code> after changing the shared state</li>
+</ul>
+<p>For producer-consumer code:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">with</span> cond:
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">while</span> <span style="font-weight:bold">not</span> queue:
+</span></span><span style="display:flex;"><span>        cond.wait()
+</span></span><span style="display:flex;"><span>    item = queue.pop(0)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">with</span> cond:
+</span></span><span style="display:flex;"><span>    queue.append(item)
+</span></span><span style="display:flex;"><span>    cond.notify()</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Python also provides <code>queue.Queue</code>, a thread-safe FIFO queue built on top of a deque, a lock, and condition variables such as <code>not_empty</code> and <code>not_full</code>.</p>
+<h3 class="heading" id="readers-writer-lock">
+  Readers-Writer Lock
+  <a class="anchor" href="#readers-writer-lock">#</a>
+</h3>
+<p>A readers-writer lock allows concurrent readers but requires writers to be exclusive:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">threading</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">class</span> <span style="color:#666;font-weight:bold;font-style:italic">RWLock</span>:
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">__init__</span>(<span style="font-weight:bold;font-style:italic">self</span>):
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>._cond = threading.Condition(threading.Lock())
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>._readers = 0
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>._writer = <span style="font-weight:bold;text-decoration:underline">False</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">acquire_read</span>(<span style="font-weight:bold;font-style:italic">self</span>):
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">with</span> <span style="font-weight:bold;font-style:italic">self</span>._cond:
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;text-decoration:underline">while</span> <span style="font-weight:bold;font-style:italic">self</span>._writer:
+</span></span><span style="display:flex;"><span>                <span style="font-weight:bold;font-style:italic">self</span>._cond.wait()
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;font-style:italic">self</span>._readers += 1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">release_read</span>(<span style="font-weight:bold;font-style:italic">self</span>):
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">with</span> <span style="font-weight:bold;font-style:italic">self</span>._cond:
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;font-style:italic">self</span>._readers -= 1
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;text-decoration:underline">if</span> <span style="font-weight:bold;font-style:italic">self</span>._readers == 0:
+</span></span><span style="display:flex;"><span>                <span style="font-weight:bold;font-style:italic">self</span>._cond.notify_all()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">acquire_write</span>(<span style="font-weight:bold;font-style:italic">self</span>):
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">with</span> <span style="font-weight:bold;font-style:italic">self</span>._cond:
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;text-decoration:underline">while</span> <span style="font-weight:bold;font-style:italic">self</span>._writer <span style="font-weight:bold">or</span> <span style="font-weight:bold;font-style:italic">self</span>._readers &gt; 0:
+</span></span><span style="display:flex;"><span>                <span style="font-weight:bold;font-style:italic">self</span>._cond.wait()
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;font-style:italic">self</span>._writer = <span style="font-weight:bold;text-decoration:underline">True</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">release_write</span>(<span style="font-weight:bold;font-style:italic">self</span>):
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">with</span> <span style="font-weight:bold;font-style:italic">self</span>._cond:
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;font-style:italic">self</span>._writer = <span style="font-weight:bold;text-decoration:underline">False</span>
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;font-style:italic">self</span>._cond.notify_all()</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>This implementation is simple but not strictly fair. Under contention, either readers or writers may starve unless the policy is extended.</p>
+<h3 class="heading" id="bounded-blocking-queue">
+  Bounded Blocking Queue
+  <a class="anchor" href="#bounded-blocking-queue">#</a>
+</h3>
+<p>A bounded blocking queue is a common concurrency primitive for producer-consumer systems. It supports multiple producers and consumers while applying backpressure when the buffer reaches capacity:</p>
+<ul>
+<li><code>put(item)</code> blocks when the queue is full</li>
+<li><code>get()</code> blocks when the queue is empty</li>
+</ul>
+<p>The usual implementation uses one mutex and two condition variables:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">threading</span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">from</span> <span style="color:#666;font-weight:bold;font-style:italic">collections</span> <span style="font-weight:bold;text-decoration:underline">import</span> deque
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">class</span> <span style="color:#666;font-weight:bold;font-style:italic">BoundedQueue</span>:
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">__init__</span>(<span style="font-weight:bold;font-style:italic">self</span>, capacity):
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.capacity = capacity
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.queue = deque()
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.lock = threading.Lock()
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.not_empty = threading.Condition(<span style="font-weight:bold;font-style:italic">self</span>.lock)
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.not_full = threading.Condition(<span style="font-weight:bold;font-style:italic">self</span>.lock)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">put</span>(<span style="font-weight:bold;font-style:italic">self</span>, item):
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">with</span> <span style="font-weight:bold;font-style:italic">self</span>.not_full:
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;text-decoration:underline">while</span> <span style="font-weight:bold;font-style:italic">len</span>(<span style="font-weight:bold;font-style:italic">self</span>.queue) &gt;= <span style="font-weight:bold;font-style:italic">self</span>.capacity:
+</span></span><span style="display:flex;"><span>                <span style="font-weight:bold;font-style:italic">self</span>.not_full.wait()
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;font-style:italic">self</span>.queue.append(item)
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;font-style:italic">self</span>.not_empty.notify()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">get</span>(<span style="font-weight:bold;font-style:italic">self</span>):
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">with</span> <span style="font-weight:bold;font-style:italic">self</span>.not_empty:
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;text-decoration:underline">while</span> <span style="font-weight:bold">not</span> <span style="font-weight:bold;font-style:italic">self</span>.queue:
+</span></span><span style="display:flex;"><span>                <span style="font-weight:bold;font-style:italic">self</span>.not_empty.wait()
+</span></span><span style="display:flex;"><span>            item = <span style="font-weight:bold;font-style:italic">self</span>.queue.popleft()
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;font-style:italic">self</span>.not_full.notify()
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;text-decoration:underline">return</span> item</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>This design works because:</p>
+<ul>
+<li>The mutex protects the queue state.</li>
+<li><code>not_full</code> blocks producers when capacity is exhausted.</li>
+<li><code>not_empty</code> blocks consumers when no data is available.</li>
+<li>The <code>while</code> loop is required because condition waits may wake spuriously.</li>
+</ul>
+<p>Practical considerations:</p>
+<ul>
+<li>Timeout support: compute a deadline, then call <code>wait(remaining)</code> until the condition is satisfied or the timeout expires.</li>
+<li><code>deque</code> instead of <code>list</code>: <code>popleft()</code> is <code>O(1)</code>, while <code>pop(0)</code> is <code>O(n)</code>.</li>
+<li><code>notify()</code> vs <code>notify_all()</code>: <code>notify()</code> wakes one waiter and is usually better for throughput; <code>notify_all()</code> wakes everyone and can cause unnecessary contention.</li>
+<li>Starvation and fairness: Python condition variables are not strictly fair. If fairness matters, use an explicit FIFO waiter policy or a semaphore-based design.</li>
+</ul>
+<h3 class="heading" id="thread-pool">
+  Thread Pool
+  <a class="anchor" href="#thread-pool">#</a>
+</h3>
+<p>A thread pool is a simple execution model built from a shared task queue and a fixed set of worker threads:</p>
+<ul>
+<li>the main thread submits tasks</li>
+<li>worker threads pull tasks and execute them</li>
+</ul>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">threading</span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">import</span> <span style="color:#666;font-weight:bold;font-style:italic">queue</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">class</span> <span style="color:#666;font-weight:bold;font-style:italic">ThreadPool</span>:
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">__init__</span>(<span style="font-weight:bold;font-style:italic">self</span>, num_workers):
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.tasks = queue.Queue()
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.workers = []
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">for</span> _ <span style="font-weight:bold">in</span> <span style="font-weight:bold;font-style:italic">range</span>(num_workers):
+</span></span><span style="display:flex;"><span>            t = threading.Thread(target=<span style="font-weight:bold;font-style:italic">self</span>._worker)
+</span></span><span style="display:flex;"><span>            t.start()
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;font-style:italic">self</span>.workers.append(t)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">_worker</span>(<span style="font-weight:bold;font-style:italic">self</span>):
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">while</span> <span style="font-weight:bold;text-decoration:underline">True</span>:
+</span></span><span style="display:flex;"><span>            task = <span style="font-weight:bold;font-style:italic">self</span>.tasks.get()
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;text-decoration:underline">if</span> task <span style="font-weight:bold">is</span> <span style="font-weight:bold;text-decoration:underline">None</span>:
+</span></span><span style="display:flex;"><span>                <span style="font-weight:bold;font-style:italic">self</span>.tasks.task_done()
+</span></span><span style="display:flex;"><span>                <span style="font-weight:bold;text-decoration:underline">break</span>
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;text-decoration:underline">try</span>:
+</span></span><span style="display:flex;"><span>                task()
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;text-decoration:underline">finally</span>:
+</span></span><span style="display:flex;"><span>                <span style="font-weight:bold;font-style:italic">self</span>.tasks.task_done()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">submit</span>(<span style="font-weight:bold;font-style:italic">self</span>, fn):
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;font-style:italic">self</span>.tasks.put(fn)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">def</span> <span style="color:#666;font-weight:bold;font-style:italic">shutdown</span>(<span style="font-weight:bold;font-style:italic">self</span>):
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">for</span> _ <span style="font-weight:bold">in</span> <span style="font-weight:bold;font-style:italic">self</span>.workers:
+</span></span><span style="display:flex;"><span>            <span style="font-weight:bold;font-style:italic">self</span>.tasks.put(<span style="font-weight:bold;text-decoration:underline">None</span>)
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">for</span> t <span style="font-weight:bold">in</span> <span style="font-weight:bold;font-style:italic">self</span>.workers:
+</span></span><span style="display:flex;"><span>            t.join()</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>At a high level:</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>ThreadPool = task queue + worker threads</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p>Practical considerations:</p>
+<ul>
+<li>CPU-bound work: threads are a poor fit in CPython because of the GIL; use <code>multiprocessing</code> for parallel CPU execution.</li>
+<li>Starvation: a plain FIFO queue is simple and predictable, but it cannot prioritize urgent work.</li>
+<li>Priority scheduling: use a priority queue, and if starvation is a concern, combine priorities with aging so long-waiting tasks gradually become more important.</li>
+<li>Multi-level queues: another option is weighted fair scheduling, for example serving high-, medium-, and low-priority queues in a fixed ratio.</li>
+</ul>
+
+    </div>
+  </article>
+
+  
+
+  
+
+  
+  
+
+<div class="single-pagination">
+    <hr />
+
+    <div class="flexnowrap">
+
+        <div class="single-pagination-prev">
+            
+            <div class="single-pagination-container-prev">
+                <div class="single-pagination-text">←</div>
+                <div class="single-pagination-text">
+                    <a href="/system/memory_allocation/">
+                        Memory Pool and Allocation
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="single-pagination-next">
+            
+        </div>
+
+    </div>
+
+    <hr />
+</div>
+
+
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
+
