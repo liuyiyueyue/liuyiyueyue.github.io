@@ -433,6 +433,9 @@ Model parallelism solves this by partitioning the model itself across multiple G
   <a class="anchor" href="#sequence-parallelism">#</a>
 </h3>
 <p>Two papers both discuss sequence parallelism (also called context parallelism) but with different goals and methods.</p>
+<p><strong>Ring-Attention</strong></p>
+<p>Before reading this section, please read the <a href="../../attention_3_flashattention/index.en.md">FlashAttention</a> blog first.</p>
+<p>Ring Attention is roughly a &ldquo;distributed&rdquo; version of FlashAttention-2 [^17]. In FlashAttention-2, both the outer loop over <code>Q</code> tiles and the inner loop over <code>K/V</code> tiles run on a single GPU. In Ring Attention, the <code>Q</code> tiles are first partitioned across multiple GPUs, and the <code>K/V</code> tiles are then circulated around those GPUs with ring communication. Each GPU updates its local output tile in essentially the same way as FlashAttention-2.</p>
 <p><strong>Megatron-LM</strong></p>
 <p>The first paper is Megatron-LM’s third paper, “Reducing Activation Recomputation in Large Transformer Models” <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>. The motivation behind Megatron-LM’s sequence parallelism was to <em>distribute the memory that tensor parallelism could not shard anymore</em>.</p>
 <figure><img src="/llm/distributed_training_4_model_parallelism/images/sequence_parallel_figure5.png"
