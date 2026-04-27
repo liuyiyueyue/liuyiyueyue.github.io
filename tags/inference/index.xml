@@ -6,19 +6,19 @@
     <description>Recent content in Inference on Yiyue Liu&#39;s Blog</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Wed, 01 Apr 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 15 Dec 2023 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://liuyiyueyue.github.io/tags/inference/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>LLM Inference: Inference Servers</title>
       <link>https://liuyiyueyue.github.io/llm/inference_4_inference_servers/</link>
-      <pubDate>Wed, 01 Apr 2026 00:00:00 +0000</pubDate>
+      <pubDate>Fri, 15 Dec 2023 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/llm/inference_4_inference_servers/</guid>
       <description>&lt;p&gt;How would we design an LLM inference serving system that supports multi-request concurrency, low latency, and high throughput? Such a system introduces a new set of systems challenges:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;How do we achieve low latency and high throughput when many user requests arrive concurrently?&lt;/li&gt;&#xA;&lt;li&gt;What should we do when the model is too large and the KV cache exceeds GPU memory capacity?&lt;/li&gt;&#xA;&lt;li&gt;How can we schedule GPU resources efficiently across many users and many models?&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;This section discusses the main challenges above in the context of inference serving systems. The focus is on how modern servers handle concurrency, memory pressure, and scheduling efficiency in practice.&lt;/p&gt;</description>
     </item>
     <item>
       <title>LLM Inference: Optimization Techniques</title>
       <link>https://liuyiyueyue.github.io/llm/inference_3_optimizations/</link>
-      <pubDate>Thu, 26 Feb 2026 00:00:00 +0000</pubDate>
+      <pubDate>Thu, 14 Dec 2023 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/llm/inference_3_optimizations/</guid>
       <description>&lt;p&gt;A survey summarizes the inference optimization methods into three levels, i.e., data-level optimization, model-level&#xA;optimization and system-level optimization, illustrated below &lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;.&lt;/p&gt;&#xA;&lt;figure&gt;&lt;img src=&#34;https://liuyiyueyue.github.io/llm/inference_3_optimizations/images/inference_methods.png&#34;&#xA;    alt=&#34;Overview of inference serving methods&#34;&gt;&lt;figcaption&gt;&#xA;      &lt;p&gt;Overview of inference serving methods.&lt;/p&gt;&#xA;    &lt;/figcaption&gt;&#xA;&lt;/figure&gt;&#xA;&#xA;&lt;p&gt;We already covered some in other posts of the &lt;code&gt;LLM Inference:&lt;/code&gt; series:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&lt;a href=&#34;https://liuyiyueyue.github.io/llm/inference_1_prefill_decode/&#34;&gt;LLM Inference: Prefill and Decode&lt;/a&gt;&lt;/li&gt;&#xA;&lt;li&gt;&lt;a href=&#34;https://liuyiyueyue.github.io/llm/inference_2_kv_cache/&#34;&gt;LLM Inference: KV Cache&lt;/a&gt;&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;This post first introduces several common inference optimization techniques, then explains when to use them to improve performance and reduce memory usage.&lt;/p&gt;</description>
     </item>
@@ -37,9 +37,9 @@
       <description>&lt;h3 class=&#34;heading&#34; id=&#34;what-are-prefill-and-decode&#34;&gt;&#xA;  What Are Prefill and Decode?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#what-are-prefill-and-decode&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;In LLM inference, prefill and decode are two distinct phases of text generation:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&lt;strong&gt;Prefill phase&lt;/strong&gt; is the first forward pass through the model, where the &lt;strong&gt;entire prompt&lt;/strong&gt; (all user input tokens) is processed. It builds the &lt;strong&gt;initial KV cache&lt;/strong&gt;. It&amp;rsquo;s also called &lt;strong&gt;Context Encoding or CTE&lt;/strong&gt;.&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;Decode phase&lt;/strong&gt; produces &lt;strong&gt;one new token at a time&lt;/strong&gt; (or a few tokens in parallel if speculative/parallel decoding is used). At each step, it uses the KV from the prefill, only calculates the attention on the newest token, and extend the KV cache. It&amp;rsquo;s also called &lt;strong&gt;Token Generation, tokengen, or TKG&lt;/strong&gt;.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;&#xA;&#xA;&#xA;&#xA;&#xA;&#xA;&#xA;&#xA;&#xA;&#xA;&#xA;&#xA;&lt;figure class=&#34;&#34;&gt;&#xA;&#xA;    &#xA;    &#xA;      &#xA;        &lt;div class=&#34;img-container&#34; style=&#34;--w: 1433; --h: 686;&#34;&gt;&#xA;            &lt;img loading=&#34;lazy&#34; alt=&#34;Prefill and decode latency breakdown&#34; src=&#34;https://liuyiyueyue.github.io/llm/inference_1_prefill_decode/images/prefill-decode-latency.jpg&#34; width=&#34;1433&#34; height=&#34;686&#34;&gt;&#xA;        &lt;/div&gt;&#xA;      &#xA;    &#xA;&#xA;    &#xA;&lt;/figure&gt;&#xA;&lt;/p&gt;</description>
     </item>
     <item>
-      <title>FlashAttention</title>
+      <title>Transformer: FlashAttention</title>
       <link>https://liuyiyueyue.github.io/llm/attention_3_flashattention/</link>
-      <pubDate>Sun, 10 Dec 2023 00:00:00 +0000</pubDate>
+      <pubDate>Fri, 14 Jul 2023 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/llm/attention_3_flashattention/</guid>
       <description>&lt;h3 class=&#34;heading&#34; id=&#34;what-is-flashattention&#34;&gt;&#xA;  What Is FlashAttention?&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#what-is-flashattention&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;FlashAttention is a fast, memory-efficient, exact attention algorithm designed with IO awareness. &lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&lt;strong&gt;Fast&lt;/strong&gt;: speeds up attention computation.&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;Memory-efficient&lt;/strong&gt;: reduces GPU memory usage.&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;Exact&lt;/strong&gt;: preserves the exact attention result instead of using an approximation.&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;IO-aware&lt;/strong&gt;: improves performance by reducing data movement between GPU memory levels.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;h3 class=&#34;heading&#34; id=&#34;why-regular-attention-is-expensive&#34;&gt;&#xA;  Why Regular Attention Is Expensive&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#why-regular-attention-is-expensive&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;In a naive attention implementation, the matrices &lt;code&gt;Q&lt;/code&gt;, &lt;code&gt;K&lt;/code&gt;, and &lt;code&gt;V&lt;/code&gt; are stored in high-bandwidth memory (HBM). Intermediate results are also repeatedly written to and read back from HBM:&lt;/p&gt;</description>
     </item>

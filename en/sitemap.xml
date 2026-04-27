@@ -31,30 +31,17 @@
                 href="https://liuyiyueyue.github.io/system/"
                 />
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/distributed_training_5_challenges/</loc>
-    <lastmod>2026-04-14T00:00:00+00:00</lastmod>
+    <loc>https://liuyiyueyue.github.io/tags/gpu/</loc>
+    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/distributed-training/</loc>
-    <lastmod>2026-04-14T00:00:00+00:00</lastmod>
+    <loc>https://liuyiyueyue.github.io/tags/memory/</loc>
+    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/llm/</loc>
-    <lastmod>2026-04-14T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/</loc>
-    <lastmod>2026-04-14T00:00:00+00:00</lastmod>
-    <xhtml:link
-                rel="alternate"
-                hreflang="zh"
-                href="https://liuyiyueyue.github.io/zh/llm/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="en"
-                href="https://liuyiyueyue.github.io/llm/"
-                />
+    <loc>https://liuyiyueyue.github.io/system/memory_allocation/</loc>
+    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/</loc>
-    <lastmod>2026-04-14T00:00:00+00:00</lastmod>
+    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="zh"
@@ -66,58 +53,35 @@
                 href="https://liuyiyueyue.github.io/tags/"
                 />
   </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/optimization/</loc>
-    <lastmod>2026-04-04T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/transformer/</loc>
-    <lastmod>2026-04-04T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/attention_4_transformer_improvements/</loc>
-    <lastmod>2026-04-04T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/cuda/</loc>
-    <lastmod>2026-04-02T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/cuda_graph/</loc>
-    <lastmod>2026-04-02T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/gpu/</loc>
-    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/inference/</loc>
-    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/inference_4_inference_servers/</loc>
-    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/memory/</loc>
-    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/system/memory_allocation/</loc>
-    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/serving/</loc>
-    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/system/</loc>
-    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</loc>
-    <lastmod>2026-03-28T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/training/</loc>
-    <lastmod>2026-03-28T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>https://liuyiyueyue.github.io/tags/datacenter/</loc>
     <lastmod>2026-03-25T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/gpu_networking_datacenter/</loc>
     <lastmod>2026-03-25T00:00:00+00:00</lastmod>
   </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/llm/</loc>
+    <lastmod>2026-03-25T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/</loc>
+    <lastmod>2026-03-25T00:00:00+00:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh"
+                href="https://liuyiyueyue.github.io/zh/llm/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://liuyiyueyue.github.io/llm/"
+                />
+  </url><url>
     <loc>https://liuyiyueyue.github.io/tags/networking/</loc>
     <lastmod>2026-03-25T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/architecture/</loc>
+    <lastmod>2026-03-24T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/cuda/</loc>
     <lastmod>2026-03-24T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/gpu_architecture/</loc>
@@ -135,10 +99,13 @@
     <loc>https://liuyiyueyue.github.io/tags/programming-languages/</loc>
     <lastmod>2026-03-13T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/inference_3_optimizations/</loc>
-    <lastmod>2026-02-26T00:00:00+00:00</lastmod>
+    <loc>https://liuyiyueyue.github.io/tags/training/</loc>
+    <lastmod>2026-03-13T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/cpu_gpu_optimizations_4_torch/</loc>
+    <lastmod>2026-02-19T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/optimization/</loc>
     <lastmod>2026-02-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/pytorch/</loc>
@@ -184,6 +151,12 @@
     <loc>https://liuyiyueyue.github.io/tags/software-engineering/</loc>
     <lastmod>2025-12-25T00:00:00+00:00</lastmod>
   </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/distributed_training_5_challenges/</loc>
+    <lastmod>2025-12-18T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/distributed-training/</loc>
+    <lastmod>2025-12-18T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>https://liuyiyueyue.github.io/llm/distributed_training_4_model_parallelism/</loc>
     <lastmod>2025-12-17T00:00:00+00:00</lastmod>
   </url><url>
@@ -208,14 +181,20 @@
     <loc>https://liuyiyueyue.github.io/tags/parallelism/</loc>
     <lastmod>2025-12-01T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/cuda_reduction_3/</loc>
-    <lastmod>2025-11-13T00:00:00+00:00</lastmod>
+    <loc>https://liuyiyueyue.github.io/tags/inference/</loc>
+    <lastmod>2023-12-15T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/cuda_gemv_2/</loc>
-    <lastmod>2025-11-10T00:00:00+00:00</lastmod>
+    <loc>https://liuyiyueyue.github.io/llm/inference_4_inference_servers/</loc>
+    <lastmod>2023-12-15T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/cuda_basics_1/</loc>
-    <lastmod>2025-10-25T00:00:00+00:00</lastmod>
+    <loc>https://liuyiyueyue.github.io/tags/serving/</loc>
+    <lastmod>2023-12-15T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/system/</loc>
+    <lastmod>2023-12-15T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/inference_3_optimizations/</loc>
+    <lastmod>2023-12-14T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/inference_2_kv_cache/</loc>
     <lastmod>2023-12-13T00:00:00+00:00</lastmod>
@@ -223,8 +202,17 @@
     <loc>https://liuyiyueyue.github.io/llm/inference_1_prefill_decode/</loc>
     <lastmod>2023-12-12T00:00:00+00:00</lastmod>
   </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</loc>
+    <lastmod>2023-08-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/transformer/</loc>
+    <lastmod>2023-07-15T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/attention_4_transformer_advance/</loc>
+    <lastmod>2023-07-15T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>https://liuyiyueyue.github.io/llm/attention_3_flashattention/</loc>
-    <lastmod>2023-12-10T00:00:00+00:00</lastmod>
+    <lastmod>2023-07-14T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/attention_2_transformer_compute_memory/</loc>
     <lastmod>2023-07-13T00:00:00+00:00</lastmod>
@@ -238,8 +226,20 @@
     <loc>https://liuyiyueyue.github.io/tags/nccl/</loc>
     <lastmod>2023-05-14T00:00:00+00:00</lastmod>
   </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/cuda_4_graph/</loc>
+    <lastmod>2022-11-14T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/cuda_3_reduction/</loc>
+    <lastmod>2022-11-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/cuda_2_gemv/</loc>
+    <lastmod>2022-11-10T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/cuda_1_basics/</loc>
+    <lastmod>2022-10-25T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>https://liuyiyueyue.github.io/llm/pytorch_101/</loc>
-    <lastmod>2022-12-13T00:00:00+00:00</lastmod>
+    <lastmod>2022-08-13T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/how_to_use_hugging_face/</loc>
     <lastmod>2022-07-23T00:00:00+00:00</lastmod>

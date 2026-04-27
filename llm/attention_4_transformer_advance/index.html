@@ -32,22 +32,22 @@
 
 <title>
     
-    Transformer: Improvements | Yiyue Liu&#39;s Blog
+    Transformer: Advanced Topics | Yiyue Liu&#39;s Blog
     
 </title>
 
-<link rel="canonical" href="https://liuyiyueyue.github.io/llm/attention_4_transformer_improvements/"/>
+<link rel="canonical" href="https://liuyiyueyue.github.io/llm/attention_4_transformer_advance/"/>
 
-<meta property="og:url" content="https://liuyiyueyue.github.io/llm/attention_4_transformer_improvements/">
+<meta property="og:url" content="https://liuyiyueyue.github.io/llm/attention_4_transformer_advance/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="Transformer: Improvements">
+  <meta property="og:title" content="Transformer: Advanced Topics">
   <meta property="og:description" content="This post continues the Transformer series and focuses on the changes that made the original architecture work better for large language models. The core idea of attention is still the same, but several parts of the 2017 design are now commonly replaced:
 Decoder-Only Instead of Encoder-Decoder Pre-Norm Instead of Post-Norm RMSNorm Instead of LayerNorm RoPE Instead of Absolute Positional Encoding GQA, MQA, and MLA Instead of MHA GLU instead of GELU in FFN/MLP As a refresher, the below is the original transformer architecture:">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
-    <meta property="article:published_time" content="2026-04-04T00:00:00+00:00">
-    <meta property="article:modified_time" content="2026-04-04T00:00:00+00:00">
+    <meta property="article:published_time" content="2023-07-15T00:00:00+00:00">
+    <meta property="article:modified_time" content="2023-07-15T00:00:00+00:00">
     <meta property="article:tag" content="Llm">
     <meta property="article:tag" content="Transformer">
     <meta property="article:tag" content="Optimization">
@@ -220,21 +220,21 @@ Decoder-Only Instead of Encoder-Decoder Pre-Norm Instead of Post-Norm RMSNorm In
 
 
 <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/llm/">LLM</a><span class="breadcrumbs-separator">/</span>
-        <a href="/llm/attention_4_transformer_improvements/">Transformer: Improvements</a></div>
+        <a href="/llm/attention_4_transformer_advance/">Transformer: Advanced Topics</a></div>
 
 
 <div >
   <article>
     <header class="single-intro-container">
         
-        <h1 class="single-title">Transformer: Improvements</h1>
+        <h1 class="single-title">Transformer: Advanced Topics</h1>
         
         <div class="single-subsummary">
           
           <div>
             
             <p class="single-date">
-              <time datetime="2026-04-04T00:00:00&#43;00:00">April 4, 2026</time>
+              <time datetime="2023-07-15T00:00:00&#43;00:00">July 15, 2023</time>
             </p>
           </div>
         </div>
@@ -244,15 +244,15 @@ Decoder-Only Instead of Encoder-Decoder Pre-Norm Instead of Post-Norm RMSNorm In
     <div class="single-content">
       <p>This post continues the Transformer series and focuses on the changes that made the original architecture work better for large language models. The core idea of attention is still the same, but several parts of the 2017 design are now commonly replaced:</p>
 <ul>
-<li><a href="/llm/attention_4_transformer_improvements/#decoder-only-instead-of-encoder-decoder">Decoder-Only Instead of Encoder-Decoder</a></li>
-<li><a href="/llm/attention_4_transformer_improvements/#pre-norm-instead-of-post-norm">Pre-Norm Instead of Post-Norm</a></li>
-<li><a href="/llm/attention_4_transformer_improvements/#rmsnorm-instead-of-layernorm">RMSNorm Instead of LayerNorm</a></li>
-<li><a href="/llm/attention_4_transformer_improvements/#rope-instead-of-absolute-positional-encoding">RoPE Instead of Absolute Positional Encoding</a></li>
-<li><a href="/llm/attention_4_transformer_improvements/#gqa-mqa-and-mla-instead-of-mha">GQA, MQA, and MLA Instead of MHA</a></li>
-<li><a href="/llm/attention_4_transformer_improvements/#glu-instead-of-gelu-in-ffnmlp">GLU instead of GELU in FFN/MLP</a></li>
+<li><a href="/llm/attention_4_transformer_advance/#decoder-only-instead-of-encoder-decoder">Decoder-Only Instead of Encoder-Decoder</a></li>
+<li><a href="/llm/attention_4_transformer_advance/#pre-norm-instead-of-post-norm">Pre-Norm Instead of Post-Norm</a></li>
+<li><a href="/llm/attention_4_transformer_advance/#rmsnorm-instead-of-layernorm">RMSNorm Instead of LayerNorm</a></li>
+<li><a href="/llm/attention_4_transformer_advance/#rope-instead-of-absolute-positional-encoding">RoPE Instead of Absolute Positional Encoding</a></li>
+<li><a href="/llm/attention_4_transformer_advance/#gqa-mqa-and-mla-instead-of-mha">GQA, MQA, and MLA Instead of MHA</a></li>
+<li><a href="/llm/attention_4_transformer_advance/#glu-instead-of-gelu-in-ffnmlp">GLU instead of GELU in FFN/MLP</a></li>
 </ul>
 <p>As a refresher, the below is the original transformer architecture:</p>
-<figure><img src="/llm/attention_4_transformer_improvements/images/transformer-with-notes.png"
+<figure><img src="/llm/attention_4_transformer_advance/images/transformer-with-notes.png"
     alt="Transformer arch with notes" width="900">
 </figure>
 
@@ -373,7 +373,7 @@ $$</p>
 <p>$$
 \tilde{q}_i^\top \tilde{k}_i = q_i^\top R((n-m)\theta_i) k_i
 $$</p>
-<figure><img src="/llm/attention_4_transformer_improvements/images/rope.png"
+<figure><img src="/llm/attention_4_transformer_advance/images/rope.png"
     alt="Rotary positional embedding illustration" width="750">
 </figure>
 
@@ -437,7 +437,7 @@ $$</p>
 <li><strong>MQA</strong> (Multi-Query Attention): many query heads share one key head and one value head <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>. MQA gives the largest KV-cache reduction.</li>
 <li><strong>MLA</strong> (Multi-Head Latent Attention): introduced in DeepSeek-V2 <sup id="fnref1:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>, it compresses attention information (key and value tensors) into a smaller latent representation and caches that compact state. The model then reconstructs the effective keys and values from the latent state during attention.</li>
 </ul>
-<figure><img src="/llm/attention_4_transformer_improvements/images/mha_mqa_gqa_mla.png"
+<figure><img src="/llm/attention_4_transformer_advance/images/mha_mqa_gqa_mla.png"
     alt="MHA, GQA, MQA, and MLA" width="1000">
 </figure>
 
@@ -701,8 +701,8 @@ $$</p>
             <div class="single-pagination-container-prev">
                 <div class="single-pagination-text">←</div>
                 <div class="single-pagination-text">
-                    <a href="/llm/cuda_graph/">
-                        CUDA Graph
+                    <a href="/llm/attention_3_flashattention/">
+                        Transformer: FlashAttention
                     </a>
                 </div>
             </div>
@@ -713,8 +713,8 @@ $$</p>
             
             <div class="single-pagination-container-next">
                 <div class="single-pagination-text">
-                    <a href="/llm/distributed_training_5_challenges/">
-                        Distributed Training: Challenges
+                    <a href="/llm/gpu_memory_usage/">
+                        GPU Memory Usage
                     </a>
                 </div>
                 <div class="single-pagination-text">→</div>

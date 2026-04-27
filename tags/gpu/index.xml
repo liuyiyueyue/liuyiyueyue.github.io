@@ -16,13 +16,6 @@
       <description>&lt;p&gt;A memory pool preallocates a large chunk of memory and manages allocation and free internally, which avoids calling &lt;code&gt;malloc&lt;/code&gt; and &lt;code&gt;free&lt;/code&gt; too often. There are many interesting topics around it: how this is implemented inside Linux kernels, why data structures such as segment trees or red-black trees are used, how PyTorch and CUDA do it, how to handle concurrency, and how &lt;code&gt;jemalloc()&lt;/code&gt; works?&lt;/p&gt;&#xA;&lt;p&gt;There are two solutions to implement allocators of a memory pool: buddy and size-class slab allocators. A slab allocator is fast but has internal fragmentation, and is common in user-space allocators. A buddy allocator supports merging and usually has less external fragmentation, and is common in kernel page allocators.&lt;/p&gt;</description>
     </item>
     <item>
-      <title>GPU Memory Usage</title>
-      <link>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</link>
-      <pubDate>Sat, 28 Mar 2026 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</guid>
-      <description>&lt;p&gt;This post gives a compact breakdown of where GPU memory goes during training and inference. For the Transformer-specific discussion of how parameter memory and activation memory scale with model size, batch size, and sequence length, see a previous blog at &lt;a href=&#34;https://liuyiyueyue.github.io/llm/attention_2_transformer_compute_memory/#memory-usage&#34;&gt;Transformer: Parameter Count, FLOPs, Memory Usage, and Training Time&lt;/a&gt;.&lt;/p&gt;&#xA;&lt;h3 class=&#34;heading&#34; id=&#34;static-and-dynamic-memory&#34;&gt;&#xA;  Static and Dynamic Memory&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#static-and-dynamic-memory&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;We refer to the memory used by model parameters as &lt;strong&gt;static memory&lt;/strong&gt;, meaning its lifetime is effectively unbounded and it must always occupy HBM. The optimizer states, model parameters, and usually gradients are static memory, since they must persist across training steps rather than being freed immediately after one operator finishes.&lt;/p&gt;</description>
-    </item>
-    <item>
       <title>GPU Networking and Datacenter Architecture</title>
       <link>https://liuyiyueyue.github.io/llm/gpu_networking_datacenter/</link>
       <pubDate>Wed, 25 Mar 2026 00:00:00 +0000</pubDate>
@@ -35,6 +28,13 @@
       <pubDate>Tue, 24 Mar 2026 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/llm/gpu_architecture/</guid>
       <description>&lt;h3 class=&#34;heading&#34; id=&#34;grace-blackwell-as-a-superchip&#34;&gt;&#xA;  Grace-Blackwell as a Superchip&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#grace-blackwell-as-a-superchip&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;Recent NVIDIA systems stop treating the CPU and GPU as two loosely connected devices over PCIe. The Grace-Blackwell design instead packages one &lt;strong&gt;Grace CPU&lt;/strong&gt; with two &lt;strong&gt;Blackwell GPU dies&lt;/strong&gt; into a tightly coupled module, connected by &lt;strong&gt;NVLink-C2C&lt;/strong&gt;. The point is not just faster I/O. It is to make CPU memory and GPU memory part of a coherent programming model with much lower communication overhead than a conventional host-device setup.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>GPU Memory Usage</title>
+      <link>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</link>
+      <pubDate>Tue, 01 Aug 2023 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/gpu_memory_usage/</guid>
+      <description>&lt;p&gt;This post gives a compact breakdown of where GPU memory goes during training and inference. For the Transformer-specific discussion of how parameter memory and activation memory scale with model size, batch size, and sequence length, see a previous blog at &lt;a href=&#34;https://liuyiyueyue.github.io/llm/attention_2_transformer_compute_memory/#memory-usage&#34;&gt;Transformer: Parameter Count, FLOPs, Memory Usage, and Training Time&lt;/a&gt;.&lt;/p&gt;&#xA;&lt;h3 class=&#34;heading&#34; id=&#34;static-and-dynamic-memory&#34;&gt;&#xA;  Static and Dynamic Memory&#xA;  &lt;a class=&#34;anchor&#34; href=&#34;#static-and-dynamic-memory&#34;&gt;#&lt;/a&gt;&#xA;&lt;/h3&gt;&#xA;&lt;p&gt;We refer to the memory used by model parameters as &lt;strong&gt;static memory&lt;/strong&gt;, meaning its lifetime is effectively unbounded and it must always occupy HBM. The optimizer states, model parameters, and usually gradients are static memory, since they must persist across training steps rather than being freed immediately after one operator finishes.&lt;/p&gt;</description>
     </item>
   </channel>
 </rss>
