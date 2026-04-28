@@ -295,7 +295,6 @@ How do we achieve low latency and high throughput when many user requests arrive
 <li>It then calls <code>step</code>, which triggers the scheduler and lets it pass the pending request data to the <code>Model Runner</code>.</li>
 <li>Finally, it decodes the token IDs into text and returns the result to the user, while the scheduler releases the corresponding resources.</li>
 </ol>
-<p>Use tighter versions like these.</p>
 <p><strong>Scheduler</strong></p>
 <p>Scheduler is the component responsible for request scheduling and execution orchestration. It maintains two queues, <code>waiting</code> and <code>running</code>, and moves requests between them during execution. The default <strong>policy</strong> is <code>prefill</code>-first to reduce time to first token. During <code>decode</code>, if KV cache blocks are insufficient, it <strong>preempts</strong> later-admitted requests in <code>running</code> and moves them back to <code>waiting</code>. This design <strong>prioritizes</strong> admission latency and KV-cache feasibility over strict fairness. It also creates a <code>Block Manager</code> instance to manage KV cache blocks.</p>
 <p>The process can be described as follows:</p>
