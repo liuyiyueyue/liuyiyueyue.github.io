@@ -254,26 +254,29 @@ Model parallelism solves this by partitioning the model itself across multiple G
 <li><a href="/llm/distributed_training_4_model_parallelism/#comparing-the-strategies">Comparing the Strategies</a></li>
 <li><a href="/llm/distributed_training_4_model_parallelism/#hybrid-parallelism">Hybrid Parallelism</a></li>
 </ul>
-<h3 class="heading" id="why-model-parallelism">
+<h2 class="heading" id="why-model-parallelism">
   Why Model Parallelism?
   <a class="anchor" href="#why-model-parallelism">#</a>
-</h3>
+</h2>
 <p>Data parallelism works well when the full model can still fit on each GPU. But once a model becomes too large, simply replicating it across devices is no longer practical.</p>
 <p>Model parallelism solves this by partitioning the model itself across multiple GPUs. Instead of every rank storing all weights, each rank stores and computes only part of the model. The tradeoff is that memory usage goes down, but communication and scheduling complexity go up.</p>
 <p>In practice, model parallelism usually appears in several forms: <strong>tensor parallelism</strong>, <strong>pipeline parallelism</strong>, <strong>sequence parallelism</strong>, <strong>expert parallelism</strong>, and <strong>automatic parallelism</strong>.</p>
-<h3 class="heading" id="tensor-parallelism">
+<h2 class="heading" id="tensor-parallelism">
   Tensor Parallelism
   <a class="anchor" href="#tensor-parallelism">#</a>
-</h3>
+</h2>
 <p>Tensor parallelism (TP) splits the computation inside one layer across multiple GPUs. TP has good memory efficiency, reduces peak GPU memory usage, and speeds up computation. Each worker only stores the tensor shard it is responsible for, so the memory overhead per worker decreases linearly as the number of workers increases. However, TP has relatively high communication overhead between GPUs, because the forward or backward computation of each layer requires collective communication, such as All-Gather or All-Reduce.</p>
-<p><strong>Megatron-LM</strong> <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup></p>
+<h3 class="heading" id="megatron-lm">
+  Megatron-LM <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>
+  <a class="anchor" href="#megatron-lm">#</a>
+</h3>
 <p>Megatron shards the weight matrix across GPUs in two methods:</p>
 <ul>
 <li><strong>Column parallelism</strong>: split the output dimension, so each GPU computes a subset of output columns.</li>
 <li><strong>Row parallelism</strong>: split the input dimension, so each GPU computes a partial result and then sums across GPUs.</li>
 </ul>
 <p>Now let&rsquo;s walk through an example using transformer encoder, which consists of one self-attention block and on MLP block. We define $b$ as the batch size, $s$ as the sequence length, $h$ as the hidden dimension, $n$ as the number of heads, and $p$ as the number of partitions. Tensor shapes are denoted using square brackets; for example, $[b, s, h]$ represents the standard input to a Transformer encoder.</p>
-<p>Self-attention uses a column-parallel QKV projection and a row-parallel output projection:</p>
+<p><strong>Self-attention</strong> uses a column-parallel QKV projection and a row-parallel output projection:</p>
 
 <div class="table-outer">
     <table>
@@ -327,7 +330,7 @@ Model parallelism solves this by partitioning the model itself across multiple G
 <li>QKV projection: $[h, h] \to [h, h/p]$ under tensor parallelism, which is <strong>column parallelism</strong></li>
 <li>Output projection: $[h, h] \to [h/p, h]$, which is <strong>row parallelism</strong></li>
 </ul>
-<p>The MLP uses a column-parallel up projection and a row-parallel down projection:</p>
+<p><strong>MLP</strong> uses a column-parallel up projection and a row-parallel down projection:</p>
 
 <div class="table-outer">
     <table>
@@ -356,7 +359,8 @@ Model parallelism solves this by partitioning the model itself across multiple G
             </tr>
         </tbody>
     </table>
-</div><p>The learnable parameters in the MLP are:</p>
+</div><p>Note that 4h is the MLP intermediate dimension; 4 is the expansion ratio of the up and down projects, not the hidden dimension itself.</p>
+<p>The learnable parameters in the MLP are:</p>
 <ul>
 <li>Up projection: $[h, 4h] \to [h, 4h/p]$, which is <strong>column parallelism</strong></li>
 <li>Down projection: $[4h, h] \to [4h/p, h]$, which is <strong>row parallelism</strong></li>
@@ -367,30 +371,24 @@ Model parallelism solves this by partitioning the model itself across multiple G
 |A1, A2| x |B2| = A1 x B1 + A2 x B2</code></pre>
   <button class="copy-code-button">copy</button>
 </div>
-<p>
-
-
-
-
-
-
-
-
-
-
-
-<figure class="">
-
-    
-    
-
-    
+<figure><img src="/llm/distributed_training_4_model_parallelism/images/megatron-lm-1.png"
+    alt="Megatron-LM tensor parallelism."><figcaption>
+      <p>Megatron-LM tensor parallelism.</p>
+    </figcaption>
 </figure>
-</p>
-<h3 class="heading" id="pipeline-parallelism">
+
+<p><strong>Communication Overhead</strong></p>
+<p>For one Transformer block, Megatron TP introduces one forward All-Reduce after each row-parallel projection:</p>
+<ul>
+<li>attention output projection: All-Reduce on $[b, s, h]$</li>
+<li>MLP down projection: All-Reduce on $[b, s, h]$</li>
+</ul>
+<p>So the forward communication is $2$ All-Reduces of tensors with $bsh$ elements. With a ring All-Reduce over $p$ GPUs, each All-Reduce moves approximately $2\frac{p-1}{p}bsh \approx 2bsh$ elements per GPU, so the forward communication per GPU is $2 \cdot 2bsh = 4bsh \text{ elements}$.</p>
+<p>During training, the backward pass adds the matching All-Reduce for the input gradients of the column-parallel QKV projection and the column-parallel MLP up projection. Thus, per block, forward plus backward uses $4$ All-Reduces of $[b, s, h]$ is $4 \cdot 2bsh = 8bsh \text{ elements}$. With FP16/BF16 activations, this is approximately $16bsh \text{ bytes}$.</p>
+<h2 class="heading" id="pipeline-parallelism">
   Pipeline Parallelism
   <a class="anchor" href="#pipeline-parallelism">#</a>
-</h3>
+</h2>
 <p>Pipeline parallelism (PP) splits the model by layers, partitioning several consecutive layers into one group, called a <strong>stage</strong>. Different stages are then assigned to different devices, so each GPU only computes a portion of the network’s layers.</p>
 <p>For example, in a 12-layer transformer:</p>
 <ul>
@@ -405,7 +403,10 @@ Model parallelism solves this by partitioning the model itself across multiple G
 <li>reducing pipeline bubbles to improve overall system throughput</li>
 <li>lowering the memory overhead on each worker so the system can scale to larger models</li>
 </ol>
-<p><strong>GPipe</strong></p>
+<h3 class="heading" id="gpipe">
+  GPipe
+  <a class="anchor" href="#gpipe">#</a>
+</h3>
 <p>The amount of time each GPU spends working is closely tied to the batch size it processes. To reduce this waiting time, GPipe, proposed by Google, presents a simple idea to further split a batch into multiple smaller sub-batches, called <strong>micro-batches</strong> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>.</p>
 <figure><img src="/llm/distributed_training_4_model_parallelism/images/gpipe_figure2_pipeline_parallelism.png"
     alt="Figure 2 from the GPipe paper: sequential execution, naive model parallelism, and pipeline parallelism with micro-batches."><figcaption>
@@ -413,7 +414,10 @@ Model parallelism solves this by partitioning the model itself across multiple G
     </figcaption>
 </figure>
 
-<p><strong>PipeDream</strong></p>
+<h3 class="heading" id="pipedream">
+  PipeDream
+  <a class="anchor" href="#pipedream">#</a>
+</h3>
 <p>The PipeDream family was proposed by Microsoft&rsquo;s MSR Fiddle team <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup>. The core idea is to futher reduce pipeline bubbles. If multiple training iterations are in flight at the same time, each node can work on a different iteration at any given moment. This avoids waiting in place on strict step-by-step data dependencies and keeps the devices busy.</p>
 <figure><img src="/llm/distributed_training_4_model_parallelism/images/pipedream_model_parallel_4_machines.png"
     alt="Figure 3: Model parallel training with 4 machines. Numbers indicate minibatch ID. For simplicity, here we assume that forward and backward work in every stage takes one time unit, and communicating activations across machines has no overhead." width="600"><figcaption>
@@ -428,16 +432,19 @@ Model parallelism solves this by partitioning the model itself across multiple G
 </figure>
 
 <p>PipeDream partitions the model into pipeline stages by balancing per-stage compute, memory, and communication, so no single stage becomes the throughput bottleneck (划分任务). To address numerical issues from stale weights, it uses techniques like weight stashing and 1F1B scheduling so each microbatch’s forward and backward passes stay more consistent (收敛性问题).</p>
-<h3 class="heading" id="sequence-parallelism">
+<h2 class="heading" id="sequence-parallelism">
   Sequence Parallelism
   <a class="anchor" href="#sequence-parallelism">#</a>
-</h3>
+</h2>
 <p>Two papers both discuss sequence parallelism (also called context parallelism) but with different goals and methods.</p>
-<p><strong>Ring-Attention</strong></p>
+<h3 class="heading" id="ring-attention">
+  Ring-Attention
+  <a class="anchor" href="#ring-attention">#</a>
+</h3>
 <p>Before reading this section, please read the <a href="../../attention_3_flashattention/index.en.md">FlashAttention</a> blog first.</p>
-<p>Ring Attention is roughly a &ldquo;distributed&rdquo; version of FlashAttention-2 [^17]. In FlashAttention-2, both the outer loop over <code>Q</code> tiles and the inner loop over <code>K/V</code> tiles run on a single GPU. In Ring Attention, the <code>Q</code> tiles are first partitioned across multiple GPUs, and the <code>K/V</code> tiles are then circulated around those GPUs with ring communication. Each GPU updates its local output tile in essentially the same way as FlashAttention-2.</p>
+<p>Ring Attention is roughly a &ldquo;distributed&rdquo; version of FlashAttention-2 <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>. In FlashAttention-2, both the outer loop over <code>Q</code> tiles and the inner loop over <code>K/V</code> tiles run on a single GPU. In Ring Attention, the <code>Q</code> tiles are first partitioned across multiple GPUs, and the <code>K/V</code> tiles are then circulated around those GPUs with ring communication. Each GPU updates its local output tile in essentially the same way as FlashAttention-2.</p>
 <p><strong>Megatron-LM</strong></p>
-<p>The first paper is Megatron-LM’s third paper, “Reducing Activation Recomputation in Large Transformer Models” <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>. The motivation behind Megatron-LM’s sequence parallelism was to <em>distribute the memory that tensor parallelism could not shard anymore</em>.</p>
+<p>The first paper is Megatron-LM’s third paper, “Reducing Activation Recomputation in Large Transformer Models” <sup id="fnref:6"><a href="#fn:6" class="footnote-ref" role="doc-noteref">6</a></sup>. The motivation behind Megatron-LM’s sequence parallelism was to <em>distribute the memory that tensor parallelism could not shard anymore</em>.</p>
 <figure><img src="/llm/distributed_training_4_model_parallelism/images/sequence_parallel_figure5.png"
     alt="Figure 5 from the Megatron-LM paper."><figcaption>
       <p>Figure 5 from the Megatron-LM paper.</p>
@@ -445,17 +452,23 @@ Model parallelism solves this by partitioning the model itself across multiple G
 </figure>
 
 <p><strong>ColossalAI</strong></p>
-<p>The other paper is ColossalAI’s “Sequence Parallelism: Long Sequence Training from a System Perspective” <sup id="fnref:6"><a href="#fn:6" class="footnote-ref" role="doc-noteref">6</a></sup>. It mainly addresses limitations from long input sequence length, which scales quadratically with self-attention&rsquo;s memory usage. It splits the input sequence into multiple chunks and feed each chunk to a GPU. It proposes the the Ring Self-Attention (RSA) to compute the attention.</p>
-<h3 class="heading" id="expert-parallelism">
+<p>The other paper is ColossalAI’s “Sequence Parallelism: Long Sequence Training from a System Perspective” <sup id="fnref:7"><a href="#fn:7" class="footnote-ref" role="doc-noteref">7</a></sup>. It mainly addresses limitations from long input sequence length, which scales quadratically with self-attention&rsquo;s memory usage. It splits the input sequence into multiple chunks and feed each chunk to a GPU. It proposes the the Ring Self-Attention (RSA) to compute the attention.</p>
+<h2 class="heading" id="expert-parallelism">
   Expert Parallelism
   <a class="anchor" href="#expert-parallelism">#</a>
+</h2>
+<h3 class="heading" id="moe">
+  MoE
+  <a class="anchor" href="#moe">#</a>
 </h3>
-<p><strong>MoE</strong></p>
 <p><strong>Mixture of Experts</strong> (MoE) is a neural network architecture that replaces one large feed-forward block with multiple specialized subnetworks called <strong>experts</strong>. Different experts learn to handle different kinds of tokens, since different tokens carry different meanings.</p>
 <p>A <strong>gating</strong> or <strong>routing</strong> network routes each token to the most relevant expert or a small subset of experts. For each token, it assigns a probability to every expert, and we keep only the top-K experts with the highest probabilities. This can improve training effectiveness and increase model capacity without activating the whole model every time. There are topics like load balancing and token buffer, but we won&rsquo;t talk about them here.</p>
 <p>Because each token uses only the top-K experts rather than all experts, an MoE layer is sparse. This also lets compute grow sublinearly as the model scales.</p>
-<p><strong>Expert Parallelism</strong></p>
-<p>Expert parallelism (EP) is mainly used with MoE models. In an MoE layer, a router sends each token to only a small subset of experts rather than activating the full dense feed-forward block <sup id="fnref:7"><a href="#fn:7" class="footnote-ref" role="doc-noteref">7</a></sup>. With EP, different experts are placed on different GPUs:</p>
+<h3 class="heading" id="expert-parallelism-1">
+  Expert Parallelism
+  <a class="anchor" href="#expert-parallelism-1">#</a>
+</h3>
+<p>Expert parallelism (EP) is mainly used with MoE models. In an MoE layer, a router sends each token to only a small subset of experts rather than activating the full dense feed-forward block <sup id="fnref:8"><a href="#fn:8" class="footnote-ref" role="doc-noteref">8</a></sup>. With EP, different experts are placed on different GPUs:</p>
 <ul>
 <li>GPU 0 and 1 hold experts 1-2</li>
 <li>GPU 2 and 3 hold experts 3-4</li>
@@ -477,27 +490,27 @@ Model parallelism solves this by partitioning the model itself across multiple G
     </figcaption>
 </figure>
 
-<ol>
-<li>Communication Overhead</li>
-</ol>
+<p><strong>1. Communication Overhead</strong></p>
 <p>Let the local token tensor have shape $[b, s, h]$. In the MoE routing step, it is common to reshape it to $[b \cdot s, h]$, so each row corresponds to one token. After routing, each token is duplicated across its selected experts, so the routed tensor has shape $[b \cdot s \cdot \mathrm{top}\text{-}k, h]$.</p>
-<p>If tokens are evenly distributed across $E$ EP ranks, the expected number of tokens that one rank sends or receives in a single all-to-all exchange is $\frac{b \cdot s \cdot \mathrm{top}\text{-}k \cdot (E - 1)}{E}$. Here, $\frac{E - 1}{E}$ is the probability that a routed token must be transferred to a different GPU, so the communication volume per phase is asymptotically $\mathcal{O}(b \cdot s \cdot \mathrm{top}\text{-}k)$. With half-precision activations, each element uses 2 bytes, so the communication cost per phase is approximately $2 \cdot b \cdot s \cdot \mathrm{top}\text{-}k \cdot h$ bytes. Since EP includes both a dispatch phase and a combine phase, the total communication is approximately $4 \cdot b \cdot s \cdot \mathrm{top}\text{-}k \cdot h$ bytes <sup id="fnref:8"><a href="#fn:8" class="footnote-ref" role="doc-noteref">8</a></sup>.</p>
-<ol start="2">
-<li>Compute Efficiency</li>
-</ol>
-<p>EP and TP have similar total FLOPs for expert computation, but EP tends to form fewer, larger GEMMs because tokens for the same local expert are gathered onto the rank that owns that expert, while TP shards each expert across ranks and therefore tends to form more, smaller GEMMs.</p>
-<p>Overall, EP has an advantage over TP for expert computation: each kernel launch carries a larger workload, and the total number of kernel launches is lower.</p>
-<ol start="3">
-<li>Memory Usage</li>
-</ol>
-<p>Under load imbalance, one rank may receive too many tokens, causing its activation memory usage to spike and potentially trigger an out-of-memory error. From a memory perspective, TP has a clear advantage: its memory usage is lower and more stable.</p>
-<p><strong>GShard</strong></p>
-<p>The GShard paper consists of two parts: one talks about the APIs (&ldquo;GShard is a module composed of a set of lightweight annotation APIs and an extension to the XLA compiler.&rdquo;); the other discusses MoE. We focus on the second part here. GShard was the first work to extend the MoE idea to Transformers. Specifically, it replaced every other FFN layer in the Transformer encoder and decoder with a position-wise MoE layer, using a Top-2 gating network throughout <sup id="fnref1:7"><a href="#fn:7" class="footnote-ref" role="doc-noteref">7</a></sup>.</p>
+<p>If tokens are evenly distributed across $E$ EP ranks, the expected number of tokens that one rank sends or receives in a single all-to-all exchange is $\frac{b \cdot s \cdot \mathrm{top}\text{-}k \cdot (E - 1)}{E} \approx b \cdot s \cdot \mathrm{top}\text{-}k$. With half-precision activations, each element uses 2 bytes, so the communication cost per phase is approximately $2 \cdot b \cdot s \cdot \mathrm{top}\text{-}k \cdot h$ bytes. Since EP includes both a dispatch phase and a combine phase, the total communication is approximately $4 \cdot b \cdot s \cdot \mathrm{top}\text{-}k \cdot h$ bytes <sup id="fnref:9"><a href="#fn:9" class="footnote-ref" role="doc-noteref">9</a></sup>.</p>
+<p>Now compare EP with TP under the same world size. Per rank per forward pass, EP sends about $4bsh \cdot \mathrm{top}\text{-}k$ bytes, while TP sends about $4bsh$ bytes. This makes EP look more expensive. However, TP ranks in the same TP group jointly process the same data, so TP reduces the number of DP replicas by the TP size $q$. EP preserves more DP, so one EP forward processes about $q$ times more tokens than one TP forward. Normalized by the same number of processed tokens, TP communication should be multiplied by $q$, giving $4q bsh$ bytes. Therefore, EP can be cheaper than TP when $\mathrm{top}\text{-}k &lt; q$.</p>
+<p><strong>2. Compute Efficiency</strong></p>
+<p>EP and TP have similar total FLOPs for the MLPs, but EP is usually more compute-efficient. EP gathers tokens for the same local expert onto the rank that owns that expert, forming fewer and larger GEMMs. Each kernel launch therefore carries more work, and the total number of launches is lower. In contrast, TP shards each expert across ranks, which tends to create more, smaller GEMMs.</p>
+<p><strong>3. Memory Usage</strong></p>
+<p>Under load imbalance, one rank may receive too many tokens, causing its activation memory usage to spike and potentially trigger an out-of-memory error. From a memory perspective, TP then has a clear advantage: its memory usage is lower and more stable.</p>
+<h3 class="heading" id="gshard">
+  GShard
+  <a class="anchor" href="#gshard">#</a>
+</h3>
+<p>The GShard paper consists of two parts: one talks about the APIs (&ldquo;GShard is a module composed of a set of lightweight annotation APIs and an extension to the XLA compiler.&rdquo;); the other discusses MoE. We focus on the second part here. GShard was the first work to extend the MoE idea to Transformers. Specifically, it replaced every other FFN layer in the Transformer encoder and decoder with a position-wise MoE layer, using a Top-2 gating network throughout <sup id="fnref1:8"><a href="#fn:8" class="footnote-ref" role="doc-noteref">8</a></sup>.</p>
 <figure><img src="/llm/distributed_training_4_model_parallelism/images/gshard_expert_parallelism.png"
     alt="GShard expert parallelism" width="1000">
 </figure>
 
-<p><strong>DeepEP</strong></p>
+<h3 class="heading" id="deepep">
+  DeepEP
+  <a class="anchor" href="#deepep">#</a>
+</h3>
 <p>DeepSeek&rsquo;s DeepEP is a communication library designed specifically for MoE models and Expert Parallelism. It provides high-throughput, low-latency <strong>all-to-all</strong> CUDA kernels via NVLink and RDMA, aka MoE <strong>dispatch</strong> and <strong>combine</strong>. The library also supports low-precision operations, including FP8.</p>
 <p>Megatron’s alltoall dispatcher has a relatively clean implementation, but it may suffer from communication redundancy. There are two levels of redundancy:</p>
 <ol>
@@ -505,25 +518,25 @@ Model parallelism solves this by partitioning the model itself across multiple G
 <li>The same token may be dispatched to different devices on the same host.</li>
 </ol>
 <p>Overall, DeepEP reduces this redundancy through hierarchical dispatch and combine: two communication levels, inter-host and intra-host, plus three levels of permute and unpermute, across hosts, across devices within a host, and across experts within a device.</p>
-<p>What suprises me is that the DeepEP&rsquo;s optimizations go very deep. This library uses <strong>a custom PTX instruction</strong>, <code>ld.global.nc.l1::no_allocate.l2::256b</code>, to improve global memory access by avoiding L1 cache allocation, reducing eviction, and taking advantage of 256-byte L2 cache transfers. DeepEP documents this optimization as an undefined-behavior technique and notes it can be disabled with DISABLE_AGGRESSIVE_PTX_INSTRS=1 on unsupported platforms <sup id="fnref:9"><a href="#fn:9" class="footnote-ref" role="doc-noteref">9</a></sup> <sup id="fnref:10"><a href="#fn:10" class="footnote-ref" role="doc-noteref">10</a></sup>.</p>
-<h3 class="heading" id="automatic-parallelism">
+<p>What suprises me is that the DeepEP&rsquo;s optimizations go very deep. This library uses <strong>a custom PTX instruction</strong>, <code>ld.global.nc.l1::no_allocate.l2::256b</code>, to improve global memory access by avoiding L1 cache allocation, reducing eviction, and taking advantage of 256-byte L2 cache transfers. DeepEP documents this optimization as an undefined-behavior technique and notes it can be disabled with DISABLE_AGGRESSIVE_PTX_INSTRS=1 on unsupported platforms <sup id="fnref:10"><a href="#fn:10" class="footnote-ref" role="doc-noteref">10</a></sup> <sup id="fnref:11"><a href="#fn:11" class="footnote-ref" role="doc-noteref">11</a></sup>.</p>
+<h2 class="heading" id="automatic-parallelism">
   Automatic Parallelism
   <a class="anchor" href="#automatic-parallelism">#</a>
-</h3>
+</h2>
 <p>(这段儿写的不太走心。。。)</p>
 <p>The goal of automatic parallelism (自动并行) is straightforward: given a model and the available hardware resources, the system should automatically choose a good parallelization strategy for efficient execution.</p>
 <p>There are two common modes:</p>
 <ul>
-<li><strong>Semi-automatic</strong>: users provide limited sharding hints for some tensors or operators, and the framework propagates them through the computation graph. Representative systems include <strong>Mesh-TensorFlow</strong>, <strong>GShard</strong>, and <strong>GSPMD</strong> <sup id="fnref:11"><a href="#fn:11" class="footnote-ref" role="doc-noteref">11</a></sup> <sup id="fnref2:7"><a href="#fn:7" class="footnote-ref" role="doc-noteref">7</a></sup> <sup id="fnref:12"><a href="#fn:12" class="footnote-ref" role="doc-noteref">12</a></sup>.</li>
-<li><strong>Fully automatic</strong>: the framework searches or synthesizes the strategy for all tensors and operators. Representative systems include <strong>FlexFlow</strong>, <strong>Unity</strong>, and <strong>Alpa</strong> <sup id="fnref:13"><a href="#fn:13" class="footnote-ref" role="doc-noteref">13</a></sup> <sup id="fnref:14"><a href="#fn:14" class="footnote-ref" role="doc-noteref">14</a></sup> <sup id="fnref:15"><a href="#fn:15" class="footnote-ref" role="doc-noteref">15</a></sup>.</li>
+<li><strong>Semi-automatic</strong>: users provide limited sharding hints for some tensors or operators, and the framework propagates them through the computation graph. Representative systems include <strong>Mesh-TensorFlow</strong>, <strong>GShard</strong>, and <strong>GSPMD</strong> <sup id="fnref:12"><a href="#fn:12" class="footnote-ref" role="doc-noteref">12</a></sup> <sup id="fnref2:8"><a href="#fn:8" class="footnote-ref" role="doc-noteref">8</a></sup> <sup id="fnref:13"><a href="#fn:13" class="footnote-ref" role="doc-noteref">13</a></sup>.</li>
+<li><strong>Fully automatic</strong>: the framework searches or synthesizes the strategy for all tensors and operators. Representative systems include <strong>FlexFlow</strong>, <strong>Unity</strong>, and <strong>Alpa</strong> <sup id="fnref:14"><a href="#fn:14" class="footnote-ref" role="doc-noteref">14</a></sup> <sup id="fnref:15"><a href="#fn:15" class="footnote-ref" role="doc-noteref">15</a></sup> <sup id="fnref:16"><a href="#fn:16" class="footnote-ref" role="doc-noteref">16</a></sup>.</li>
 </ul>
-<p><strong>Mesh-TensorFlow.</strong> Standard SPMD often means data parallelism by splitting the batch dimension. Mesh-TensorFlow generalizes this idea by allowing other tensor dimensions to be partitioned as well. Each operation is lowered into parallel computation plus collective communication, and users describe model dimensions and device layout with a DSL; the system then maps the program onto a TPU mesh automatically <sup id="fnref1:11"><a href="#fn:11" class="footnote-ref" role="doc-noteref">11</a></sup>.</p>
-<p><strong>GSPMD.</strong> GSPMD uses <strong>tensor sharding annotations</strong> as a unified abstraction for different parallelization strategies. In practice, it keeps the user-facing programming model close to single-device programming, while inferring the partitioning for the remaining operators from a small number of annotations. Its SPMD partitioner can also support pipeline-style partitioning through a lightweight wrapper layer <sup id="fnref1:12"><a href="#fn:12" class="footnote-ref" role="doc-noteref">12</a></sup>.</p>
-<p><strong>FlexFlow.</strong> FlexFlow defines the <strong>SOAP</strong> search space, covering parallelization across the Sample, Operator, Attribute, and Parameter dimensions. On top of that space, it provides a deep learning framework that searches for an efficient strategy for a given model and machine configuration <sup id="fnref1:13"><a href="#fn:13" class="footnote-ref" role="doc-noteref">13</a></sup>.</p>
-<h3 class="heading" id="comparing-the-strategies">
+<p><strong>Mesh-TensorFlow.</strong> Standard SPMD often means data parallelism by splitting the batch dimension. Mesh-TensorFlow generalizes this idea by allowing other tensor dimensions to be partitioned as well. Each operation is lowered into parallel computation plus collective communication, and users describe model dimensions and device layout with a DSL; the system then maps the program onto a TPU mesh automatically <sup id="fnref1:12"><a href="#fn:12" class="footnote-ref" role="doc-noteref">12</a></sup>.</p>
+<p><strong>GSPMD.</strong> GSPMD uses <strong>tensor sharding annotations</strong> as a unified abstraction for different parallelization strategies. In practice, it keeps the user-facing programming model close to single-device programming, while inferring the partitioning for the remaining operators from a small number of annotations. Its SPMD partitioner can also support pipeline-style partitioning through a lightweight wrapper layer <sup id="fnref1:13"><a href="#fn:13" class="footnote-ref" role="doc-noteref">13</a></sup>.</p>
+<p><strong>FlexFlow.</strong> FlexFlow defines the <strong>SOAP</strong> search space, covering parallelization across the Sample, Operator, Attribute, and Parameter dimensions. On top of that space, it provides a deep learning framework that searches for an efficient strategy for a given model and machine configuration <sup id="fnref1:14"><a href="#fn:14" class="footnote-ref" role="doc-noteref">14</a></sup>.</p>
+<h2 class="heading" id="comparing-the-strategies">
   Comparing the Strategies
   <a class="anchor" href="#comparing-the-strategies">#</a>
-</h3>
+</h2>
 
 <div class="table-outer">
     <table>
@@ -562,11 +575,14 @@ Model parallelism solves this by partitioning the model itself across multiple G
             </tr>
         </tbody>
     </table>
-</div><h3 class="heading" id="hybrid-parallelism">
+</div><h2 class="heading" id="hybrid-parallelism">
   Hybrid Parallelism
   <a class="anchor" href="#hybrid-parallelism">#</a>
+</h2>
+<h3 class="heading" id="3d-parallelism-tpppdp">
+  3D Parallelism: TP+PP+DP
+  <a class="anchor" href="#3d-parallelism-tpppdp">#</a>
 </h3>
-<p><strong>3D Parallelism: TP+PP+DP</strong></p>
 <p>The <a href="/llm/distributed_training_4_model_parallelism/#pipeline-parallelism">Pipeline Parallelism</a>, <a href="/llm/distributed_training_4_model_parallelism/#tensor-parallelism">Tensor Parallelism</a>, and <a href="/llm/distributed_training_3_zero_fsdp/">Data Parallel</a> posts summarize the main memory and communication tradeoffs. We choose the parallelism dimensions in the order of their practical constraints. As a recap, TP is the most constrained, because its high communication cost usually prevents it from scaling efficiently across nodes. PP comes next, because its theoretical upper bound is limited by the number of layers in the model, and in practice each stage also cannot be made too small without hurting efficiency. DP is the least constrained, because in principle it can scale much further, and is mainly limited by batch size and communication efficiency at very large scale.</p>
 <p>Now let&rsquo;s run through an example. Suppose the model has 512B parameters.</p>
 <p>First, we apply PP, by partitioning the model into 4 stages, so each stage contains 128B parameters. Assign each stage to one 4-GPU node. We call it PP=4 or 4-way PP.</p>
@@ -615,37 +631,40 @@ Model parallelism solves this by partitioning the model itself across multiple G
 <p>PipeDream: Fast and Efficient Pipeline Parallel DNN Training. arXiv, June 9, 2018. <a href="https://arxiv.org/abs/1806.03377">https://arxiv.org/abs/1806.03377</a>&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:5">
-<p>Reducing Activation Recomputation in Large Transformer Models. arXiv, May 5, 2022. <a href="https://arxiv.org/abs/2205.05198">https://arxiv.org/abs/2205.05198</a>&#160;<a href="#fnref:5" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Ring Attention with Blockwise Transformers for Near-Infinite Context. arXiv, October 3, 2023. <a href="https://arxiv.org/abs/2310.01889">https://arxiv.org/abs/2310.01889</a>&#160;<a href="#fnref:5" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:6">
-<p>Sequence Parallelism: Long Sequence Training from a System Perspective. arXiv, May 27, 2021. <a href="https://arxiv.org/abs/2105.13120">https://arxiv.org/abs/2105.13120</a>&#160;<a href="#fnref:6" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Reducing Activation Recomputation in Large Transformer Models. arXiv, May 5, 2022. <a href="https://arxiv.org/abs/2205.05198">https://arxiv.org/abs/2205.05198</a>&#160;<a href="#fnref:6" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:7">
-<p>GShard: Scaling Giant Models with Conditional Computation and Automatic Sharding. arXiv, June 30, 2020. <a href="https://arxiv.org/abs/2006.16668">https://arxiv.org/abs/2006.16668</a>&#160;<a href="#fnref:7" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref1:7" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref2:7" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Sequence Parallelism: Long Sequence Training from a System Perspective. arXiv, May 27, 2021. <a href="https://arxiv.org/abs/2105.13120">https://arxiv.org/abs/2105.13120</a>&#160;<a href="#fnref:7" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:8">
-<p>MegaScale-MoE: Large-Scale Communication-Efficient Training of Mixture-of-Experts Models in Production. arXiv, May 16, 2025. <a href="https://arxiv.org/abs/2505.11432">https://arxiv.org/abs/2505.11432</a>&#160;<a href="#fnref:8" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>GShard: Scaling Giant Models with Conditional Computation and Automatic Sharding. arXiv, June 30, 2020. <a href="https://arxiv.org/abs/2006.16668">https://arxiv.org/abs/2006.16668</a>&#160;<a href="#fnref:8" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref1:8" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref2:8" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:9">
-<p>DeepEP README, &ldquo;Undefined-behavior PTX usage.&rdquo; GitHub. <a href="https://github.com/deepseek-ai/DeepEP/tree/main?tab=readme-ov-file#undefined-behavior-ptx-usage">https://github.com/deepseek-ai/DeepEP/tree/main?tab=readme-ov-file#undefined-behavior-ptx-usage</a>&#160;<a href="#fnref:9" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>MegaScale-MoE: Large-Scale Communication-Efficient Training of Mixture-of-Experts Models in Production. arXiv, May 16, 2025. <a href="https://arxiv.org/abs/2505.11432">https://arxiv.org/abs/2505.11432</a>&#160;<a href="#fnref:9" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:10">
-<p>NVIDIA, &ldquo;Parallel Thread Execution ISA.&rdquo; CUDA Toolkit Documentation. <a href="https://docs.nvidia.com/cuda/archive/13.0.0/hopper-tuning-guide/parallel-thread-execution/index.html">https://docs.nvidia.com/cuda/archive/13.0.0/hopper-tuning-guide/parallel-thread-execution/index.html</a>. NVIDIA, &ldquo;PTX and SASS Assembly Debugging.&rdquo; Nsight Visual Studio Edition User Guide. <a href="https://docs.nvidia.com/nsight-visual-studio-edition/5.2/Content/PTX_SASS_Assembly_Debugging.htm">https://docs.nvidia.com/nsight-visual-studio-edition/5.2/Content/PTX_SASS_Assembly_Debugging.htm</a>&#160;<a href="#fnref:10" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>DeepEP README, &ldquo;Undefined-behavior PTX usage.&rdquo; GitHub. <a href="https://github.com/deepseek-ai/DeepEP/tree/main?tab=readme-ov-file#undefined-behavior-ptx-usage">https://github.com/deepseek-ai/DeepEP/tree/main?tab=readme-ov-file#undefined-behavior-ptx-usage</a>&#160;<a href="#fnref:10" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:11">
-<p>Mesh-TensorFlow: Deep Learning for Supercomputers. arXiv, November 5, 2018. <a href="https://arxiv.org/abs/1811.02084">https://arxiv.org/abs/1811.02084</a>&#160;<a href="#fnref:11" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref1:11" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>NVIDIA, &ldquo;Parallel Thread Execution ISA.&rdquo; CUDA Toolkit Documentation. <a href="https://docs.nvidia.com/cuda/archive/13.0.0/hopper-tuning-guide/parallel-thread-execution/index.html">https://docs.nvidia.com/cuda/archive/13.0.0/hopper-tuning-guide/parallel-thread-execution/index.html</a>. NVIDIA, &ldquo;PTX and SASS Assembly Debugging.&rdquo; Nsight Visual Studio Edition User Guide. <a href="https://docs.nvidia.com/nsight-visual-studio-edition/5.2/Content/PTX_SASS_Assembly_Debugging.htm">https://docs.nvidia.com/nsight-visual-studio-edition/5.2/Content/PTX_SASS_Assembly_Debugging.htm</a>&#160;<a href="#fnref:11" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:12">
-<p>GSPMD: General and Scalable Parallelization for ML Computation Graphs. arXiv, May 10, 2021. <a href="https://arxiv.org/abs/2105.04663">https://arxiv.org/abs/2105.04663</a>&#160;<a href="#fnref:12" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref1:12" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Mesh-TensorFlow: Deep Learning for Supercomputers. arXiv, November 5, 2018. <a href="https://arxiv.org/abs/1811.02084">https://arxiv.org/abs/1811.02084</a>&#160;<a href="#fnref:12" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref1:12" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:13">
-<p>Beyond Data and Model Parallelism for Deep Neural Networks. arXiv, July 14, 2018. <a href="https://arxiv.org/abs/1807.05358">https://arxiv.org/abs/1807.05358</a>&#160;<a href="#fnref:13" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref1:13" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>GSPMD: General and Scalable Parallelization for ML Computation Graphs. arXiv, May 10, 2021. <a href="https://arxiv.org/abs/2105.04663">https://arxiv.org/abs/2105.04663</a>&#160;<a href="#fnref:13" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref1:13" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:14">
-<p>Unity: Accelerating DNN Training Through Joint Optimization of Algebraic Transformations and Parallelization. OSDI 2022. <a href="https://www.usenix.org/conference/osdi22/presentation/unger">https://www.usenix.org/conference/osdi22/presentation/unger</a>&#160;<a href="#fnref:14" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Beyond Data and Model Parallelism for Deep Neural Networks. arXiv, July 14, 2018. <a href="https://arxiv.org/abs/1807.05358">https://arxiv.org/abs/1807.05358</a>&#160;<a href="#fnref:14" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref1:14" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 <li id="fn:15">
-<p>Alpa: Automating Inter- and Intra-Operator Parallelism for Distributed Deep Learning. arXiv, January 28, 2022. <a href="https://arxiv.org/abs/2201.12023">https://arxiv.org/abs/2201.12023</a>&#160;<a href="#fnref:15" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<p>Unity: Accelerating DNN Training Through Joint Optimization of Algebraic Transformations and Parallelization. OSDI 2022. <a href="https://www.usenix.org/conference/osdi22/presentation/unger">https://www.usenix.org/conference/osdi22/presentation/unger</a>&#160;<a href="#fnref:15" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:16">
+<p>Alpa: Automating Inter- and Intra-Operator Parallelism for Distributed Deep Learning. arXiv, January 28, 2022. <a href="https://arxiv.org/abs/2201.12023">https://arxiv.org/abs/2201.12023</a>&#160;<a href="#fnref:16" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 </ol>
 </div>
