@@ -272,6 +272,17 @@ If each rank holds <code>n</code> bytes and there are <code>p</code> ranks, the 
 <figure><img src="/llm/nccl_1_collective_operations/images/reduce.png">
 </figure>
 
+<p>In the pseudo-code below, <code>{x}</code> means the set containing <code>x</code>, so <code>ranks - {dst}</code> means all ranks except <code>dst</code>.</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span># reduce(x, dst)
+</span></span><span style="display:flex;"><span>if rank == dst:
+</span></span><span style="display:flex;"><span>    y = x
+</span></span><span style="display:flex;"><span>    for r in ranks - {dst}:
+</span></span><span style="display:flex;"><span>        y += recv(from=r)
+</span></span><span style="display:flex;"><span>else:
+</span></span><span style="display:flex;"><span>    send(x, to=dst)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
 <h3 class="heading" id="broadcast">
   Broadcast
   <a class="anchor" href="#broadcast">#</a>
@@ -281,6 +292,15 @@ If the source tensor has size <code>n</code> bytes and there are <code>p</code> 
 <figure><img src="/llm/nccl_1_collective_operations/images/broadcast.png">
 </figure>
 
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span># broadcast(x, src)
+</span></span><span style="display:flex;"><span>if rank == src:
+</span></span><span style="display:flex;"><span>    for r in ranks - {src}:
+</span></span><span style="display:flex;"><span>        send(x, to=r)
+</span></span><span style="display:flex;"><span>else:
+</span></span><span style="display:flex;"><span>    x = recv(from=src)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
 <h3 class="heading" id="scatter">
   Scatter
   <a class="anchor" href="#scatter">#</a>
@@ -290,6 +310,16 @@ If the full tensor on the source rank has size <code>n</code> bytes and there ar
 <figure><img src="/llm/nccl_1_collective_operations/images/scatter.png">
 </figure>
 
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span># scatter(chunks, src)
+</span></span><span style="display:flex;"><span>if rank == src:
+</span></span><span style="display:flex;"><span>    y = chunks[src]
+</span></span><span style="display:flex;"><span>    for r in ranks - {src}:
+</span></span><span style="display:flex;"><span>        send(chunks[r], to=r)
+</span></span><span style="display:flex;"><span>else:
+</span></span><span style="display:flex;"><span>    y = recv(from=src)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
 <h3 class="heading" id="gather">
   Gather
   <a class="anchor" href="#gather">#</a>
@@ -299,6 +329,16 @@ If the final gathered tensor has size <code>n</code> bytes and there are <code>p
 <figure><img src="/llm/nccl_1_collective_operations/images/gather.png">
 </figure>
 
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span># gather(x, dst)
+</span></span><span style="display:flex;"><span>if rank == dst:
+</span></span><span style="display:flex;"><span>    chunks[dst] = x
+</span></span><span style="display:flex;"><span>    for r in ranks - {dst}:
+</span></span><span style="display:flex;"><span>        chunks[r] = recv(from=r)
+</span></span><span style="display:flex;"><span>else:
+</span></span><span style="display:flex;"><span>    send(x, to=dst)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
 <h3 class="heading" id="allgather">
   AllGather
   <a class="anchor" href="#allgather">#</a>
@@ -308,6 +348,19 @@ If each rank starts with <code>n</code> bytes and there are <code>p</code> ranks
 <figure><img src="/llm/nccl_1_collective_operations/images/all-gather.png">
 </figure>
 
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span># ring_all_gather(x)
+</span></span><span style="display:flex;"><span>left = (rank - 1) mod p
+</span></span><span style="display:flex;"><span>right = (rank + 1) mod p
+</span></span><span style="display:flex;"><span>chunks[rank] = x
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>for step in 0 .. p - 2:
+</span></span><span style="display:flex;"><span>    send_idx = (rank - step) mod p
+</span></span><span style="display:flex;"><span>    recv_idx = (rank - step - 1) mod p
+</span></span><span style="display:flex;"><span>    send(chunks[send_idx], to=right)
+</span></span><span style="display:flex;"><span>    chunks[recv_idx] = recv(from=left)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
 <h3 class="heading" id="reducescatter">
   ReduceScatter
   <a class="anchor" href="#reducescatter">#</a>
@@ -317,6 +370,20 @@ If the reduced output on each rank has size <code>n / p</code> bytes, the total 
 <figure><img src="/llm/nccl_1_collective_operations/images/reduce-scatter.png">
 </figure>
 
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span># ring_reduce_scatter(chunks)
+</span></span><span style="display:flex;"><span>left = (rank - 1) mod p
+</span></span><span style="display:flex;"><span>right = (rank + 1) mod p
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>for step in 0 .. p - 2:
+</span></span><span style="display:flex;"><span>    send_idx = (rank - step) mod p
+</span></span><span style="display:flex;"><span>    recv_idx = (rank - step - 1) mod p
+</span></span><span style="display:flex;"><span>    send(chunks[send_idx], to=right)
+</span></span><span style="display:flex;"><span>    chunks[recv_idx] += recv(from=left)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>local_shard = chunks[(rank + 1) mod p]</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
 <h3 class="heading" id="allreduce">
   AllReduce
   <a class="anchor" href="#allreduce">#</a>
@@ -325,20 +392,31 @@ If the reduced output on each rank has size <code>n / p</code> bytes, the total 
 <figure><img src="/llm/nccl_1_collective_operations/images/all-reduce.png">
 </figure>
 
-<p><strong>AllReduce = ReduceScatter + AllGather</strong></p>
-<p><code>AllReduce</code> can be implemented as a <code>ReduceScatter</code> followed by an <code>AllGather</code>.</p>
+<div class="code-block">
+  <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span># ring_all_reduce(chunks)
+</span></span><span style="display:flex;"><span>local_shard = ring_reduce_scatter(chunks)
+</span></span><span style="display:flex;"><span>output = ring_all_gather(local_shard)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span># recursive_doubling_all_reduce(x)
+</span></span><span style="display:flex;"><span>output = x
+</span></span><span style="display:flex;"><span>for k in 0 .. log2(p) - 1:
+</span></span><span style="display:flex;"><span>    peer = rank xor (1 &lt;&lt; k)
+</span></span><span style="display:flex;"><span>    send(output, to=peer)
+</span></span><span style="display:flex;"><span>    output += recv(from=peer)</span></span></code></pre></div>
+  <button class="copy-code-button">copy</button>
+</div>
+<p><strong>Ring AllReduce = ReduceScatter + AllGather</strong></p>
+<p>Ring all-reduce is a common bandwidth-efficient implementation on GPU systems <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>. It runs a ring <code>ReduceScatter</code> followed by a ring <code>AllGather</code>, so each rank communicates <code>2 * (p - 1) * n / p</code> bytes.</p>
 <figure><img src="/llm/nccl_1_collective_operations/images/all-reduce-composition.png">
 </figure>
 
-<p>In FSDP, see <a href="/llm/distributed_training_3_zero_fsdp/">Distributed Training: ZeRO and FSDP</a> for a concrete use of all-reduce-related collectives such as <code>all_gather</code> and <code>reduce_scatter</code>.</p>
+<p>In FSDP, see <a href="/llm/distributed_training_3_zero_fsdp/">Distributed Training: ZeRO and FSDP</a> for a concrete use of related collectives such as <code>all_gather</code> and <code>reduce_scatter</code>.</p>
 <figure><img src="/llm/nccl_1_collective_operations/images/fsdp_all_reduce.png"
     alt="FSDP All Reduce."><figcaption>
       <p>FSDP All Reduce.</p>
     </figcaption>
 </figure>
 
-<p><strong>Ring AllReduce</strong></p>
-<p>Ring all-reduce is the standard implementation of <code>AllReduce</code> on many GPU systems <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup> <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>. It decomposes <code>AllReduce</code> into a <code>ReduceScatter</code> phase followed by an <code>AllGather</code> phase, with ranks exchanging data in a ring topology. This gives each rank a communication volume of <code>2 * (p - 1) * n / p</code> bytes.</p>
 <h3 class="heading" id="pytorch-examples">
   PyTorch Examples
   <a class="anchor" href="#pytorch-examples">#</a>
