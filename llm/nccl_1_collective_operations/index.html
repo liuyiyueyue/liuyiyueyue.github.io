@@ -268,7 +268,7 @@ Table of Contents # P2P Reduce Broadcast Scatter Gather AllGather ReduceScatter 
   <a class="anchor" href="#reduce">#</a>
 </h3>
 <p>A <code>Reduce</code> operation combines values from all ranks and writes the result to one destination rank.
-If each rank holds <code>n</code> bytes and there are <code>p</code> ranks, the total communication volume is about <code>(p - 1) * n</code> bytes.</p>
+If each rank holds <code>n</code> bytes, the destination rank receives <code>(p - 1) * n</code> bytes, while each non-destination rank sends <code>n</code> bytes.</p>
 <figure><img src="/llm/nccl_1_collective_operations/images/reduce.png">
 </figure>
 
@@ -288,7 +288,7 @@ If each rank holds <code>n</code> bytes and there are <code>p</code> ranks, the 
   <a class="anchor" href="#broadcast">#</a>
 </h3>
 <p>A <code>Broadcast</code> operation copies data from one source rank to all ranks.
-If the source tensor has size <code>n</code> bytes and there are <code>p</code> ranks, the total communication volume is about <code>(p - 1) * n</code> bytes.</p>
+If the source tensor has size <code>n</code> bytes, the source rank sends <code>(p - 1) * n</code> bytes, while each non-source rank receives <code>n</code> bytes.</p>
 <figure><img src="/llm/nccl_1_collective_operations/images/broadcast.png">
 </figure>
 
@@ -306,7 +306,7 @@ If the source tensor has size <code>n</code> bytes and there are <code>p</code> 
   <a class="anchor" href="#scatter">#</a>
 </h3>
 <p>A <code>Scatter</code> operation splits data on one rank and sends one shard to each rank.
-If the full tensor on the source rank has size <code>n</code> bytes and there are <code>p</code> ranks, the total communication volume is about <code>(p - 1) * n / p</code> bytes.</p>
+If the full tensor on the source rank has size <code>n</code> bytes, the source rank sends <code>(p - 1) * n / p</code> bytes, while each non-source rank receives <code>n / p</code> bytes.</p>
 <figure><img src="/llm/nccl_1_collective_operations/images/scatter.png">
 </figure>
 
@@ -325,7 +325,7 @@ If the full tensor on the source rank has size <code>n</code> bytes and there ar
   <a class="anchor" href="#gather">#</a>
 </h3>
 <p>A <code>Gather</code> operation collects shards from all ranks and places the combined result on one destination rank.
-If the final gathered tensor has size <code>n</code> bytes and there are <code>p</code> ranks, the total communication volume is about <code>(p - 1) * n / p</code> bytes.</p>
+If the final gathered tensor has size <code>n</code> bytes, the destination rank receives <code>(p - 1) * n / p</code> bytes, while each non-destination rank sends <code>n / p</code> bytes.</p>
 <figure><img src="/llm/nccl_1_collective_operations/images/gather.png">
 </figure>
 
@@ -344,7 +344,7 @@ If the final gathered tensor has size <code>n</code> bytes and there are <code>p
   <a class="anchor" href="#allgather">#</a>
 </h3>
 <p>An <code>AllGather</code> operation collects shards from all ranks and places the full concatenated result on every rank.
-If each rank starts with <code>n</code> bytes and there are <code>p</code> ranks, each rank receives <code>(p - 1) * n</code> bytes, so the total communication volume is about <code>p * (p - 1) * n</code> bytes.</p>
+If the final gathered tensor has size <code>n</code> bytes, ring all-gather communicates <code>(p - 1) * n / p</code> bytes per rank.</p>
 <figure><img src="/llm/nccl_1_collective_operations/images/all-gather.png">
 </figure>
 
@@ -366,7 +366,7 @@ If each rank starts with <code>n</code> bytes and there are <code>p</code> ranks
   <a class="anchor" href="#reducescatter">#</a>
 </h3>
 <p>A <code>ReduceScatter</code> operation first reduces values across ranks and then scatters one reduced shard to each rank.
-If the reduced output on each rank has size <code>n / p</code> bytes, the total communication volume is about <code>(p - 1) * n</code> bytes.</p>
+If the reduced full tensor has size <code>n</code> bytes, ring reduce-scatter communicates <code>(p - 1) * n / p</code> bytes per rank.</p>
 <figure><img src="/llm/nccl_1_collective_operations/images/reduce-scatter.png">
 </figure>
 
