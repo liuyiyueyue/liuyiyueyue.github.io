@@ -42,8 +42,7 @@
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Some Notes on Pretraining Scaling">
   <meta property="og:description" content="(This is an on-going blog)
-Scaling pretraining is not only a question of adding more GPUs. The hard part is deciding what should scale, how to predict whether the training recipe will keep working, and how to keep the system efficient when the job becomes a long-running distributed system.
-This note looks at pretraining scale from an ML systems perspective. The main question is: if we start from a small stable run, what has to change before the same training recipe can run on many racks of GPUs?">
+The original “scaling laws” result from Kaplan et al., coauthored by Dario Amodei, showed that language model loss follows predictable power-law trends with model size, dataset size, and training compute across many orders of magnitude.1 Scaling pretraining in practice is not only a question of adding more GPUs. The hard part is deciding what should scale, how to predict whether the training recipe will keep working, and how to keep the system efficient when the job becomes a long-running distributed system.">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -69,7 +68,7 @@ This note looks at pretraining scale from an ML systems perspective. The main qu
 
 
 
-      <script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxxxx"></script>
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-2HFJYLLKZB"></script>
       <script>
         var doNotTrack = false;
         if ( true ) {
@@ -80,7 +79,7 @@ This note looks at pretraining scale from an ML systems perspective. The main qu
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', 'G-xxxxxxxxx');
+          gtag('config', 'G-2HFJYLLKZB');
         }
       </script>
 
@@ -248,9 +247,12 @@ This note looks at pretraining scale from an ML systems perspective. The main qu
     
     <div class="single-content">
       <p>(This is an on-going blog)</p>
-<p>Scaling pretraining is not only a question of adding more GPUs. The hard part is deciding what should scale, how to predict whether the training recipe will keep working, and how to keep the system efficient when the job becomes a long-running distributed system.</p>
-<p>This note looks at pretraining scale from an ML systems perspective. The main question is: if we start from a small stable run, what has to change before the same training recipe can run on many racks of GPUs?</p>
-<p>The outline:</p>
+<p>The original &ldquo;scaling laws&rdquo; result from Kaplan et al., coauthored by Dario Amodei, showed that language model loss follows predictable power-law trends with model size, dataset size, and training compute across many orders of magnitude.<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> Scaling pretraining in practice is not only a question of adding more GPUs. The hard part is deciding what should scale, how to predict whether the training recipe will keep working, and how to keep the system efficient when the job becomes a long-running distributed system.</p>
+<p>This note looks at pretraining scale from an ML systems perspective. The main question is: if we start from a small stable run, what has to change before the same training recipe can run on many racks of GPUs? And what are the challenges?</p>
+<h2 class="heading" id="mental-model">
+  Mental Model
+  <a class="anchor" href="#mental-model">#</a>
+</h2>
 <ol start="0">
 <li>
 <p>What Are We Scaling?</p>
@@ -578,6 +580,14 @@ $$</p>
 <li>Increase GPU count only after the above is stable.</li>
 </ol>
 <p>The core idea is that scaling pretraining is not one jump from 32 GPUs to 10K GPUs. It is a staged process where each stage exposes a new bottleneck: correctness, communication, topology, reliability, then goodput.</p>
+<div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>Jared Kaplan, Sam McCandlish, Tom Henighan, Tom B. Brown, Benjamin Chess, Rewon Child, Scott Gray, Alec Radford, Jeffrey Wu, and Dario Amodei. &ldquo;Scaling Laws for Neural Language Models.&rdquo; arXiv, January 23, 2020. <a href="https://arxiv.org/abs/2001.08361">https://arxiv.org/abs/2001.08361</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
 
     </div>
   </article>
