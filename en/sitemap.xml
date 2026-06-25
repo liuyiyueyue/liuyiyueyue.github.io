@@ -2,11 +2,11 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://liuyiyueyue.github.io/system/concurrency/</loc>
-    <lastmod>2026-04-24T00:00:00+00:00</lastmod>
+    <loc>https://liuyiyueyue.github.io/tags/distributed-training/</loc>
+    <lastmod>2026-06-24T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/</loc>
-    <lastmod>2026-04-24T00:00:00+00:00</lastmod>
+    <lastmod>2026-06-24T00:00:00+00:00</lastmod>
     <xhtml:link
                 rel="alternate"
                 hreflang="zh"
@@ -17,6 +17,44 @@
                 hreflang="en"
                 href="https://liuyiyueyue.github.io/"
                 />
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/llm/</loc>
+    <lastmod>2026-06-24T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/</loc>
+    <lastmod>2026-06-24T00:00:00+00:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh"
+                href="https://liuyiyueyue.github.io/zh/llm/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://liuyiyueyue.github.io/llm/"
+                />
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/pretraining/</loc>
+    <lastmod>2026-06-24T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/llm/scaling_law/</loc>
+    <lastmod>2026-06-24T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/tags/</loc>
+    <lastmod>2026-06-24T00:00:00+00:00</lastmod>
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh"
+                href="https://liuyiyueyue.github.io/zh/tags/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://liuyiyueyue.github.io/tags/"
+                />
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/system/concurrency/</loc>
+    <lastmod>2026-04-24T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/system/</loc>
     <lastmod>2026-04-24T00:00:00+00:00</lastmod>
@@ -40,40 +78,11 @@
     <loc>https://liuyiyueyue.github.io/system/memory_allocation/</loc>
     <lastmod>2026-04-01T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/</loc>
-    <lastmod>2026-04-01T00:00:00+00:00</lastmod>
-    <xhtml:link
-                rel="alternate"
-                hreflang="zh"
-                href="https://liuyiyueyue.github.io/zh/tags/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="en"
-                href="https://liuyiyueyue.github.io/tags/"
-                />
-  </url><url>
     <loc>https://liuyiyueyue.github.io/tags/datacenter/</loc>
     <lastmod>2026-03-25T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/gpu_networking_datacenter/</loc>
     <lastmod>2026-03-25T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/llm/</loc>
-    <lastmod>2026-03-25T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/llm/</loc>
-    <lastmod>2026-03-25T00:00:00+00:00</lastmod>
-    <xhtml:link
-                rel="alternate"
-                hreflang="zh"
-                href="https://liuyiyueyue.github.io/zh/llm/"
-                />
-    <xhtml:link
-                rel="alternate"
-                hreflang="en"
-                href="https://liuyiyueyue.github.io/llm/"
-                />
   </url><url>
     <loc>https://liuyiyueyue.github.io/tags/networking/</loc>
     <lastmod>2026-03-25T00:00:00+00:00</lastmod>
@@ -152,9 +161,6 @@
     <lastmod>2025-12-25T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/distributed_training_5_challenges/</loc>
-    <lastmod>2025-12-18T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://liuyiyueyue.github.io/tags/distributed-training/</loc>
     <lastmod>2025-12-18T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://liuyiyueyue.github.io/llm/distributed_training_4_model_parallelism/</loc>

@@ -6,8 +6,29 @@
     <description>Recent content in Tags on Yiyue Liu&#39;s Blog</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Wed, 01 Apr 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 24 Jun 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://liuyiyueyue.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Distributed-Training</title>
+      <link>https://liuyiyueyue.github.io/tags/distributed-training/</link>
+      <pubDate>Wed, 24 Jun 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/tags/distributed-training/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Llm</title>
+      <link>https://liuyiyueyue.github.io/tags/llm/</link>
+      <pubDate>Wed, 24 Jun 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/tags/llm/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Pretraining</title>
+      <link>https://liuyiyueyue.github.io/tags/pretraining/</link>
+      <pubDate>Wed, 24 Jun 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/tags/pretraining/</guid>
+      <description></description>
+    </item>
     <item>
       <title>Gpu</title>
       <link>https://liuyiyueyue.github.io/tags/gpu/</link>
@@ -27,13 +48,6 @@
       <link>https://liuyiyueyue.github.io/tags/datacenter/</link>
       <pubDate>Wed, 25 Mar 2026 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/tags/datacenter/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Llm</title>
-      <link>https://liuyiyueyue.github.io/tags/llm/</link>
-      <pubDate>Wed, 25 Mar 2026 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyueyue.github.io/tags/llm/</guid>
       <description></description>
     </item>
     <item>
@@ -132,13 +146,6 @@
       <link>https://liuyiyueyue.github.io/tags/software-engineering/</link>
       <pubDate>Thu, 25 Dec 2025 00:00:00 +0000</pubDate>
       <guid>https://liuyiyueyue.github.io/tags/software-engineering/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Distributed-Training</title>
-      <link>https://liuyiyueyue.github.io/tags/distributed-training/</link>
-      <pubDate>Thu, 18 Dec 2025 00:00:00 +0000</pubDate>
-      <guid>https://liuyiyueyue.github.io/tags/distributed-training/</guid>
       <description></description>
     </item>
     <item>

@@ -492,7 +492,7 @@ $$</p>
 \frac{24bsh^2l}{12lh^2 \times bs} = 2 \ \text{FLOPs/token-parameter}
 $$</p>
 <p>This means that, in one forward pass, each token-parameter pair requires about 2 floating-point operations: one multiplication and one addition. One can also says that each parameter requires about 2 floating-point operations per token.</p>
-<p>One training step includes both a forward pass and a backward pass. The backward pass costs about 2 times the forward pass.
+<p>One training step includes both a forward pass and a backward pass. The backward pass costs about 2 times the forward pass. For a matrix multiplication, backpropagation needs to compute both the input gradient and the weight gradient. Each gradient computation is another matrix multiplication with cost similar to the original forward matrix multiplication.
 Therefore, in one training step, each token-parameter pair requires:</p>
 <p>$$
 2 \times (1 + 2) = 6 \ \text{FLOPs/token-parameter}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Pretraining on Yiyue Liu&#39;s Blog</title>
+    <link>https://liuyiyueyue.github.io/tags/pretraining/</link>
+    <description>Recent content in Pretraining on Yiyue Liu&#39;s Blog</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <lastBuildDate>Wed, 24 Jun 2026 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://liuyiyueyue.github.io/tags/pretraining/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Some Notes on Pretraining Scaling</title>
+      <link>https://liuyiyueyue.github.io/llm/scaling_law/</link>
+      <pubDate>Wed, 24 Jun 2026 00:00:00 +0000</pubDate>
+      <guid>https://liuyiyueyue.github.io/llm/scaling_law/</guid>
+      <description>&lt;p&gt;(This is an on-going blog)&lt;/p&gt;&#xA;&lt;p&gt;Scaling pretraining is not only a question of adding more GPUs. The hard part is deciding what should scale, how to predict whether the training recipe will keep working, and how to keep the system efficient when the job becomes a long-running distributed system.&lt;/p&gt;&#xA;&lt;p&gt;This note looks at pretraining scale from an ML systems perspective. The main question is: if we start from a small stable run, what has to change before the same training recipe can run on many racks of GPUs?&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>
