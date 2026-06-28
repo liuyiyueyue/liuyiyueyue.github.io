@@ -336,7 +336,7 @@ $$
 <p>FLOPs (计算量), or floating-point operations, measure computational cost.</p>
 </blockquote>
 <blockquote>
-<p>For $A \in \mathbb{R}^{m \times n}$ and $B \in \mathbb{R}^{n \times p}$, the matrix multiplication $AB$ costs $2mnp$ FLOPs.</p>
+<p>For $A \in \mathbb{R}^{m \times n}$ and $B \in \mathbb{R}^{n \times p}$, the matrix multiplication $C=AB$ costs $2mnp$ FLOPs. This is because each element of $C$ costs roughly $2n$ FLOPs, including $n$ multiplies and $n-1$ adds</p>
 </blockquote>
 <p>In one training iteration, let the input token shape be $[b, s]$, where $b$ is the batch size and $s$ is the sequence length. After embedding, the hidden states are $x \in \mathbb{R}^{b \times s \times h}$, where $h$ is the hidden size.</p>
 <p>For a <strong>self-attention</strong> block,</p>
