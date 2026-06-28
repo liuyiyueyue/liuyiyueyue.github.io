@@ -26,22 +26,22 @@
 <link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
 
-<link rel="alternate" type="application/rss+xml" href="https://liuyiyueyue.github.io/software_engineering/index.xml" title="Yiyue Liu's Blog">
+<link rel="alternate" type="application/rss+xml" href="https://liuyiyueyue.github.io/search/index.xml" title="Yiyue Liu's Blog">
 <meta name="description" content=""/>
 
 
 
 <title>
     
-    Software_engineerings | Yiyue Liu&#39;s Blog
+    Search | Yiyue Liu&#39;s Blog
     
 </title>
 
-<link rel="canonical" href="https://liuyiyueyue.github.io/software_engineering/"/>
+<link rel="canonical" href="https://liuyiyueyue.github.io/search/"/>
 
-<meta property="og:url" content="https://liuyiyueyue.github.io/software_engineering/">
+<meta property="og:url" content="https://liuyiyueyue.github.io/search/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="Software_engineerings">
+  <meta property="og:title" content="Search">
   <meta property="og:description" content="Technical notes on LLM systems, GPU, CUDA, performance, distributed training, inference, operating systems, and software engineering.">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="website">
@@ -141,7 +141,7 @@
         </p>
         
         
-        <p class="small  bold ">
+        <p class="small ">
             <a href="/software_engineering/" >
                 /Software Engineering
             </a>
@@ -170,7 +170,7 @@
 
 
       <div class="header-actions">
-        <a class="header-search-link " href="/search/">
+        <a class="header-search-link active" href="/search/">
           Search
         </a>
 
@@ -202,7 +202,7 @@
             
             
 
-            <a href="/zh/software_engineering/">中文</a>
+            <a href="/zh/search/">中文</a>
           
 
           
@@ -215,164 +215,34 @@
 
     <main class="main">
       
+<section class="search-page">
+  <h1>Search</h1>
 
-<div class="list-container">
+  <input
+    id="search-input"
+    class="search-input"
+    type="search"
+    placeholder="Search posts..."
+    autocomplete="off"
+    autofocus
+  >
 
-    <div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span>
-        <a href="/software_engineering/">Software_engineerings</a></div>
+  <p id="search-status" class="search-status" aria-live="polite"></p>
+  <div id="search-results" class="search-results"></div>
+</section>
 
-    <h1>Software_engineerings</h1>
-    
 
-    
-
-    
-    
-    
-    
-
-    
-
-    
-
-    
-    <div class="post-line">
-
-    
-
-    
-        <p class="line-date">25 Dec 2025 </p>
-    
-
-    <div>
-        <p class="line-title">
-            <a href="/software_engineering/effective-code-review/">
-                Code Review Bottlenecks: From a Team Pain Point to Scalable Practices
-            </a>
-        </p>
-
-        
-        
-        
-        
-        
-        
-        
-            
-        
-        
-            
-            
-                
-                    
-                
-            
-                
-                    
-                
-            
-                
-                    
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-                
-            
-        
-        
-        <p class="line-summary">This post grew out of a very concrete problem in my own team. Over time, code reviews started to feel slower and heavier than they should have. Changes were functionally ready, but sat in review queues for days or even weeks....</p>
-        
-    </div>
-</div>
-
-    
-
-    
-
-    
-
-</div>
+<script>
+  window.blogSearch = {
+    indexURL: "/index.json",
+    emptyText: "Type to search posts.",
+    noResultsText: "No matching posts found.",
+    loadingText: "Loading search index...",
+    errorText: "Search index failed to load."
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.1.0/dist/fuse.min.js" defer></script>
+<script src="/js/search.56c2c21c9b274d1cdcc0991a33953995a9831622e50a4811d68c0dd9c2b475cc.js" integrity="sha256-VsLCHJsnTRzcwJkaM5U5lamDFiLlCkgR1owN2cK0dcw=" defer></script>
 
     </main>
   </div>

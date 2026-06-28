@@ -73,5 +73,17 @@
                 hreflang="zh"
                 href="https://liuyiyueyue.github.io/zh/"
                 />
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/zh/search/</loc>
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://liuyiyueyue.github.io/search/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh"
+                href="https://liuyiyueyue.github.io/zh/search/"
+                />
   </url>
 </urlset>

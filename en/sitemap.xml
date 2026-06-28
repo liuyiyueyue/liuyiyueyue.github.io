@@ -276,5 +276,17 @@
                 hreflang="en"
                 href="https://liuyiyueyue.github.io/archives/"
                 />
+  </url><url>
+    <loc>https://liuyiyueyue.github.io/search/</loc>
+    <xhtml:link
+                rel="alternate"
+                hreflang="zh"
+                href="https://liuyiyueyue.github.io/zh/search/"
+                />
+    <xhtml:link
+                rel="alternate"
+                hreflang="en"
+                href="https://liuyiyueyue.github.io/search/"
+                />
   </url>
 </urlset>

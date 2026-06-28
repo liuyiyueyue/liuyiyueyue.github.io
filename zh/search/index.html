@@ -26,21 +26,22 @@
 <link rel="icon" type="image/png" sizes="192x192" href="https://liuyiyueyue.github.io/android-chrome-192x192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="https://liuyiyueyue.github.io/apple-touch-icon.png">
 
+<link rel="alternate" type="application/rss+xml" href="https://liuyiyueyue.github.io/zh/search/index.xml" title="Yiyue Liu's Blog">
 <meta name="description" content=""/>
 
 
 
 <title>
     
-    404 Page not found | Yiyue Liu&#39;s Blog
+    搜索 | Yiyue Liu&#39;s Blog
     
 </title>
 
-<link rel="canonical" href="https://liuyiyueyue.github.io/zh/404.html"/>
+<link rel="canonical" href="https://liuyiyueyue.github.io/zh/search/"/>
 
-<meta property="og:url" content="https://liuyiyueyue.github.io/zh/404.html">
+<meta property="og:url" content="https://liuyiyueyue.github.io/zh/search/">
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
-  <meta property="og:title" content="404 Page not found">
+  <meta property="og:title" content="搜索">
   <meta property="og:description" content="Technical notes on LLM systems, GPU, CUDA, performance, distributed training, inference, operating systems, and software engineering.">
   <meta property="og:locale" content="zh">
   <meta property="og:type" content="website">
@@ -169,7 +170,7 @@
 
 
       <div class="header-actions">
-        <a class="header-search-link " href="/zh/search/">
+        <a class="header-search-link active" href="/zh/search/">
           搜索
         </a>
 
@@ -191,7 +192,7 @@
             
             
 
-            <a href="/404.html">English</a>
+            <a href="/search/">English</a>
           
 
           
@@ -214,20 +215,34 @@
 
     <main class="main">
       
+<section class="search-page">
+  <h1>搜索</h1>
+
+  <input
+    id="search-input"
+    class="search-input"
+    type="search"
+    placeholder="搜索文章..."
+    autocomplete="off"
+    autofocus
+  >
+
+  <p id="search-status" class="search-status" aria-live="polite"></p>
+  <div id="search-results" class="search-results"></div>
+</section>
+
 
 <script>
-  if (window.location.pathname === "/resume") {
-    window.location.replace("/resume/" + window.location.search + window.location.hash);
-  }
+  window.blogSearch = {
+    indexURL: "/zh/index.json",
+    emptyText: "输入关键词开始搜索。",
+    noResultsText: "没有找到匹配的文章。",
+    loadingText: "正在加载搜索索引...",
+    errorText: "搜索索引加载失败。"
+  };
 </script>
-
-<div class="not-found">
-  <div>
-    <h1> typo? </h1>
-    <p> Click <a href="/">here</a> to return home </p>
-  </div>
-</div>
-
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.1.0/dist/fuse.min.js" defer></script>
+<script src="/js/search.56c2c21c9b274d1cdcc0991a33953995a9831622e50a4811d68c0dd9c2b475cc.js" integrity="sha256-VsLCHJsnTRzcwJkaM5U5lamDFiLlCkgR1owN2cK0dcw=" defer></script>
 
     </main>
   </div>
