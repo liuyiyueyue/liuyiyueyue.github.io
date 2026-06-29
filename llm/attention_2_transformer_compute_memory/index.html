@@ -42,8 +42,9 @@
   <meta property="og:site_name" content="Yiyue Liu&#39;s Blog">
   <meta property="og:title" content="Transformer: Parameter Count, FLOPs, Memory Usage, and Training Time">
   <meta property="og:description" content="This post continues the Transformer article and focuses on model size and compute estimation.
-Parameter Count # A Transformer model consists of $l$ identical layers. Each layer has two parts: a self-attention block and an MLP block.
-The self-attention block contains the weight matrices $W_Q$, $W_K$, $W_V$, and $W_O$, together with their biases. The four weight matrices satisfy $W_Q, W_K, W_V, W_O \in \mathbb{R}^{n \times n}$, and the four bias vectors satisfy $b_Q, b_K, b_V, b_O \in \mathbb{R}^{n}$. Therefore, the number of parameters in the self-attention block is">
+Terminology # $b$ is batch size, $s$ is sequence length, $h$ is hidden dimension, $a$ is the number of attention heads, and $d_{\mathrm{head}}$ is head dimension.
+hidden_dim: the last dimension in [batch, sequence, hidden_dim]. It is also called hidden size, model dimension, embedding dimension, d_model, hidden_size, or n_embd.
+head_dim: the dimension of each attention head, also written as d_head or head_size. Usually, head_dim = hidden_dim / num_heads. After Q/K/V projection, Q is [batch, seq_len, num_heads, head_dim], K is [batch, seq_len, num_heads, head_dim], and V is [batch, seq_len, num_heads, head_dim]">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="llm">
@@ -253,6 +254,19 @@ The self-attention block contains the weight matrices $W_Q$, $W_K$, $W_V$, and $
     
     <div class="single-content">
       <p>This post continues the <a href="/llm/attention_1_transformer/">Transformer</a> article and focuses on model size and compute estimation.</p>
+<h3 class="heading" id="terminology">
+  Terminology
+  <a class="anchor" href="#terminology">#</a>
+</h3>
+<p>$b$ is batch size, $s$ is sequence length, $h$ is hidden dimension, $a$ is the number of attention heads, and $d_{\mathrm{head}}$ is head dimension.</p>
+<ul>
+<li>
+<p><strong>hidden_dim</strong>: the last dimension in <code>[batch, sequence, hidden_dim]</code>. It is also called hidden size, model dimension, embedding dimension, <code>d_model</code>, <code>hidden_size</code>, or <code>n_embd</code>.</p>
+</li>
+<li>
+<p><strong>head_dim</strong>: the dimension of each attention head, also written as <code>d_head</code> or <code>head_size</code>. Usually, <code>head_dim = hidden_dim / num_heads</code>. After Q/K/V projection, Q is <code>[batch, seq_len, num_heads, head_dim]</code>, K is <code>[batch, seq_len, num_heads, head_dim]</code>, and V is <code>[batch, seq_len, num_heads, head_dim]</code></p>
+</li>
+</ul>
 <h3 class="heading" id="parameter-count">
   Parameter Count
   <a class="anchor" href="#parameter-count">#</a>
@@ -413,11 +427,36 @@ $$</p>
 <p>$$
 O(sh^2 + s^2h) \text{ or } O(s^2h) \text{ or } O(s^2)
 $$</p>
+
+
+<p><details >
+  <summary markdown="span">Exercise: How many matrix multiplications are there in one MLP block and one attention layer?</summary>
+  <p>Answer:</p>
+<ul>
+<li>One MLP block has <strong>2 matrix multiplications</strong>: the up projection and the down projection.</li>
+<li>One attention layer has <strong>6 matrix multiplications</strong>: Q, K, V projections, $QK^T$, attention-weighted values, and the output projection.</li>
+</ul>
+<p>Explanation:</p>
+<p>For the MLP block:</p>
+<ul>
+<li>up projection: $[bs, h] \times [h, 4h] \rightarrow [bs, 4h]$</li>
+<li>down projection: $[bs, 4h] \times [4h, h] \rightarrow [bs, h]$</li>
+</ul>
+<p>For the attention layer:</p>
+<ul>
+<li>Q/K/V projections: $[bs, h] \times [h, h] \rightarrow [bs, h]$, repeated 3 times</li>
+<li>Attention scores: $[b, a, s, d_{\mathrm{head}}] \times [b, a, d_{\mathrm{head}}, s] \rightarrow [b, a, s, s]$</li>
+<li>Weighted values: $[b, a, s, s] \times [b, a, s, d_{\mathrm{head}}] \rightarrow [b, a, s, d_{\mathrm{head}}]$</li>
+<li>Output projection: $[bs, h] \times [h, h] \rightarrow [bs, h]$</li>
+</ul>
+
+</details></p>
+
 <h3 class="heading" id="activation-memory">
   Activation Memory
   <a class="anchor" href="#activation-memory">#</a>
 </h3>
-<p>Besides model parameters, gradients, and optimizer states, one of the largest contributors to GPU memory usage is the intermediate activations produced during the forward pass. These activations must be saved so they can be reused during backpropagation when computing gradients. Here, <strong>activations</strong> refer to all tensors that are computed during the forward pass and are needed again during the backward pass. This does not include model parameters or optimizer states, but it does include tensors such as the mask matrices required by dropout.</p>
+<p>Besides model parameters, gradients, and optimizer states, one of the largest contributors to GPU memory usage is the intermediate activations produced during the forward pass. These activations must be saved so they can be reused during backpropagation when computing gradients. Here, <strong>activations</strong> refer to all tensors that are computed during the forward pass and are needed again during the backward pass. This does not include model parameters or optimizer states, but it does include tensors such as the mask matrices required by dropout and the hidden states after embedding.</p>
 <p>Throughout this section, activations are assumed to be stored in <code>fp16</code> or <code>bf16</code>, so each element takes 2 bytes. The only exception is the dropout mask, where each element takes 1 byte. Below, we give both the number of elements and the corresponding activation memory usage in bytes.</p>
 <p>Let $a$ denote the number of attention heads, and let $d_{\mathrm{head}} = h / a$.</p>
 <p>For a <strong>self-attention</strong> block,</p>
