@@ -68,7 +68,7 @@ Functions that depend only on their input arguments Outputs that are fully deter
 
 
 
-<link rel="stylesheet" href="/assets/combined.min.47410168915a8b92eb0165a72b9f469f667b4027bd950c696eae302835318589.css" media="all">
+<link rel="stylesheet" href="/assets/combined.min.25ce07fec87382f5cd3ed82b58dde5771219579149fa0d93ac606cf24ca6e330.css" media="all">
 
 
 
@@ -455,13 +455,119 @@ Take the state that PyTorch stores inside objects (such as model parameters or b
 
     postMeta.insertAdjacentHTML(
       "beforeend",
-      '&nbsp; · &nbsp;<span class="page-views"><span id="vercount_value_page_pv">...</span> views</span>'
+      '&nbsp; · &nbsp;<span class="page-views"><span id="vercount_value_page_pv">...</span> views</span>' +
+        '&nbsp; · &nbsp;<button class="page-like-button" type="button" aria-pressed="false">' +
+        '<span class="page-like-icon" aria-hidden="true">&#9825;</span> ' +
+        '<span id="page_like_count">...</span> likes' +
+        "</button>"
     );
 
     const script = document.createElement("script");
     script.defer = true;
     script.src = "https://events.vercount.one/js";
     document.body.appendChild(script);
+
+    const likeButton = postMeta.querySelector(".page-like-button");
+    const likeIcon = postMeta.querySelector(".page-like-icon");
+    const likeCount = document.getElementById("page_like_count");
+    const apiUrl = "https://events.vercount.one/api/v2/log";
+    const likeUrl = new URL(
+      "/__likes__/llm/jax_1/",
+      "https://liuyiyueyue.github.io/"
+    );
+    const likeKey = likeUrl.toString();
+    const likeStorageKey = "page_like_" + likeKey;
+    let likesLoaded = false;
+
+    function hasLiked() {
+      try {
+        return localStorage.getItem(likeStorageKey) === "1";
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function saveLiked() {
+      try {
+        localStorage.setItem(likeStorageKey, "1");
+      } catch (error) {
+        console.warn(error);
+      }
+    }
+
+    function updateLikeButton(isLiked) {
+      likeButton.setAttribute("aria-pressed", String(isLiked));
+      likeButton.classList.toggle("is-liked", isLiked);
+      likeIcon.textContent = isLiked ? "\u2665" : "\u2661";
+    }
+
+    function setLikeCount(value) {
+      likeCount.textContent = String(Number(value) || 0);
+      likesLoaded = true;
+    }
+
+    function currentLikeCount() {
+      if (!likesLoaded) {
+        return 0;
+      }
+
+      return Number(likeCount.textContent) || 0;
+    }
+
+    async function fetchLikes() {
+      const response = await fetch(apiUrl + "?url=" + encodeURIComponent(likeKey));
+      if (!response.ok) {
+        throw new Error("Unable to load likes");
+      }
+
+      const result = await response.json();
+      setLikeCount(result && result.data ? result.data.page_pv : 0);
+    }
+
+    likeButton.addEventListener("click", async function (event) {
+      event.preventDefault();
+
+      if (hasLiked()) {
+        return;
+      }
+
+      likeButton.disabled = true;
+      saveLiked();
+      updateLikeButton(true);
+      setLikeCount(currentLikeCount() + 1);
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: likeKey, isNewUv: false }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to save like");
+        }
+
+        const result = await response.json();
+        setLikeCount(result && result.data ? result.data.page_pv : 0);
+      } catch (error) {
+        updateLikeButton(false);
+        try {
+          localStorage.removeItem(likeStorageKey);
+        } catch (storageError) {
+          console.warn(storageError);
+        }
+        setLikeCount(Math.max(currentLikeCount() - 1, 0));
+        console.warn(error);
+      } finally {
+        likeButton.disabled = false;
+      }
+    });
+
+    updateLikeButton(hasLiked());
+    fetchLikes().catch(function (error) {
+      setLikeCount(0);
+      console.warn(error);
+    });
   })();
 </script>
 
