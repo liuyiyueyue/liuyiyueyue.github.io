@@ -474,6 +474,14 @@ Decode uses <code>[B, 1, d] x [d, d]</code>. Since <code>L</code> does not appea
       }
     }
 
+    function removeLiked() {
+      try {
+        localStorage.removeItem(likeStorageKey);
+      } catch (error) {
+        console.warn(error);
+      }
+    }
+
     function updateLikeButton(isLiked) {
       likeButton.setAttribute("aria-pressed", String(isLiked));
       likeButton.classList.toggle("is-liked", isLiked);
@@ -507,6 +515,9 @@ Decode uses <code>[B, 1, d] x [d, d]</code>. Since <code>L</code> does not appea
       event.preventDefault();
 
       if (hasLiked()) {
+        removeLiked();
+        updateLikeButton(false);
+        setLikeCount(Math.max(currentLikeCount() - 1, 0));
         return;
       }
 
@@ -530,11 +541,7 @@ Decode uses <code>[B, 1, d] x [d, d]</code>. Since <code>L</code> does not appea
         setLikeCount(result && result.data ? result.data.page_pv : 0);
       } catch (error) {
         updateLikeButton(false);
-        try {
-          localStorage.removeItem(likeStorageKey);
-        } catch (storageError) {
-          console.warn(storageError);
-        }
+        removeLiked();
         setLikeCount(Math.max(currentLikeCount() - 1, 0));
         console.warn(error);
       } finally {

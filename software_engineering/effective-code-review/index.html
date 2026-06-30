@@ -504,6 +504,14 @@ A discussion of real-world code review challenges in the author&rsquo;s team.</l
       }
     }
 
+    function removeLiked() {
+      try {
+        localStorage.removeItem(likeStorageKey);
+      } catch (error) {
+        console.warn(error);
+      }
+    }
+
     function updateLikeButton(isLiked) {
       likeButton.setAttribute("aria-pressed", String(isLiked));
       likeButton.classList.toggle("is-liked", isLiked);
@@ -537,6 +545,9 @@ A discussion of real-world code review challenges in the author&rsquo;s team.</l
       event.preventDefault();
 
       if (hasLiked()) {
+        removeLiked();
+        updateLikeButton(false);
+        setLikeCount(Math.max(currentLikeCount() - 1, 0));
         return;
       }
 
@@ -560,11 +571,7 @@ A discussion of real-world code review challenges in the author&rsquo;s team.</l
         setLikeCount(result && result.data ? result.data.page_pv : 0);
       } catch (error) {
         updateLikeButton(false);
-        try {
-          localStorage.removeItem(likeStorageKey);
-        } catch (storageError) {
-          console.warn(storageError);
-        }
+        removeLiked();
         setLikeCount(Math.max(currentLikeCount() - 1, 0));
         console.warn(error);
       } finally {

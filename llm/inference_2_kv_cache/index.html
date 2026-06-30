@@ -531,6 +531,14 @@ If there are 32 simultaneous requests, each with a sequence length of 2048 token
       }
     }
 
+    function removeLiked() {
+      try {
+        localStorage.removeItem(likeStorageKey);
+      } catch (error) {
+        console.warn(error);
+      }
+    }
+
     function updateLikeButton(isLiked) {
       likeButton.setAttribute("aria-pressed", String(isLiked));
       likeButton.classList.toggle("is-liked", isLiked);
@@ -564,6 +572,9 @@ If there are 32 simultaneous requests, each with a sequence length of 2048 token
       event.preventDefault();
 
       if (hasLiked()) {
+        removeLiked();
+        updateLikeButton(false);
+        setLikeCount(Math.max(currentLikeCount() - 1, 0));
         return;
       }
 
@@ -587,11 +598,7 @@ If there are 32 simultaneous requests, each with a sequence length of 2048 token
         setLikeCount(result && result.data ? result.data.page_pv : 0);
       } catch (error) {
         updateLikeButton(false);
-        try {
-          localStorage.removeItem(likeStorageKey);
-        } catch (storageError) {
-          console.warn(storageError);
-        }
+        removeLiked();
         setLikeCount(Math.max(currentLikeCount() - 1, 0));
         console.warn(error);
       } finally {
